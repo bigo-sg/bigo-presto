@@ -215,7 +215,7 @@ class FileSender(object):
         }
 
         # rsp = requests.post("http://auth.bigo.sg/api/v1/storage/genStoreUploadSig/", json=d, headers=h)
-        rsp = requests.post(self._tokenUrl, json=d, headers=h, timeout=30)
+        rsp = requests.post(self._tokenUrl, json=d, headers=h, timeout=300)
         if rsp.status_code != 200 or rsp.json().get('code') != 0:
             print rsp.status_code
             raise ApiCenterError()
@@ -289,7 +289,7 @@ class FileSender(object):
         }
         # 添加版本接口
 
-        response = requests.post(self._packDeployUrl, data=data, timeout=60)
+        response = requests.post(self._packDeployUrl, data=data, timeout=600)
         print ("add version api return content: ", response.status_code, json.dumps(response.json(), encoding="UTF-8"))
         if response.status_code != 200 or not response.json().get('ret'):
             raise AddVersionError()
@@ -304,7 +304,7 @@ def getTarOrbin(username, password, version_group, version):
         "version_group": version_group,
         "version": version
     }
-    ret = requests.post(GET_BIN_TYPE_URL, data=data, timeout=60)
+    ret = requests.post(GET_BIN_TYPE_URL, data=data, timeout=600)
     print ret.status_code
     print ret.content
     print ("get bin type api return content: ", ret.status_code, json.dumps(ret.json(), encoding="UTF-8"))

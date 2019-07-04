@@ -38,7 +38,7 @@
         </artifact>
     </artifactSet>
 
-    <artifactSet to="plugin/password-authenticators">
+    <artifactSet to="plugin/ranger-systemaccesscontrol">
         <artifact id="${project.groupId}:presto-ranger-systemaccesscontrol:zip:${project.version}">
             <unpack />
         </artifact>

@@ -68,13 +68,11 @@ class Coordinator(Script):
                     f.write(key_val_template.format(key, value))
 
     def add_other_config_file(self):
-
         from params import config, config_directory
         for key, value in config['configurations']['all-other-configs.filecontent'].iteritems():
             with open(path.join(config_directory, key), 'w') as f:
                 print 'add config file:',key,'with content',value
                 f.write(value)
-
 
     def configure(self, env):
         from params import config, node_properties, jvm_config, config_properties, \

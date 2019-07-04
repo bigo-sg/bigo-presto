@@ -158,6 +158,12 @@
         </artifact>
     </artifactSet>
 
+    <artifactSet to="plugin/bigo-base-plugin">
+        <artifact id="${project.groupId}:presto-bigo-base-plugin:zip:${project.version}">
+            <unpack />
+        </artifact>
+    </artifactSet>
+
     <artifactSet to="plugin/tpcds">
         <artifact id="${project.groupId}:presto-tpcds:zip:${project.version}">
             <unpack />

@@ -16,6 +16,9 @@
 from resource_management.libraries.script.script import Script
 
 # config object that holds the configurations declared in the config xml file
+
+added_properties = ['event-listener.properties']
+
 config = Script.get_config()
 
 node_properties = config['configurations']['node.properties']

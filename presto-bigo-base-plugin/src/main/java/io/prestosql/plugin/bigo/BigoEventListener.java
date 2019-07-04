@@ -13,7 +13,6 @@
  */
 package io.prestosql.plugin.bigo;
 
-import com.alibaba.fastjson.JSON;
 import io.prestosql.plugin.bigo.kafka.KafkaSinker;
 import io.prestosql.spi.eventlistener.EventListener;
 import io.prestosql.spi.eventlistener.QueryCompletedEvent;
@@ -43,7 +42,7 @@ public class BigoEventListener
     public void queryCompleted(QueryCompletedEvent queryCompletedEvent)
     {
         AuditLogBean auditLogBean = new AuditLogBean(queryCompletedEvent);
-        kafkaSinker.send(auditLogBean.getQueryId(), JSON.toJSONString(auditLogBean));
+        kafkaSinker.send(auditLogBean.getQueryId(), auditLogBean.toString());
     }
 
     @Override

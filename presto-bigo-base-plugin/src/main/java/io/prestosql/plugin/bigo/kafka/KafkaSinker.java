@@ -56,6 +56,7 @@ public class KafkaSinker
         ProducerRecord<String, String> producerRecord =
                 new ProducerRecord<>(topic, key, message);
         producer.send(producerRecord);
+        new Thread(() -> flush()).start();
     }
 
     public void flush()

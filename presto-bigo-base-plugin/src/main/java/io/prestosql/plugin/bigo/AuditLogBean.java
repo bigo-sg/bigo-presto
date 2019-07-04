@@ -13,25 +13,26 @@
  */
 package io.prestosql.plugin.bigo;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.CaseFormat;
+import io.prestosql.spi.PrestoWarning;
+import io.prestosql.spi.eventlistener.*;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 
-import io.prestosql.spi.eventlistener.QueryCompletedEvent;
-import io.prestosql.spi.eventlistener.QueryContext;
-import io.prestosql.spi.eventlistener.QueryFailureInfo;
-import io.prestosql.spi.eventlistener.QueryMetadata;
-import io.prestosql.spi.eventlistener.QueryStatistics;
 /**
  * @author tangyun@bigo.sg
  * @date 7/2/19 11:08 AM
  */
 @Data
+@Slf4j
 public class AuditLogBean
 {
     // from metadata
@@ -41,8 +42,6 @@ public class AuditLogBean
     private String preparedQuery;
     private String queryState;
     private String uri;
-    private String plan;
-    private String payload;
 
     // from statistics
     private Duration cpuTime;
@@ -69,7 +68,6 @@ public class AuditLogBean
     private double cumulativeMemory;
     private int completedSplits;
     private boolean complete;
-    private String planNodeStatsAndCosts;
 
     // from context
     private String user;
@@ -94,6 +92,16 @@ public class AuditLogBean
     private String executionStartTime;
     private String endTime;
 
+    // from warning
+    private List<PrestoWarning> prestoWarnings;
+
+    // from ioMetadata
+    private List<QueryInputMetadata> inputs;
+    private String catalogName;
+    private String outputSchema;
+    private String table;
+
+
     public AuditLogBean(QueryCompletedEvent queryCompletedEvent)
     {
         QueryMetadata queryMetadata = queryCompletedEvent.getMetadata();
@@ -103,8 +111,6 @@ public class AuditLogBean
         preparedQuery = getFromOptionalString(queryMetadata.getPreparedQuery());
         queryState = queryMetadata.getQueryState();
         uri = queryMetadata.getUri().toString();
-        plan = getFromOptionalString(queryMetadata.getPlan());
-        payload = getFromOptionalString(queryMetadata.getPayload());
 
         QueryStatistics statistics = queryCompletedEvent.getStatistics();
         cpuTime = statistics.getCpuTime();
@@ -130,7 +136,6 @@ public class AuditLogBean
         cumulativeMemory = statistics.getCumulativeMemory();
         complete = statistics.isComplete();
         completedSplits = statistics.getCompletedSplits();
-        planNodeStatsAndCosts = getFromOptionalString(statistics.getPlanNodeStatsAndCosts());
 
         QueryContext queryContext = queryCompletedEvent.getContext();
         user = queryContext.getUser();
@@ -156,6 +161,16 @@ public class AuditLogBean
         createTime = queryCompletedEvent.getCreateTime().atOffset(ZoneOffset.ofHours(8)).toString();
         executionStartTime = queryCompletedEvent.getExecutionStartTime().atOffset(ZoneOffset.ofHours(8)).toString();
         endTime = queryCompletedEvent.getEndTime().atOffset(ZoneOffset.ofHours(8)).toString();
+
+        prestoWarnings = queryCompletedEvent.getWarnings();
+
+        inputs = queryCompletedEvent.getIoMetadata().getInputs();
+        if (queryCompletedEvent.getIoMetadata().getOutput().isPresent()) {
+            QueryOutputMetadata queryOutputMetadata = queryCompletedEvent.getIoMetadata().getOutput().get();
+            catalogName = queryOutputMetadata.getCatalogName();
+            outputSchema = queryOutputMetadata.getSchema();
+            table = queryOutputMetadata.getTable();
+        }
     }
 
     public static Duration getFromOptionalDuration(Optional<Duration> data)
@@ -174,14 +189,51 @@ public class AuditLogBean
         JSONObject jsonObject = new JSONObject();
         Field[] fields = this.getClass().getDeclaredFields();
         for (Field field: fields) {
-            String name = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, field.getName());
+            String name = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getName());
             field.setAccessible(true);
-            Object value = null;
+            Object value;
             try {
                 value = field.get(this);
+
+                if (name.equals("presto_warnings")) {
+                    // prestoWarnings
+                    List<PrestoWarning> prestoWarningsArray = (List<PrestoWarning>) value;
+                    JSONArray prestoWarningsJson = new JSONArray();
+                    for (PrestoWarning prestoWarning: prestoWarningsArray) {
+                        JSONObject warningJson = new JSONObject();
+                        warningJson.put("warning_name", prestoWarning.getWarningCode().getName());
+                        warningJson.put("warning_code", prestoWarning.getWarningCode().getCode());
+                        warningJson.put("warning_message", prestoWarning.getMessage());
+                        prestoWarningsJson.add(warningJson);
+                    }
+                    jsonObject.put(name, prestoWarningsJson);
+                    continue;
+                } else if (name.equals("inputs")) {
+                    // inputs
+                    JSONArray inputsJson = new JSONArray();
+                    List<QueryInputMetadata> inputs = (List<QueryInputMetadata>) value;
+                    for (QueryInputMetadata input: inputs) {
+                        JSONObject inputJson = new JSONObject();
+                        inputJson.put("catalog_name", input.getCatalogName());
+                        inputJson.put("schema", input.getSchema());
+                        inputJson.put("table", input.getTable());
+                        JSONArray columnsJson = new JSONArray();
+                        List<String> columns = input.getColumns();
+                        for (String column : columns) {
+                            columnsJson.add(column);
+                        }
+                        inputJson.put("columns", columnsJson);
+                        inputsJson.add(inputJson);
+                    }
+                    jsonObject.put("inputs", inputsJson);
+                    continue;
+                } else if (name.equals("log")) {
+                    // ignore log field
+                    continue;
+                }
                 jsonObject.put(name, value);
             } catch (IllegalAccessException e) {
-                e.printStackTrace();
+                log.error("", e);
             }
         }
         return jsonObject.toString();

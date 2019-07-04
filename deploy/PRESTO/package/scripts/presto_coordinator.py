@@ -24,9 +24,11 @@ from resource_management.libraries.functions.check_process_status import check_p
 import os, re  
 import sys
 import logging
+import json
+
 logging.basicConfig(stream=sys.stdout)
 _LOGGER = logging.getLogger(__name__)
-
+key_val_template = '{0}={1}\n'
 
 # execute command, and return the output  
 def execCmd(cmd):  
@@ -37,7 +39,6 @@ def execCmd(cmd):
 
 class Coordinator(Script):
     def install(self, env):
-        from params import java_home
         Execute('mkdir -p /etc/presto')
         Execute('mkdir -p /etc/presto/catalog')
         self.configure(env)
@@ -58,16 +59,39 @@ class Coordinator(Script):
         check_process_status('/data1/var/presto/data/var/run/launcher.pid')
         return
 
-    def configure(self, env):
-        from params import node_properties, jvm_config, config_properties, \
-            config_directory, memory_configs, host_info, connectors_to_add, connectors_to_delete
-        key_val_template = '{0}={1}\n'
+    def add_kv_file(self):
+        from params import config, added_properties, config_directory
+        for file in added_properties:
+            with open(path.join(config_directory, file), 'w') as f:
+                for key, value in config['configurations'][file].iteritems():
+                    print 'add:',key,'=',value,'to',file
+                    f.write(key_val_template.format(key, value))
 
+    def add_other_config_file(self):
+
+        from params import config, config_directory
+        for key, value in config['configurations']['all-other-configs.filecontent'].iteritems():
+            with open(path.join(config_directory, key), 'w') as f:
+                print 'add config file:',key,'with content',value
+                f.write(value)
+
+
+    def configure(self, env):
+        from params import config, node_properties, jvm_config, config_properties, \
+            config_directory, memory_configs, host_info, connectors_to_add, connectors_to_delete
+
+        print "config", json.dumps(config)
+
+        self.add_other_config_file()
         with open(path.join(config_directory, 'node.properties'), 'w') as f:
             for key, value in node_properties.iteritems():
                 f.write(key_val_template.format(key, value))
             f.write(key_val_template.format('node.id', str(uuid.uuid4())))
             f.write(key_val_template.format('node.data-dir', '/data1/var/presto/data'))
+
+        with open(path.join(config_directory, 'event-listener.properties'), 'w') as f:
+            for key, value in config['configurations']['event-listener.properties'].iteritems():
+                f.write(key_val_template.format(key, value))
 
         with open(path.join(config_directory, 'jvm.config'), 'w') as f:
             f.write(jvm_config['jvm.config'])

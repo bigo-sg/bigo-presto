@@ -21,6 +21,15 @@ from common import PRESTO_RPM_URL, PRESTO_RPM_NAME, create_connectors, \
     delete_connectors
 from resource_management.libraries.functions.check_process_status import check_process_status
 
+import os, re
+import sys
+import logging
+import json
+
+logging.basicConfig(stream=sys.stdout)
+_LOGGER = logging.getLogger(__name__)
+key_val_template = '{0}={1}\n'
+
 
 class Worker(Script):
     def install(self, env):
@@ -45,11 +54,19 @@ class Worker(Script):
 
         check_process_status('/data1/var/presto/data/var/run/launcher.pid')
 
+    def add_other_config_file(self):
+
+        from params import config, config_directory
+        for key, value in config['configurations']['all-other-configs.filecontent'].iteritems():
+            with open(path.join(config_directory, key), 'w') as f:
+                print 'add config file:',key,'with content',value
+                f.write(value)
+
     def configure(self, env):
         from params import node_properties, jvm_config, config_properties, \
             config_directory, memory_configs, connectors_to_add, connectors_to_delete
         key_val_template = '{0}={1}\n'
-
+        self.add_other_config_file()
         with open(path.join(config_directory, 'node.properties'), 'w') as f:
             for key, value in node_properties.iteritems():
                 f.write(key_val_template.format(key, value))

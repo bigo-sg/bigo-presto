@@ -87,10 +87,6 @@ class Coordinator(Script):
             f.write(key_val_template.format('node.id', str(uuid.uuid4())))
             f.write(key_val_template.format('node.data-dir', '/data1/var/presto/data'))
 
-        with open(path.join(config_directory, 'event-listener.properties'), 'w') as f:
-            for key, value in config['configurations']['event-listener.properties'].iteritems():
-                f.write(key_val_template.format(key, value))
-
         with open(path.join(config_directory, 'jvm.config'), 'w') as f:
             f.write(jvm_config['jvm.config'])
 

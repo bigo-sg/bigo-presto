@@ -1,9 +1,8 @@
-package sg.bigo.plugin.hive.parse;
+package sg.bigo.plugin.ranger;
 
 import org.antlr.runtime.Token;
 import org.antlr.runtime.tree.CommonTree;
 import org.antlr.runtime.tree.Tree;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.ArrayDeque;
@@ -11,9 +10,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-/**
- *
- */
 public class ASTNode extends CommonTree implements Node,Serializable {
   private static final long serialVersionUID = 1L;
   private transient StringBuilder astStr;
@@ -140,6 +136,8 @@ public class ASTNode extends CommonTree implements Node,Serializable {
     dump(sb);
     return sb.toString();
   }
+
+
 
   private StringBuilder dump(StringBuilder sb) {
     Deque<ASTNode> stack = new ArrayDeque<ASTNode>();

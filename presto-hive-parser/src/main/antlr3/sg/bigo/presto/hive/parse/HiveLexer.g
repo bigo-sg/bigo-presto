@@ -1,7 +1,7 @@
 lexer grammar HiveLexer;
 
 @lexer::header {
-package sg.bigo.plugin.hive.parse;
+package sg.bigo.presto.hive.parse;
 }
 
 @lexer::members {

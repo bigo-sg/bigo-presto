@@ -386,7 +386,7 @@ TOK_BLOCKING;
 
 // Package headers
 @header {
-package sg.bigo.plugin.hive.parse;
+package sg.bigo.presto.hive.parse;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -395,7 +395,7 @@ import java.util.HashMap;
 
 
 @members {
-  ArrayList<ParseError> errors = new ArrayList<ParseError>();
+  ArrayList<HiveParseError> errors = new ArrayList<HiveParseError>();
   Stack msgs = new Stack<String>();
 
   private static HashMap<String, String> xlateMap;
@@ -601,7 +601,7 @@ import java.util.HashMap;
   @Override
   public void displayRecognitionError(String[] tokenNames,
       RecognitionException e) {
-    errors.add(new ParseError(this, e, tokenNames));
+    errors.add(new HiveParseError(this, e, tokenNames));
   }
 
   @Override

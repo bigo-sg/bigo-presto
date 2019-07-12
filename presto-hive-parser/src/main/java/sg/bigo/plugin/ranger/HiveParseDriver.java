@@ -1,4 +1,4 @@
-package sg.bigo.plugin.hive.parse;
+package sg.bigo.plugin.ranger;
 
 import io.airlift.log.Logger;
 import org.antlr.runtime.ANTLRStringStream;
@@ -15,12 +15,12 @@ import org.antlr.runtime.tree.TreeAdaptor;
 import java.util.ArrayList;
 
 /**
- * ParseDriver.
+ * HiveParseDriver.
  *
  */
-public class ParseDriver {
+public class HiveParseDriver {
 
-  private static final Logger LOG = Logger.get(ParseDriver.class);
+  private static final Logger LOG = Logger.get(HiveParseDriver.class);
 
   /**
    * ANTLRNoCaseStringStream.
@@ -63,23 +63,23 @@ public class ParseDriver {
    */
   public class HiveLexerX extends HiveLexer {
 
-    private final ArrayList<ParseError> errors;
+    private final ArrayList<HiveParseError> errors;
 
     public HiveLexerX() {
       super();
-      errors = new ArrayList<ParseError>();
+      errors = new ArrayList<HiveParseError>();
     }
 
     public HiveLexerX(CharStream input) {
       super(input);
-      errors = new ArrayList<ParseError>();
+      errors = new ArrayList<HiveParseError>();
     }
 
     @Override
     public void displayRecognitionError(String[] tokenNames,
         RecognitionException e) {
 
-      errors.add(new ParseError(this, e, tokenNames));
+      errors.add(new HiveParseError(this, e, tokenNames));
     }
 
     @Override
@@ -101,7 +101,7 @@ public class ParseDriver {
       return msg;
     }
 
-    public ArrayList<ParseError> getErrors() {
+    public ArrayList<HiveParseError> getErrors() {
       return errors;
     }
 
@@ -138,6 +138,13 @@ public class ParseDriver {
     };
   };
 
+  private static ASTNode findRootNonNullToken(ASTNode tree) {
+    while ((tree.getToken() == null) && (tree.getChildCount() > 0)) {
+      tree = (ASTNode) tree.getChild(0);
+    }
+    return tree;
+  }
+
   /**
    * Parses a command, optionally assigning the parser's token stream to the
    * given context.
@@ -148,7 +155,7 @@ public class ParseDriver {
    * @return parsed AST
    */
   public ASTNode parse(String command)
-      throws ParseException {
+      throws HiveParseException {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Parsing command: " + command);
     }
@@ -163,21 +170,22 @@ public class ParseDriver {
     try {
       r = parser.statement();
     } catch (RecognitionException e) {
-      e.printStackTrace();
-      throw new ParseException(parser.errors);
+      //e.printStackTrace();
+      throw new HiveParseException(parser.errors);
     }
 
     if (lexer.getErrors().size() == 0 && parser.errors.size() == 0) {
       LOG.debug("Parse Completed");
     } else if (lexer.getErrors().size() != 0) {
-      throw new ParseException(lexer.getErrors());
+      throw new HiveParseException(lexer.getErrors());
     } else {
-      throw new ParseException(parser.errors);
+      throw new HiveParseException(parser.errors);
     }
 
-    ASTNode tree = (ASTNode) r.getTree();
+    ASTNode tree = r.getTree();
     tree.setUnknownTokenBoundaries();
-    return tree;
+
+    return findRootNonNullToken(tree);
   }
 
   /*
@@ -190,7 +198,7 @@ public class ParseDriver {
    * the input schema and hence the Result Expression cannot be analyzed by the regular Hive
    * translation process.
    */
-  public ASTNode parseSelect(String command) throws ParseException {
+  public ASTNode parseSelect(String command) throws HiveParseException {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Parsing command: " + command);
     }
@@ -205,20 +213,20 @@ public class ParseDriver {
       r = parser.selectClause();
     } catch (RecognitionException e) {
       e.printStackTrace();
-      throw new ParseException(parser.errors);
+      throw new HiveParseException(parser.errors);
     }
 
     if (lexer.getErrors().size() == 0 && parser.errors.size() == 0) {
       LOG.debug("Parse Completed");
     } else if (lexer.getErrors().size() != 0) {
-      throw new ParseException(lexer.getErrors());
+      throw new HiveParseException(lexer.getErrors());
     } else {
-      throw new ParseException(parser.errors);
+      throw new HiveParseException(parser.errors);
     }
 
     return (ASTNode) r.getTree();
   }
-  public ASTNode parseExpression(String command) throws ParseException {
+  public ASTNode parseExpression(String command) throws HiveParseException {
     LOG.info("Parsing expression: " + command);
 
     HiveLexerX lexer = new HiveLexerX(new ANTLRNoCaseStringStream(command));
@@ -230,15 +238,15 @@ public class ParseDriver {
       r = parser.expression();
     } catch (RecognitionException e) {
       e.printStackTrace();
-      throw new ParseException(parser.errors);
+      throw new HiveParseException(parser.errors);
     }
 
     if (lexer.getErrors().size() == 0 && parser.errors.size() == 0) {
       LOG.info("Parse Completed");
     } else if (lexer.getErrors().size() != 0) {
-      throw new ParseException(lexer.getErrors());
+      throw new HiveParseException(lexer.getErrors());
     } else {
-      throw new ParseException(parser.errors);
+      throw new HiveParseException(parser.errors);
     }
 
     return (ASTNode) r.getTree();

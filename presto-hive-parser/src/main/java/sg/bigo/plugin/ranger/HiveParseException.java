@@ -1,17 +1,17 @@
-package sg.bigo.plugin.hive.parse;
+package sg.bigo.plugin.ranger;
 
 import java.util.ArrayList;
 
 /**
- * ParseException.
+ * HiveParseException.
  *
  */
-public class ParseException extends Exception {
+public class HiveParseException extends Exception {
 
   private static final long serialVersionUID = 1L;
-  ArrayList<ParseError> errors;
+  ArrayList<HiveParseError> errors;
 
-  public ParseException(ArrayList<ParseError> errors) {
+  public HiveParseException(ArrayList<HiveParseError> errors) {
     super();
     this.errors = errors;
   }
@@ -20,7 +20,7 @@ public class ParseException extends Exception {
   public String getMessage() {
 
     StringBuilder sb = new StringBuilder();
-    for (ParseError err : errors) {
+    for (HiveParseError err : errors) {
       if (sb.length() > 0) {
         sb.append('\n');
       }

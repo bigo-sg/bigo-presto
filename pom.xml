@@ -107,6 +107,7 @@
         <module>presto-sqlserver</module>
         <module>presto-mongodb</module>
         <module>presto-client</module>
+        <module>presto-hive-parser</module>
         <module>presto-parser</module>
         <module>presto-main</module>
         <module>presto-ml</module>
@@ -120,8 +121,8 @@
         <module>presto-cli</module>
         <module>presto-benchmark-driver</module>
         <module>presto-server</module>
-        <module>presto-server-rpm</module>
-        <module>presto-docs</module>
+<!--        <module>presto-server-rpm</module>-->
+<!--        <module>presto-docs</module>-->
         <module>presto-verifier</module>
         <module>presto-testing-server-launcher</module>
         <module>presto-plugin-toolkit</module>
@@ -324,6 +325,12 @@
             <dependency>
                 <groupId>io.prestosql</groupId>
                 <artifactId>presto-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.prestosql</groupId>
+                <artifactId>presto-hive-parser</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

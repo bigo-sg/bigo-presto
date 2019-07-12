@@ -1,4 +1,4 @@
-package sg.bigo.plugin.hive.parse;
+package sg.bigo.plugin.ranger;
 
 import org.antlr.runtime.BaseRecognizer;
 import org.antlr.runtime.RecognitionException;
@@ -6,12 +6,12 @@ import org.antlr.runtime.RecognitionException;
 /**
  *
  */
-public class ParseError {
+public class HiveParseError {
   private final BaseRecognizer br;
   private final RecognitionException re;
   private final String[] tokenNames;
 
-  ParseError(BaseRecognizer br, RecognitionException re, String[] tokenNames) {
+  HiveParseError(BaseRecognizer br, RecognitionException re, String[] tokenNames) {
     this.br = br;
     this.re = re;
     this.tokenNames = tokenNames;

@@ -1,4 +1,4 @@
-package sg.bigo.plugin.hive.parse;
+package sg.bigo.plugin.ranger;
 
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.Token;

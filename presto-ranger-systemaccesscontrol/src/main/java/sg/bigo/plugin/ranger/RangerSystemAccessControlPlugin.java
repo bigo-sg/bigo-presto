@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sg.bigo.presto.hive.parse;
+package sg.bigo.plugin.ranger;
 
 import com.google.common.collect.ImmutableList;
 import io.prestosql.spi.Plugin;

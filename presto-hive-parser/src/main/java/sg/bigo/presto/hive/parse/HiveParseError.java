@@ -1,4 +1,4 @@
-package sg.bigo.plugin.ranger;
+package sg.bigo.presto.hive.parse;
 
 import org.antlr.runtime.BaseRecognizer;
 import org.antlr.runtime.RecognitionException;

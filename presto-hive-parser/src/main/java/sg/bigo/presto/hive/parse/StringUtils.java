@@ -1,4 +1,4 @@
-package sg.bigo.plugin.ranger;
+package sg.bigo.presto.hive.parse;
 
 public class StringUtils {
     /**

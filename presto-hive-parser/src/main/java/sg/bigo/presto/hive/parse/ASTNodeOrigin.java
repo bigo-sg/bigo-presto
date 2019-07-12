@@ -1,4 +1,4 @@
-package sg.bigo.plugin.ranger;
+package sg.bigo.presto.hive.parse;
 
 /**
  * ASTNodeOrigin contains contextual information about the object from whose

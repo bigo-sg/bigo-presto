@@ -1,4 +1,4 @@
-package sg.bigo.plugin.ranger;
+package sg.bigo.presto.hive.parse;
 
 import io.airlift.log.Logger;
 import org.antlr.runtime.ANTLRStringStream;

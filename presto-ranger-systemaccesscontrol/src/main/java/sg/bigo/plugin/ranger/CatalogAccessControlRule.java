@@ -27,6 +27,7 @@ public class CatalogAccessControlRule
     private final boolean readonly;
     private final Optional<Pattern> userRegex;
     private final Optional<Pattern> catalogRegex;
+    private final Optional<Pattern> schemaRegex;
 
     static class MatchResult
     {
@@ -67,6 +68,7 @@ public class CatalogAccessControlRule
                 ", readonly=" + readonly +
                 ", userRegex=" + userRegex +
                 ", catalogRegex=" + catalogRegex +
+                ", schemaRegex=" + schemaRegex +
                 '}';
     }
 
@@ -75,18 +77,31 @@ public class CatalogAccessControlRule
             @JsonProperty("allow") boolean allow,
             @JsonProperty("readonly") boolean readonly,
             @JsonProperty("user") Optional<Pattern> userRegex,
-            @JsonProperty("catalog") Optional<Pattern> catalogRegex)
+            @JsonProperty("catalog") Optional<Pattern> catalogRegex,
+            @JsonProperty("schema") Optional<Pattern> schemaRegex)
     {
         this.allow = allow;
         this.readonly = readonly;
         this.userRegex = requireNonNull(userRegex, "userRegex is null");
         this.catalogRegex = requireNonNull(catalogRegex, "catalogRegex is null");
+        this.schemaRegex = requireNonNull(schemaRegex, "schemaRegex is null");
     }
 
     public MatchResult match(String user, String catalog)
     {
-        if (userRegex.map(regex -> regex.matcher(user).matches()).orElse(true) &&
+        if (!schemaRegex.isPresent() &&
+                userRegex.map(regex -> regex.matcher(user).matches()).orElse(true) &&
                 catalogRegex.map(regex -> regex.matcher(catalog).matches()).orElse(true)) {
+            return new MatchResult(Optional.of(allow), Optional.of(readonly));
+        }
+        return new MatchResult(Optional.empty(), Optional.empty());
+    }
+
+    public MatchResult match(String user, String catalog, String schema)
+    {
+        if (userRegex.map(regex -> regex.matcher(user).matches()).orElse(true) &&
+                catalogRegex.map(regex -> regex.matcher(catalog).matches()).orElse(true) &&
+                schemaRegex.map(regex -> regex.matcher(schema).matches()).orElse(true)) {
             return new MatchResult(Optional.of(allow), Optional.of(readonly));
         }
         return new MatchResult(Optional.empty(), Optional.empty());

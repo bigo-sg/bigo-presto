@@ -143,7 +143,8 @@ public class RangerSystemAccessControl
                     true,
                     false,
                     Optional.of(Pattern.compile(".*")),
-                    Optional.of(Pattern.compile("system"))));
+                    Optional.of(Pattern.compile("system")),
+                    Optional.of(Pattern.compile(".*"))));
 
             return new RangerSystemAccessControl(catalogRulesBuilder.build(), rules.getPrincipalUserMatchRules());
         }
@@ -214,6 +215,17 @@ public class RangerSystemAccessControl
         return false;
     }
 
+    private boolean canModifyCatalogSchema(Identity identity, String catalogName, String schema)
+    {
+        for (CatalogAccessControlRule rule : catalogRules) {
+            CatalogAccessControlRule.MatchResult matchResult = rule.match(identity.getUser(), catalogName, schema);
+            if (matchResult.isAllow().isPresent() && matchResult.isAllow().get()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean canAccessCatalog(Identity identity, String catalogName)
     {
         for (CatalogAccessControlRule rule : catalogRules) {
@@ -274,7 +286,9 @@ public class RangerSystemAccessControl
     @Override
     public void checkCanCreateTable(Identity identity, CatalogSchemaTableName table)
     {
-        if (!canModifyCatalog(identity, table.getCatalogName())) {
+        // only support create table for now.
+        if (!canModifyCatalog(identity, table.getCatalogName()) &&
+                !canModifyCatalogSchema(identity, table.getCatalogName(), table.getSchemaTableName().getSchemaName())) {
             denyCreateTable(table.toString());
         }
     }

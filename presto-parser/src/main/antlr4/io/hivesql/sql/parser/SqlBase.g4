@@ -72,6 +72,7 @@ singleTableSchema
 statement
     : query                                                            #statementDefault
     | USE db=identifier                                                #use
+    | USE catalog=identifier '.' db=identifier                         #use
     | CREATE DATABASE (IF NOT EXISTS)? identifier
         (COMMENT comment=STRING)? locationSpec?
         (WITH DBPROPERTIES tablePropertyList)?                         #createDatabase

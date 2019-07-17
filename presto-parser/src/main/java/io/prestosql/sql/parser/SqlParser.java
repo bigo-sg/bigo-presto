@@ -125,6 +125,73 @@ public class SqlParser
             LOG.info("use presto sql");
         } else {
             LOG.info("use hive sql");
+            try {
+                io.hivesql.sql.parser.SqlBaseLexer lexer =
+                        new io.hivesql.sql.parser.SqlBaseLexer(
+                                new CaseInsensitiveStream(CharStreams.fromString(sql)));
+                CommonTokenStream tokenStream = new CommonTokenStream(lexer);
+                io.hivesql.sql.parser.SqlBaseParser parser =
+                        new io.hivesql.sql.parser.SqlBaseParser(tokenStream);
+
+                // Override the default error strategy to not attempt inserting or deleting a token.
+                // Otherwise, it messes up error reporting
+                parser.setErrorHandler(new DefaultErrorStrategy()
+                {
+                    @Override
+                    public Token recoverInline(Parser recognizer)
+                            throws RecognitionException
+                    {
+                        if (nextTokensContext == null) {
+                            throw new InputMismatchException(recognizer);
+                        }
+                        else {
+                            throw new InputMismatchException(recognizer, nextTokensState, nextTokensContext);
+                        }
+                    }
+                });
+
+                parser.addParseListener(new PostProcessor(Arrays.asList(parser.getRuleNames())));
+
+                lexer.removeErrorListeners();
+                lexer.addErrorListener(LEXER_ERROR_LISTENER);
+
+                parser.removeErrorListeners();
+
+                if (enhancedErrorHandlerEnabled) {
+                    parser.addErrorListener(PARSER_ERROR_HANDLER);
+                }
+                else {
+                    parser.addErrorListener(LEXER_ERROR_LISTENER);
+                }
+
+                ParserRuleContext tree;
+                Function<io.hivesql.sql.parser.SqlBaseParser, ParserRuleContext> hiveParseFunction = null;
+                if (type.equals("singleStatement")) {
+                    hiveParseFunction = io.hivesql.sql.parser.SqlBaseParser::singleStatement;
+                } else if (type.equals("standaloneExpression")) {
+                    hiveParseFunction = io.hivesql.sql.parser.SqlBaseParser::singleExpression;
+                } else {
+                    hiveParseFunction = io.hivesql.sql.parser.SqlBaseParser::expression;
+                }
+                try {
+                    // first, try parsing with potentially faster SLL mode
+                    parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+                    tree = hiveParseFunction.apply(parser);
+                }
+                catch (ParseCancellationException ex) {
+                    // if we fail, parse with LL mode
+                    tokenStream.reset(); // rewind input stream
+                    parser.reset();
+
+                    parser.getInterpreter().setPredictionMode(PredictionMode.LL);
+                    tree = hiveParseFunction.apply(parser);
+                }
+
+                return new HiveAstBuilder().visit(tree);
+            }
+            catch (StackOverflowError e) {
+                throw new ParsingException(name + " is too large (stack overflow while parsing)");
+            }
         }
 
         try {

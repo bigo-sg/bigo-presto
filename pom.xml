@@ -107,7 +107,6 @@
         <module>presto-sqlserver</module>
         <module>presto-mongodb</module>
         <module>presto-client</module>
-        <module>presto-hive-parser</module>
         <module>presto-parser</module>
         <module>presto-main</module>
         <module>presto-ml</module>

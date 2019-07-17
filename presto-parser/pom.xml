@@ -47,12 +47,6 @@
             <artifactId>log</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>io.prestosql</groupId>
-            <artifactId>presto-hive-parser</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- for testing -->
         <dependency>
             <groupId>org.testng</groupId>

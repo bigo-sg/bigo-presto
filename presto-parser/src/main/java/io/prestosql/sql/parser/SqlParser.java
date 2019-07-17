@@ -39,11 +39,15 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Function;
+import io.airlift.log.Logger;
+
 
 import static java.util.Objects.requireNonNull;
 
 public class SqlParser
 {
+    private static final Logger LOG = Logger.get(SqlParser.class);
+
     private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {
         @Override
@@ -93,7 +97,7 @@ public class SqlParser
 
     public Statement createStatement(String sql, ParsingOptions parsingOptions)
     {
-        return (Statement) invokeParser("statement", sql, SqlBaseParser::singleStatement, parsingOptions);
+        return (Statement) invokeParser("statement", sql, SqlBaseParser::singleStatement, parsingOptions, "singleStatement");
     }
 
     /**
@@ -107,16 +111,22 @@ public class SqlParser
 
     public Expression createExpression(String expression, ParsingOptions parsingOptions)
     {
-        return (Expression) invokeParser("expression", expression, SqlBaseParser::standaloneExpression, parsingOptions);
+        return (Expression) invokeParser("expression", expression, SqlBaseParser::standaloneExpression, parsingOptions, "standaloneExpression");
     }
 
     public PathSpecification createPathSpecification(String expression)
     {
-        return (PathSpecification) invokeParser("path specification", expression, SqlBaseParser::standalonePathSpecification, new ParsingOptions());
+        return (PathSpecification) invokeParser("path specification", expression, SqlBaseParser::standalonePathSpecification, new ParsingOptions(), "standalonePathSpecification");
     }
 
-    private Node invokeParser(String name, String sql, Function<SqlBaseParser, ParserRuleContext> parseFunction, ParsingOptions parsingOptions)
+    private Node invokeParser(String name, String sql, Function<SqlBaseParser, ParserRuleContext> parseFunction, ParsingOptions parsingOptions, String type)
     {
+        if (!parsingOptions.isUseHiveSql()) {
+            LOG.info("use presto sql");
+        } else {
+            LOG.info("use hive sql");
+        }
+
         try {
             SqlBaseLexer lexer = new SqlBaseLexer(new CaseInsensitiveStream(CharStreams.fromString(sql)));
             CommonTokenStream tokenStream = new CommonTokenStream(lexer);

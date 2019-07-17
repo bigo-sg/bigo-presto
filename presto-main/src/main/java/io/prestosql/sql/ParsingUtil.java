@@ -16,6 +16,7 @@ package io.prestosql.sql;
 import io.prestosql.Session;
 import io.prestosql.sql.parser.ParsingOptions;
 
+import static io.prestosql.SystemSessionProperties.isEnableHiveSqlSynTax;
 import static io.prestosql.SystemSessionProperties.isParseDecimalLiteralsAsDouble;
 import static io.prestosql.sql.parser.ParsingOptions.DecimalLiteralTreatment.AS_DECIMAL;
 import static io.prestosql.sql.parser.ParsingOptions.DecimalLiteralTreatment.AS_DOUBLE;
@@ -24,7 +25,9 @@ public class ParsingUtil
 {
     public static ParsingOptions createParsingOptions(Session session)
     {
-        return new ParsingOptions(isParseDecimalLiteralsAsDouble(session) ? AS_DOUBLE : AS_DECIMAL);
+        ParsingOptions parsingOptions = new ParsingOptions(isParseDecimalLiteralsAsDouble(session) ? AS_DOUBLE : AS_DECIMAL);
+        parsingOptions.setUseHiveSql(isEnableHiveSqlSynTax(session));
+        return parsingOptions;
     }
 
     private ParsingUtil() {}

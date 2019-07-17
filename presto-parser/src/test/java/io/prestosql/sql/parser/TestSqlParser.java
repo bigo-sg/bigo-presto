@@ -689,6 +689,22 @@ public class TestSqlParser
         sqlParser.createStatement("select * from foo:bar");
     }
 
+    @Test
+    public void testAllowIdentifierColon1()
+    {
+        SqlParser sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
+        Node node = sqlParser.createStatement("select * from (select count(distinct uid) as dau from tab group by os)t0 limit 100");
+        System.out.println(node);
+    }
+
+    @Test
+    public void testshowScema()
+    {
+        SqlParser sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
+        Node node = sqlParser.createStatement("show create table t");
+        System.out.println(node);
+    }
+
     @SuppressWarnings("deprecation")
     @Test
     public void testAllowIdentifierAtSign()

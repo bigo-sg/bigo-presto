@@ -29,6 +29,13 @@
             <groupId>io.airlift</groupId>
             <artifactId>log</artifactId>
         </dependency>
+
+        <!-- for testing -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

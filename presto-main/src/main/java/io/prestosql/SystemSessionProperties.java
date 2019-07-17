@@ -119,6 +119,9 @@ public final class SystemSessionProperties
     public static final String WORK_PROCESSOR_PIPELINES = "work_processor_pipelines";
     public static final String ENABLE_DYNAMIC_FILTERING = "enable_dynamic_filtering";
 
+    public static final String ENABLE_HIVE_SQL_SYNTAX = "enable_hive_syntax";
+
+
     private final List<PropertyMetadata<?>> sessionProperties;
 
     public SystemSessionProperties()
@@ -509,7 +512,13 @@ public final class SystemSessionProperties
                         ENABLE_DYNAMIC_FILTERING,
                         "Enable dynamic filtering",
                         featuresConfig.isEnableDynamicFiltering(),
-                        false));
+                        false),
+                booleanProperty(
+                        ENABLE_HIVE_SQL_SYNTAX,
+                        "Experimental: Use hive sql syntax",
+                        false,
+                        false)
+        );
     }
 
     public List<PropertyMetadata<?>> getSessionProperties()
@@ -905,5 +914,9 @@ public final class SystemSessionProperties
     public static boolean isEnableDynamicFiltering(Session session)
     {
         return session.getSystemProperty(ENABLE_DYNAMIC_FILTERING, Boolean.class);
+    }
+    public static boolean isEnableHiveSqlSynTax(Session session)
+    {
+        return session.getSystemProperty(ENABLE_HIVE_SQL_SYNTAX, Boolean.class);
     }
 }

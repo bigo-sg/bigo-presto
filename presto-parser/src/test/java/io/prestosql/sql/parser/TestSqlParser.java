@@ -698,6 +698,14 @@ public class TestSqlParser
     }
 
     @Test
+    public void testAllowIdentifierColon2()
+    {
+        SqlParser sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
+        Node node = sqlParser.createStatement("use hive.algo");
+        System.out.println(node);
+    }
+
+    @Test
     public void testshowScema()
     {
         SqlParser sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));

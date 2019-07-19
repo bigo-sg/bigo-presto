@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,18 +55,32 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitUse(SqlBaseParser.UseContext ctx) {
 
-        Use use = new Use(
-                getLocation(ctx),
-                visitIfPresent(ctx.catalog, Identifier.class),
-                new Identifier(getLocation(ctx), ctx.db.getText(), false));
+
+        Use use;
+        if (ctx.catalog != null) {
+            use = new Use(
+                    getLocation(ctx),
+                    Optional.of(new Identifier(getLocation(ctx), ctx.catalog.getText(), false)),
+                    new Identifier(getLocation(ctx), ctx.db.getText(), false));
+            visit(ctx.catalog);
+        } else {
+            use = new Use(
+                    getLocation(ctx),
+                    Optional.ofNullable(null),
+                    new Identifier(getLocation(ctx), ctx.db.getText(), false));
+        }
+
         visit(ctx.db);
         return use;
     }
 
     @Override
     public Node visitSetSession(SqlBaseParser.SetSessionContext ctx) {
+
+
+        SqlBaseParser.ExpressionContext expression = ctx.expression();
         SetSession setSession = new SetSession(getLocation(ctx),
-                getQualifiedName(ctx.qualifiedName()), (Expression) visit(ctx.expression()));
+                getQualifiedName(ctx.qualifiedName()), (Expression) visit(expression));
         LOG.info("-------setSession:" + FieldUtils.filedsToString(setSession));
         return setSession;
     }
@@ -460,9 +475,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         switch (symbol.getType()) {
             case io.hivesql.sql.parser.SqlBaseLexer.EQ:
                 return ComparisonExpression.Operator.EQUAL;
-            case SqlBaseLexer.NSEQ:
+            case io.hivesql.sql.parser.SqlBaseLexer.NSEQ:
                 return ComparisonExpression.Operator.EQNSF;
-            case io.hivesql.sql.parser.SqlBaseLexer.NEQ | io.hivesql.sql.parser.SqlBaseLexer.NEQJ:
+            case io.hivesql.sql.parser.SqlBaseLexer.NEQ:
+                return ComparisonExpression.Operator.NOT_EQUAL;
+            case io.hivesql.sql.parser.SqlBaseLexer.NEQJ:
                 return ComparisonExpression.Operator.NOT_EQUAL;
             case io.hivesql.sql.parser.SqlBaseLexer.LT:
                 return ComparisonExpression.Operator.LESS_THAN;
@@ -490,7 +507,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     private QualifiedName getQualifiedName(SqlBaseParser.QualifiedNameContext context)
     {
-        return QualifiedName.of(visit(context.identifier(), Identifier.class));
+        List<Identifier> identifiers = new ArrayList<>();
+        for (SqlBaseParser.IdentifierContext identifierContext: context.identifier()) {
+            Identifier identifier =
+                    new Identifier(getLocation(identifierContext),
+                            identifierContext.getText(), false);
+            identifiers.add(identifier);
+            visit(identifierContext);
+        }
+        return QualifiedName.of(identifiers);
     }
     private <T> List<T> visit(List<? extends ParserRuleContext> contexts, Class<T> clazz)
     {

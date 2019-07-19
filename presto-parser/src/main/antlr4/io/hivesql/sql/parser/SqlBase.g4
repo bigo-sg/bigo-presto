@@ -170,9 +170,9 @@ statement
     | TRUNCATE TABLE tableIdentifier partitionSpec?                    #truncateTable
     | MSCK REPAIR TABLE tableIdentifier                                #repairTable
     | op=(ADD | LIST) identifier .*?                                   #manageResource
+    | SET SESSION qualifiedName EQ expression                          #setSession
     | SET ROLE .*?                                                     #failNativeCommand
     | SET .*?                                                          #setConfiguration
-    | SET SESSION qualifiedName EQ expression                          #setSession
     | RESET                                                            #resetConfiguration
     | unsupportedHiveNativeCommands .*?                                #failNativeCommand
     ;
@@ -779,6 +779,7 @@ nonReserved
     | BOTH | LEADING | TRAILING
     ;
 
+SESSION:'SESSION';
 SELECT: 'SELECT';
 FROM: 'FROM';
 ADD: 'ADD';

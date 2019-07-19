@@ -25,7 +25,7 @@ public class ParsingOptions
         this.useHiveSql = useHiveSql;
     }
 
-    private boolean useHiveSql = false;
+    private boolean useHiveSql = true;
     public enum DecimalLiteralTreatment
     {
         AS_DOUBLE,

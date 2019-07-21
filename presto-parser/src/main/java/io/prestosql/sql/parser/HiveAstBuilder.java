@@ -29,14 +29,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     private static final Logger LOG = Logger.get(HiveAstBuilder.class);
 
 
-//    @Override
-//    public Node visitChildren(RuleNode node) {
-//        if (node.getChildCount() == 1) {
-//            return node.getChild(0).accept(this);
-//        } else {
-//            return null;
-//        }
-//    }
+    @Override
+    public Node visitChildren(RuleNode node) {
+        if (node.getChildCount() == 1) {
+            return node.getChild(0).accept(this);
+        } else {
+            return null;
+        }
+    }
 
     @Override
     public Node visitSingleStatement(SqlBaseParser.SingleStatementContext ctx) {
@@ -70,7 +70,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Optional.ofNullable(null),
                     new Identifier(getLocation(ctx), ctx.db.getText(), false));
         }
-
         visit(ctx.db);
         return use;
     }

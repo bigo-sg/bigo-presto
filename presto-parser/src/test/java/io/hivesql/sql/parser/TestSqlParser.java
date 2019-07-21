@@ -4,23 +4,43 @@ import io.prestosql.sql.parser.ParsingOptions;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.parser.SqlParserOptions;
 import io.prestosql.sql.tree.Node;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import static io.prestosql.sql.parser.IdentifierSymbol.COLON;
 
 public class TestSqlParser {
 
+    private SqlParser sqlParser = null;
+    private ParsingOptions parsingOptions = null;
+    @BeforeTest
+    public void init() {
+        sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
+        parsingOptions = new ParsingOptions();
+        parsingOptions.setUseHiveSql(true);
+    }
+
+    @Test
+    public void testUse()
+    {
+        String sql = "USE hive.tmp";
+        Node node = sqlParser.createStatement(sql, parsingOptions);
+        System.out.println(node);
+    }
+
     @Test
     public void testSetSession()
     {
+        String sql = "SET SESSION foo=true";
+        Node node = sqlParser.createStatement(sql, parsingOptions);
+        System.out.println(node);
+    }
 
-        String sql = "select * from x";
-        String sql1 = "SET SESSION foo=true";
-        SqlParser sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
-        ParsingOptions parsingOptions = new ParsingOptions();
-        parsingOptions.setUseHiveSql(true);
-        Node node = sqlParser.createStatement(
-                sql1, parsingOptions);
+    @Test
+    public void testLogicalBinary()
+    {
+        String sql = "SELECT x AND y OR z FROM t";
+        Node node = sqlParser.createStatement(sql, parsingOptions);
         System.out.println(node);
     }
 }

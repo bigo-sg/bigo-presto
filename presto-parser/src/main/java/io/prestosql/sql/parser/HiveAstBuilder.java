@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -28,14 +29,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     private static final Logger LOG = Logger.get(HiveAstBuilder.class);
 
 
-    @Override
-    public Node visitChildren(RuleNode node) {
-        if (node.getChildCount() == 1) {
-            return node.getChild(0).accept(this);
-        } else {
-            return null;
-        }
-    }
+//    @Override
+//    public Node visitChildren(RuleNode node) {
+//        if (node.getChildCount() == 1) {
+//            return node.getChild(0).accept(this);
+//        } else {
+//            return null;
+//        }
+//    }
 
     @Override
     public Node visitSingleStatement(SqlBaseParser.SingleStatementContext ctx) {
@@ -76,7 +77,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitSetSession(SqlBaseParser.SetSessionContext ctx) {
-
 
         SqlBaseParser.ExpressionContext expression = ctx.expression();
         SetSession setSession = new SetSession(getLocation(ctx),
@@ -311,7 +311,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     // to be implement: presto have no this func!
     @Override
     public Node visitBooleanLiteral(SqlBaseParser.BooleanLiteralContext ctx) {
-        return super.visitBooleanLiteral(ctx);
+        return new BooleanLiteral(getLocation(ctx), ctx.getText());
     }
 
     @Override

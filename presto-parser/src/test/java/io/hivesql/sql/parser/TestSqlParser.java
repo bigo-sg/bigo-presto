@@ -39,8 +39,17 @@ public class TestSqlParser {
     @Test
     public void testLogicalBinary()
     {
-        String sql = "SELECT x AND y OR z FROM t";
+        String sql = "SELECT x FROM t";
         Node node = sqlParser.createStatement(sql, parsingOptions);
         System.out.println(node);
     }
+
+    @Test
+    public void testSelect01()
+    {
+        String sql = "SELECT a,b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
+        Node node = sqlParser.createStatement(sql, parsingOptions);
+        System.out.println(node);
+    }
+
 }

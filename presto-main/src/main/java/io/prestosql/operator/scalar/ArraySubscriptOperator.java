@@ -23,10 +23,8 @@ import io.prestosql.metadata.FunctionRegistry;
 import io.prestosql.metadata.SqlOperator;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.block.Block;
-import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeManager;
-import io.prestosql.sql.parser.ParsingOptions;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Set;
@@ -46,14 +44,14 @@ public class ArraySubscriptOperator
         extends SqlOperator
 {
     public static final ArraySubscriptOperator ARRAY_SUBSCRIPT = new ArraySubscriptOperator();
-    private static Session array_sub_session;
+    private static boolean enable_hive_syntax = false;
     private static final Logger LOG = Logger.get(ArraySubscriptOperator.class);
 
-    private static final MethodHandle METHOD_HANDLE_BOOLEAN = methodHandle(ArraySubscriptOperator.class, "booleanSubscript", Type.class, Session.class, Block.class, long.class);
-    private static final MethodHandle METHOD_HANDLE_LONG = methodHandle(ArraySubscriptOperator.class, "longSubscript", Type.class, Session.class, Block.class, long.class);
-    private static final MethodHandle METHOD_HANDLE_DOUBLE = methodHandle(ArraySubscriptOperator.class, "doubleSubscript", Type.class, Session.class, Block.class, long.class);
-    private static final MethodHandle METHOD_HANDLE_SLICE = methodHandle(ArraySubscriptOperator.class, "sliceSubscript", Type.class, Session.class, Block.class, long.class);
-    private static final MethodHandle METHOD_HANDLE_OBJECT = methodHandle(ArraySubscriptOperator.class, "objectSubscript", Type.class, Session.class, Block.class, long.class);
+    private static final MethodHandle METHOD_HANDLE_BOOLEAN = methodHandle(ArraySubscriptOperator.class, "booleanSubscript", Type.class, Block.class, long.class);
+    private static final MethodHandle METHOD_HANDLE_LONG = methodHandle(ArraySubscriptOperator.class, "longSubscript", Type.class, Block.class, long.class);
+    private static final MethodHandle METHOD_HANDLE_DOUBLE = methodHandle(ArraySubscriptOperator.class, "doubleSubscript", Type.class, Block.class, long.class);
+    private static final MethodHandle METHOD_HANDLE_SLICE = methodHandle(ArraySubscriptOperator.class, "sliceSubscript", Type.class, Block.class, long.class);
+    private static final MethodHandle METHOD_HANDLE_OBJECT = methodHandle(ArraySubscriptOperator.class, "objectSubscript", Type.class, Block.class, long.class);
 
     protected ArraySubscriptOperator()
     {
@@ -98,7 +96,7 @@ public class ArraySubscriptOperator
     }
 
     @UsedByGeneratedCode
-    public static Long longSubscript(Type elementType, Session session, Block array, long index)
+    public static Long longSubscript(Type elementType, Block array, long index)
     {
         int position = checkedIndexToBlockPosition(array, index);
         if (position == -1) {
@@ -112,7 +110,7 @@ public class ArraySubscriptOperator
     }
 
     @UsedByGeneratedCode
-    public static Boolean booleanSubscript(Type elementType, Session session, Block array, long index)
+    public static Boolean booleanSubscript(Type elementType, Block array, long index)
     {
         int position = checkedIndexToBlockPosition(array, index);
         if (position == -1) {
@@ -126,7 +124,7 @@ public class ArraySubscriptOperator
     }
 
     @UsedByGeneratedCode
-    public static Double doubleSubscript(Type elementType, Session session, Block array, long index)
+    public static Double doubleSubscript(Type elementType, Block array, long index)
     {
         int position = checkedIndexToBlockPosition(array, index);
         if (position == -1) {
@@ -140,7 +138,7 @@ public class ArraySubscriptOperator
     }
 
     @UsedByGeneratedCode
-    public static Slice sliceSubscript(Type elementType, Session session, Block array, long index)
+    public static Slice sliceSubscript(Type elementType, Block array, long index)
     {
         int position = checkedIndexToBlockPosition(array, index);
         if (position == -1) {
@@ -154,7 +152,7 @@ public class ArraySubscriptOperator
     }
 
     @UsedByGeneratedCode
-    public static Object objectSubscript(Type elementType, Session session, Block array, long index)
+    public static Object objectSubscript(Type elementType, Block array, long index)
     {
         int position = checkedIndexToBlockPosition(array, index);
         if (position == -1) {
@@ -169,13 +167,26 @@ public class ArraySubscriptOperator
 
     public static void transmitSessionInfo(Session session)
     {
-        array_sub_session = session;
-        LOG.info("Test_transmitSessionInfo, session_clientTags=%s", session.getClientTags().toString());
+        Set<String> clientTags = session.getClientTags();
+        String clientTag="presto";
+        for (String str : clientTags){
+            clientTag = str.toLowerCase();
+        }
+
+        if (clientTag.equals("hive")) {
+            enable_hive_syntax = true;
+        }else{
+            enable_hive_syntax = false;
+        }
+        LOG.info("ArraySubscriptOperator_clientTag=%s", clientTag);
 
     }
 
     public static void checkArrayIndex(long index)
     {
+        if (index == 0 && !enable_hive_syntax) {
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "Presto SQL array indices start at 1");
+        }
         if (index < 0) {
             throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "Array subscript is negative");
         }
@@ -184,18 +195,6 @@ public class ArraySubscriptOperator
     private static int checkedIndexToBlockPosition(Block block, long index)
     {
         int arrayLength = block.getPositionCount();
-        Set<String> clientTags = array_sub_session.getClientTags();
-        String clientTag="presto";
-        for (String str : clientTags){
-            clientTag = str.toLowerCase();
-        }
-
-        boolean enable_hive_syntax = false;
-        if (clientTag.equals("hive")) {
-            enable_hive_syntax = true;
-        }
-//        String enable_hive_syntax = session.getProperty("enable_hive_syntax", String.class);
-        LOG.info("Test_ArraySubscriptOperator, clientTag=%s", clientTag);
 
         if ((Math.abs(index) > arrayLength) || ((Math.abs(index) == arrayLength) && enable_hive_syntax)){
             return -1; // -1 indicates that the element is out of range and "ELEMENT_AT" should return null

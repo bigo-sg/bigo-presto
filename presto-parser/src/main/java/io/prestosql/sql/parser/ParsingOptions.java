@@ -17,6 +17,15 @@ import static java.util.Objects.requireNonNull;
 
 public class ParsingOptions
 {
+    public boolean isUseHiveSql() {
+        return useHiveSql;
+    }
+
+    public void setUseHiveSql(boolean useHiveSql) {
+        this.useHiveSql = useHiveSql;
+    }
+
+    private boolean useHiveSql = false;
     public enum DecimalLiteralTreatment
     {
         AS_DOUBLE,

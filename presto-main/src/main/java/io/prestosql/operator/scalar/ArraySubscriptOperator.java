@@ -14,17 +14,22 @@
 package io.prestosql.operator.scalar;
 
 import com.google.common.collect.ImmutableList;
+import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
+import io.prestosql.Session;
 import io.prestosql.annotation.UsedByGeneratedCode;
 import io.prestosql.metadata.BoundVariables;
 import io.prestosql.metadata.FunctionRegistry;
 import io.prestosql.metadata.SqlOperator;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.block.Block;
+import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeManager;
+import io.prestosql.sql.parser.ParsingOptions;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.prestosql.metadata.Signature.typeVariable;
@@ -41,12 +46,14 @@ public class ArraySubscriptOperator
         extends SqlOperator
 {
     public static final ArraySubscriptOperator ARRAY_SUBSCRIPT = new ArraySubscriptOperator();
+    private static Session array_sub_session;
+    private static final Logger LOG = Logger.get(ArraySubscriptOperator.class);
 
-    private static final MethodHandle METHOD_HANDLE_BOOLEAN = methodHandle(ArraySubscriptOperator.class, "booleanSubscript", Type.class, Block.class, long.class);
-    private static final MethodHandle METHOD_HANDLE_LONG = methodHandle(ArraySubscriptOperator.class, "longSubscript", Type.class, Block.class, long.class);
-    private static final MethodHandle METHOD_HANDLE_DOUBLE = methodHandle(ArraySubscriptOperator.class, "doubleSubscript", Type.class, Block.class, long.class);
-    private static final MethodHandle METHOD_HANDLE_SLICE = methodHandle(ArraySubscriptOperator.class, "sliceSubscript", Type.class, Block.class, long.class);
-    private static final MethodHandle METHOD_HANDLE_OBJECT = methodHandle(ArraySubscriptOperator.class, "objectSubscript", Type.class, Block.class, long.class);
+    private static final MethodHandle METHOD_HANDLE_BOOLEAN = methodHandle(ArraySubscriptOperator.class, "booleanSubscript", Type.class, Session.class, Block.class, long.class);
+    private static final MethodHandle METHOD_HANDLE_LONG = methodHandle(ArraySubscriptOperator.class, "longSubscript", Type.class, Session.class, Block.class, long.class);
+    private static final MethodHandle METHOD_HANDLE_DOUBLE = methodHandle(ArraySubscriptOperator.class, "doubleSubscript", Type.class, Session.class, Block.class, long.class);
+    private static final MethodHandle METHOD_HANDLE_SLICE = methodHandle(ArraySubscriptOperator.class, "sliceSubscript", Type.class, Session.class, Block.class, long.class);
+    private static final MethodHandle METHOD_HANDLE_OBJECT = methodHandle(ArraySubscriptOperator.class, "objectSubscript", Type.class, Session.class, Block.class, long.class);
 
     protected ArraySubscriptOperator()
     {
@@ -91,10 +98,12 @@ public class ArraySubscriptOperator
     }
 
     @UsedByGeneratedCode
-    public static Long longSubscript(Type elementType, Block array, long index)
+    public static Long longSubscript(Type elementType, Session session, Block array, long index)
     {
-        checkIndex(array, index);
-        int position = toIntExact(index - 1);
+        int position = checkedIndexToBlockPosition(array, index);
+        if (position == -1) {
+            return null;
+        }
         if (array.isNull(position)) {
             return null;
         }
@@ -103,10 +112,12 @@ public class ArraySubscriptOperator
     }
 
     @UsedByGeneratedCode
-    public static Boolean booleanSubscript(Type elementType, Block array, long index)
+    public static Boolean booleanSubscript(Type elementType, Session session, Block array, long index)
     {
-        checkIndex(array, index);
-        int position = toIntExact(index - 1);
+        int position = checkedIndexToBlockPosition(array, index);
+        if (position == -1) {
+            return null;
+        }
         if (array.isNull(position)) {
             return null;
         }
@@ -115,10 +126,12 @@ public class ArraySubscriptOperator
     }
 
     @UsedByGeneratedCode
-    public static Double doubleSubscript(Type elementType, Block array, long index)
+    public static Double doubleSubscript(Type elementType, Session session, Block array, long index)
     {
-        checkIndex(array, index);
-        int position = toIntExact(index - 1);
+        int position = checkedIndexToBlockPosition(array, index);
+        if (position == -1) {
+            return null;
+        }
         if (array.isNull(position)) {
             return null;
         }
@@ -127,10 +140,12 @@ public class ArraySubscriptOperator
     }
 
     @UsedByGeneratedCode
-    public static Slice sliceSubscript(Type elementType, Block array, long index)
+    public static Slice sliceSubscript(Type elementType, Session session, Block array, long index)
     {
-        checkIndex(array, index);
-        int position = toIntExact(index - 1);
+        int position = checkedIndexToBlockPosition(array, index);
+        if (position == -1) {
+            return null;
+        }
         if (array.isNull(position)) {
             return null;
         }
@@ -139,10 +154,12 @@ public class ArraySubscriptOperator
     }
 
     @UsedByGeneratedCode
-    public static Object objectSubscript(Type elementType, Block array, long index)
+    public static Object objectSubscript(Type elementType, Session session, Block array, long index)
     {
-        checkIndex(array, index);
-        int position = toIntExact(index - 1);
+        int position = checkedIndexToBlockPosition(array, index);
+        if (position == -1) {
+            return null;
+        }
         if (array.isNull(position)) {
             return null;
         }
@@ -150,21 +167,59 @@ public class ArraySubscriptOperator
         return elementType.getObject(array, position);
     }
 
+    public static void transmitSessionInfo(Session session)
+    {
+        array_sub_session = session;
+        LOG.info("Test_transmitSessionInfo, session_clientTags=%s", session.getClientTags().toString());
+
+    }
+
     public static void checkArrayIndex(long index)
     {
-        if (index == 0) {
-            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "SQL array indices start at 1");
-        }
         if (index < 0) {
             throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "Array subscript is negative");
         }
     }
 
-    public static void checkIndex(Block array, long index)
+    private static int checkedIndexToBlockPosition(Block block, long index)
     {
-        checkArrayIndex(index);
-        if (index > array.getPositionCount()) {
-            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "Array subscript out of bounds");
+        int arrayLength = block.getPositionCount();
+        Set<String> clientTags = array_sub_session.getClientTags();
+        String clientTag="presto";
+        for (String str : clientTags){
+            clientTag = str.toLowerCase();
+        }
+
+        boolean enable_hive_syntax = false;
+        if (clientTag.equals("hive")) {
+            enable_hive_syntax = true;
+        }
+//        String enable_hive_syntax = session.getProperty("enable_hive_syntax", String.class);
+        LOG.info("Test_ArraySubscriptOperator, clientTag=%s", clientTag);
+
+        if ((Math.abs(index) > arrayLength) || ((Math.abs(index) == arrayLength) && enable_hive_syntax)){
+            return -1; // -1 indicates that the element is out of range and "ELEMENT_AT" should return null
+        }
+
+        if (index == 0) {
+            if(!enable_hive_syntax) {
+                throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "Presto SQL array indices start at 1");
+            }else{
+                return 0;
+            }
+        }else if (index > 0) {
+            if(!enable_hive_syntax) {
+                return toIntExact(index - 1);
+            }else {
+                return toIntExact(index);
+            }
+        }
+        else {
+            if(!enable_hive_syntax) {
+                return toIntExact(arrayLength + index + 1);
+            }else {
+                return toIntExact(arrayLength + index);
+            }
         }
     }
 }

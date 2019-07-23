@@ -21,7 +21,7 @@ import io.hivesql.presto.sql.parser.HiveSqlBaseBaseVisitor;
 import io.hivesql.presto.sql.parser.HiveSqlBaseParser;
 import io.prestosql.sql.parser.ParsingException;
 import io.prestosql.sql.parser.ParsingOptions;
-import io.prestosql.sql.parser.SqlBaseLexer;
+import io.hivesql.presto.sql.parser.HiveSqlBaseLexer;
 import io.prestosql.sql.tree.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -296,7 +296,7 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitTransactionAccessMode(HiveSqlBaseParser.TransactionAccessModeContext context)
     {
-        return new TransactionAccessMode(getLocation(context), context.accessMode.getType() == SqlBaseLexer.ONLY);
+        return new TransactionAccessMode(getLocation(context), context.accessMode.getType() == HiveSqlBaseLexer.ONLY);
     }
 
     @Override
@@ -554,11 +554,11 @@ public class PrestoHiveAstBuilder
         boolean distinct = context.setQuantifier() == null || context.setQuantifier().DISTINCT() != null;
 
         switch (context.operator.getType()) {
-            case SqlBaseLexer.UNION:
+            case HiveSqlBaseLexer.UNION:
                 return new Union(getLocation(context.UNION()), ImmutableList.of(left, right), distinct);
-            case SqlBaseLexer.INTERSECT:
+            case HiveSqlBaseLexer.INTERSECT:
                 return new Intersect(getLocation(context.INTERSECT()), ImmutableList.of(left, right), distinct);
-            case SqlBaseLexer.EXCEPT:
+            case HiveSqlBaseLexer.EXCEPT:
                 return new Except(getLocation(context.EXCEPT()), left, right, distinct);
         }
 
@@ -612,11 +612,11 @@ public class PrestoHiveAstBuilder
     public Node visitExplainFormat(HiveSqlBaseParser.ExplainFormatContext context)
     {
         switch (context.value.getType()) {
-            case SqlBaseLexer.GRAPHVIZ:
+            case HiveSqlBaseLexer.GRAPHVIZ:
                 return new ExplainFormat(getLocation(context), ExplainFormat.Type.GRAPHVIZ);
-            case SqlBaseLexer.TEXT:
+            case HiveSqlBaseLexer.TEXT:
                 return new ExplainFormat(getLocation(context), ExplainFormat.Type.TEXT);
-            case SqlBaseLexer.JSON:
+            case HiveSqlBaseLexer.JSON:
                 return new ExplainFormat(getLocation(context), ExplainFormat.Type.JSON);
         }
 
@@ -627,13 +627,13 @@ public class PrestoHiveAstBuilder
     public Node visitExplainType(HiveSqlBaseParser.ExplainTypeContext context)
     {
         switch (context.value.getType()) {
-            case SqlBaseLexer.LOGICAL:
+            case HiveSqlBaseLexer.LOGICAL:
                 return new ExplainType(getLocation(context), ExplainType.Type.LOGICAL);
-            case SqlBaseLexer.DISTRIBUTED:
+            case HiveSqlBaseLexer.DISTRIBUTED:
                 return new ExplainType(getLocation(context), ExplainType.Type.DISTRIBUTED);
-            case SqlBaseLexer.VALIDATE:
+            case HiveSqlBaseLexer.VALIDATE:
                 return new ExplainType(getLocation(context), ExplainType.Type.VALIDATE);
-            case SqlBaseLexer.IO:
+            case HiveSqlBaseLexer.IO:
                 return new ExplainType(getLocation(context), ExplainType.Type.IO);
         }
 
@@ -1121,9 +1121,9 @@ public class PrestoHiveAstBuilder
         Expression child = (Expression) visit(context.valueExpression());
 
         switch (context.operator.getType()) {
-            case SqlBaseLexer.MINUS:
+            case HiveSqlBaseLexer.MINUS:
                 return ArithmeticUnaryExpression.negative(getLocation(context), child);
-            case SqlBaseLexer.PLUS:
+            case HiveSqlBaseLexer.PLUS:
                 return ArithmeticUnaryExpression.positive(getLocation(context), child);
             default:
                 throw new UnsupportedOperationException("Unsupported sign: " + context.operator.getText());
@@ -1819,9 +1819,9 @@ public class PrestoHiveAstBuilder
     private static LikeClause.PropertiesOption getPropertiesOption(Token token)
     {
         switch (token.getType()) {
-            case SqlBaseLexer.INCLUDING:
+            case HiveSqlBaseLexer.INCLUDING:
                 return LikeClause.PropertiesOption.INCLUDING;
-            case SqlBaseLexer.EXCLUDING:
+            case HiveSqlBaseLexer.EXCLUDING:
                 return LikeClause.PropertiesOption.EXCLUDING;
         }
         throw new IllegalArgumentException("Unsupported LIKE option type: " + token.getText());
@@ -1869,15 +1869,15 @@ public class PrestoHiveAstBuilder
     private static ArithmeticBinaryExpression.Operator getArithmeticBinaryOperator(Token operator)
     {
         switch (operator.getType()) {
-            case SqlBaseLexer.PLUS:
+            case HiveSqlBaseLexer.PLUS:
                 return ArithmeticBinaryExpression.Operator.ADD;
-            case SqlBaseLexer.MINUS:
+            case HiveSqlBaseLexer.MINUS:
                 return ArithmeticBinaryExpression.Operator.SUBTRACT;
-            case SqlBaseLexer.ASTERISK:
+            case HiveSqlBaseLexer.ASTERISK:
                 return ArithmeticBinaryExpression.Operator.MULTIPLY;
-            case SqlBaseLexer.SLASH:
+            case HiveSqlBaseLexer.SLASH:
                 return ArithmeticBinaryExpression.Operator.DIVIDE;
-            case SqlBaseLexer.PERCENT:
+            case HiveSqlBaseLexer.PERCENT:
                 return ArithmeticBinaryExpression.Operator.MODULUS;
         }
 
@@ -1887,17 +1887,19 @@ public class PrestoHiveAstBuilder
     private static ComparisonExpression.Operator getComparisonOperator(Token symbol)
     {
         switch (symbol.getType()) {
-            case SqlBaseLexer.EQ:
+            case HiveSqlBaseLexer.EQ:
                 return ComparisonExpression.Operator.EQUAL;
-            case SqlBaseLexer.NEQ:
+            case HiveSqlBaseLexer.DEQ:
+                return ComparisonExpression.Operator.EQUAL;
+            case HiveSqlBaseLexer.NEQ:
                 return ComparisonExpression.Operator.NOT_EQUAL;
-            case SqlBaseLexer.LT:
+            case HiveSqlBaseLexer.LT:
                 return ComparisonExpression.Operator.LESS_THAN;
-            case SqlBaseLexer.LTE:
+            case HiveSqlBaseLexer.LTE:
                 return ComparisonExpression.Operator.LESS_THAN_OR_EQUAL;
-            case SqlBaseLexer.GT:
+            case HiveSqlBaseLexer.GT:
                 return ComparisonExpression.Operator.GREATER_THAN;
-            case SqlBaseLexer.GTE:
+            case HiveSqlBaseLexer.GTE:
                 return ComparisonExpression.Operator.GREATER_THAN_OR_EQUAL;
         }
 
@@ -1907,15 +1909,15 @@ public class PrestoHiveAstBuilder
     private static CurrentTime.Function getDateTimeFunctionType(Token token)
     {
         switch (token.getType()) {
-            case SqlBaseLexer.CURRENT_DATE:
+            case HiveSqlBaseLexer.CURRENT_DATE:
                 return CurrentTime.Function.DATE;
-            case SqlBaseLexer.CURRENT_TIME:
+            case HiveSqlBaseLexer.CURRENT_TIME:
                 return CurrentTime.Function.TIME;
-            case SqlBaseLexer.CURRENT_TIMESTAMP:
+            case HiveSqlBaseLexer.CURRENT_TIMESTAMP:
                 return CurrentTime.Function.TIMESTAMP;
-            case SqlBaseLexer.LOCALTIME:
+            case HiveSqlBaseLexer.LOCALTIME:
                 return CurrentTime.Function.LOCALTIME;
-            case SqlBaseLexer.LOCALTIMESTAMP:
+            case HiveSqlBaseLexer.LOCALTIMESTAMP:
                 return CurrentTime.Function.LOCALTIMESTAMP;
         }
 
@@ -1925,17 +1927,17 @@ public class PrestoHiveAstBuilder
     private static IntervalLiteral.IntervalField getIntervalFieldType(Token token)
     {
         switch (token.getType()) {
-            case SqlBaseLexer.YEAR:
+            case HiveSqlBaseLexer.YEAR:
                 return IntervalLiteral.IntervalField.YEAR;
-            case SqlBaseLexer.MONTH:
+            case HiveSqlBaseLexer.MONTH:
                 return IntervalLiteral.IntervalField.MONTH;
-            case SqlBaseLexer.DAY:
+            case HiveSqlBaseLexer.DAY:
                 return IntervalLiteral.IntervalField.DAY;
-            case SqlBaseLexer.HOUR:
+            case HiveSqlBaseLexer.HOUR:
                 return IntervalLiteral.IntervalField.HOUR;
-            case SqlBaseLexer.MINUTE:
+            case HiveSqlBaseLexer.MINUTE:
                 return IntervalLiteral.IntervalField.MINUTE;
-            case SqlBaseLexer.SECOND:
+            case HiveSqlBaseLexer.SECOND:
                 return IntervalLiteral.IntervalField.SECOND;
         }
 
@@ -1945,9 +1947,9 @@ public class PrestoHiveAstBuilder
     private static IntervalLiteral.Sign getIntervalSign(Token token)
     {
         switch (token.getType()) {
-            case SqlBaseLexer.MINUS:
+            case HiveSqlBaseLexer.MINUS:
                 return IntervalLiteral.Sign.NEGATIVE;
-            case SqlBaseLexer.PLUS:
+            case HiveSqlBaseLexer.PLUS:
                 return IntervalLiteral.Sign.POSITIVE;
         }
 
@@ -1957,9 +1959,9 @@ public class PrestoHiveAstBuilder
     private static WindowFrame.Type getFrameType(Token type)
     {
         switch (type.getType()) {
-            case SqlBaseLexer.RANGE:
+            case HiveSqlBaseLexer.RANGE:
                 return WindowFrame.Type.RANGE;
-            case SqlBaseLexer.ROWS:
+            case HiveSqlBaseLexer.ROWS:
                 return WindowFrame.Type.ROWS;
         }
 
@@ -1969,9 +1971,9 @@ public class PrestoHiveAstBuilder
     private static FrameBound.Type getBoundedFrameBoundType(Token token)
     {
         switch (token.getType()) {
-            case SqlBaseLexer.PRECEDING:
+            case HiveSqlBaseLexer.PRECEDING:
                 return FrameBound.Type.PRECEDING;
-            case SqlBaseLexer.FOLLOWING:
+            case HiveSqlBaseLexer.FOLLOWING:
                 return FrameBound.Type.FOLLOWING;
         }
 
@@ -1981,9 +1983,9 @@ public class PrestoHiveAstBuilder
     private static FrameBound.Type getUnboundedFrameBoundType(Token token)
     {
         switch (token.getType()) {
-            case SqlBaseLexer.PRECEDING:
+            case HiveSqlBaseLexer.PRECEDING:
                 return FrameBound.Type.UNBOUNDED_PRECEDING;
-            case SqlBaseLexer.FOLLOWING:
+            case HiveSqlBaseLexer.FOLLOWING:
                 return FrameBound.Type.UNBOUNDED_FOLLOWING;
         }
 
@@ -1993,9 +1995,9 @@ public class PrestoHiveAstBuilder
     private static SampledRelation.Type getSamplingMethod(Token token)
     {
         switch (token.getType()) {
-            case SqlBaseLexer.BERNOULLI:
+            case HiveSqlBaseLexer.BERNOULLI:
                 return SampledRelation.Type.BERNOULLI;
-            case SqlBaseLexer.SYSTEM:
+            case HiveSqlBaseLexer.SYSTEM:
                 return SampledRelation.Type.SYSTEM;
         }
 
@@ -2005,9 +2007,9 @@ public class PrestoHiveAstBuilder
     private static LogicalBinaryExpression.Operator getLogicalBinaryOperator(Token token)
     {
         switch (token.getType()) {
-            case SqlBaseLexer.AND:
+            case HiveSqlBaseLexer.AND:
                 return LogicalBinaryExpression.Operator.AND;
-            case SqlBaseLexer.OR:
+            case HiveSqlBaseLexer.OR:
                 return LogicalBinaryExpression.Operator.OR;
         }
 
@@ -2017,9 +2019,9 @@ public class PrestoHiveAstBuilder
     private static SortItem.NullOrdering getNullOrderingType(Token token)
     {
         switch (token.getType()) {
-            case SqlBaseLexer.FIRST:
+            case HiveSqlBaseLexer.FIRST:
                 return SortItem.NullOrdering.FIRST;
-            case SqlBaseLexer.LAST:
+            case HiveSqlBaseLexer.LAST:
                 return SortItem.NullOrdering.LAST;
         }
 
@@ -2029,9 +2031,9 @@ public class PrestoHiveAstBuilder
     private static SortItem.Ordering getOrderingType(Token token)
     {
         switch (token.getType()) {
-            case SqlBaseLexer.ASC:
+            case HiveSqlBaseLexer.ASC:
                 return SortItem.Ordering.ASCENDING;
-            case SqlBaseLexer.DESC:
+            case HiveSqlBaseLexer.DESC:
                 return SortItem.Ordering.DESCENDING;
         }
 
@@ -2041,11 +2043,11 @@ public class PrestoHiveAstBuilder
     private static QuantifiedComparisonExpression.Quantifier getComparisonQuantifier(Token symbol)
     {
         switch (symbol.getType()) {
-            case SqlBaseLexer.ALL:
+            case HiveSqlBaseLexer.ALL:
                 return QuantifiedComparisonExpression.Quantifier.ALL;
-            case SqlBaseLexer.ANY:
+            case HiveSqlBaseLexer.ANY:
                 return QuantifiedComparisonExpression.Quantifier.ANY;
-            case SqlBaseLexer.SOME:
+            case HiveSqlBaseLexer.SOME:
                 return QuantifiedComparisonExpression.Quantifier.SOME;
         }
 

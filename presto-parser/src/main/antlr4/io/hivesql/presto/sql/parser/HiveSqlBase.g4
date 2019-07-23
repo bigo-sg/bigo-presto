@@ -343,7 +343,7 @@ timeZoneSpecifier
     ;
 
 comparisonOperator
-    : EQ | NEQ | LT | LTE | GT | GTE
+    : EQ | DEQ | NEQ | LT | LTE | GT | GTE
     ;
 
 comparisonQuantifier
@@ -710,6 +710,7 @@ YEAR: 'YEAR';
 ZONE: 'ZONE';
 
 EQ  : '=';
+DEQ : '==';
 NEQ : '<>' | '!=';
 LT  : '<';
 LTE : '<=';

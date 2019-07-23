@@ -38,9 +38,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import javax.inject.Inject;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import io.prestosql.sql.parser.hive.PrestoHiveAstBuilder;
 
@@ -49,6 +47,20 @@ import static java.util.Objects.requireNonNull;
 public class SqlParser
 {
     private static final Logger LOG = Logger.get(SqlParser.class);
+    public static final String ENABLE_HIVEE_SYNTAX = "enable_hive_syntax";
+    public static final String QUERY_ID = "query_id";
+    final static int MAX_ENTRIES;
+    public static Map cache;
+    static {
+        MAX_ENTRIES = 10000;
+        cache = new LinkedHashMap(MAX_ENTRIES + 1, .75F, true) {
+            // This method is called just after a new entry has been added
+            public boolean removeEldestEntry(Map.Entry eldest) {
+                return size() > MAX_ENTRIES;
+            }
+        };
+        cache = Collections.synchronizedMap(cache);
+    }
 
     private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {
@@ -127,7 +139,8 @@ public class SqlParser
     private Node invokeParser(String name, String sql, Function<SqlBaseParser,
             ParserRuleContext> parseFunction, ParsingOptions parsingOptions, String type)
     {
-        if (!parsingOptions.useHiveParser()) {
+        if (cache.get(QUERY_ID) == null ||
+            cache.get(cache.get(QUERY_ID) + ENABLE_HIVEE_SYNTAX).equals("false")) {
             LOG.info("use presto sql");
         } else {
             LOG.info("use hive sql");

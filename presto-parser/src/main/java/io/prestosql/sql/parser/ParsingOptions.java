@@ -26,7 +26,6 @@ public class ParsingOptions
     public boolean useHiveParser() {
         return ifUseHiveParser;
     }
-
     public enum DecimalLiteralTreatment
     {
         AS_DOUBLE,

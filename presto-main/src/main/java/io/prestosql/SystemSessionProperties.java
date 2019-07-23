@@ -516,7 +516,8 @@ public final class SystemSessionProperties
                         ENABLE_HIVE_SQL_SYNTAX,
                         "Experimental: Use hive sql syntax",
                         false,
-                        false));
+                        false)
+        );
     }
 
     public List<PropertyMetadata<?>> getSessionProperties()

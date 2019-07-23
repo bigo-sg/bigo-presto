@@ -1528,20 +1528,20 @@ public class PrestoHiveAstBuilder
         return new GroupingOperation(Optional.of(getLocation(context)), arguments);
     }
 
+    @Override public Node visitBackQuotedIdentifier(HiveSqlBaseParser.BackQuotedIdentifierContext context)
+    {
+        String token = context.getText();
+        String identifier = token.substring(1, token.length() - 1)
+                .replace("``", "`");
+
+        return new Identifier(getLocation(context), identifier, true);
+    }
+
+
     @Override
     public Node visitUnquotedIdentifier(HiveSqlBaseParser.UnquotedIdentifierContext context)
     {
         return new Identifier(getLocation(context), context.getText(), false);
-    }
-
-    @Override
-    public Node visitQuotedIdentifier(HiveSqlBaseParser.QuotedIdentifierContext context)
-    {
-        String token = context.getText();
-        String identifier = token.substring(1, token.length() - 1)
-                .replace("\"\"", "\"");
-
-        return new Identifier(getLocation(context), identifier, true);
     }
 
     // ************** literals **************

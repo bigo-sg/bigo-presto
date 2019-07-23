@@ -474,7 +474,7 @@ roles
 
 identifier
     : IDENTIFIER             #unquotedIdentifier
-    | QUOTED_IDENTIFIER      #quotedIdentifier
+//    | QUOTED_IDENTIFIER      #quotedIdentifier
     | nonReserved            #unquotedIdentifier
     | BACKQUOTED_IDENTIFIER  #backQuotedIdentifier
     | DIGIT_IDENTIFIER       #digitIdentifier
@@ -725,6 +725,7 @@ CONCAT: '||';
 
 STRING
     : '\'' ( ~'\'' | '\'\'' )* '\''
+    | QUOTED_IDENTIFIER
     ;
 
 UNICODE_STRING

@@ -17,7 +17,7 @@ public class TestSqlParser {
     public void init() {
         sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
         parsingOptions = new ParsingOptions();
-        parsingOptions.setIfUseHiveParser(true);
+        parsingOptions.setIfUseHiveParser(false);
     }
 
     @Test
@@ -47,7 +47,15 @@ public class TestSqlParser {
     @Test
     public void testSelect01()
     {
-        String sql = "SELECT a,b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
+        String sql = "SELECT \"a\",b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
+        Node node = sqlParser.createStatement(sql, parsingOptions);
+        System.out.println(node);
+    }
+
+    @Test
+    public void testQuotedQuery()
+    {
+        String sql = "SELECT `a`,b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
         Node node = sqlParser.createStatement(sql, parsingOptions);
         System.out.println(node);
     }

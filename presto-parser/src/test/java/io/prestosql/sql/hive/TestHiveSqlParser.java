@@ -9,7 +9,7 @@ import org.testng.annotations.Test;
 
 import static io.prestosql.sql.parser.IdentifierSymbol.COLON;
 
-public class TestSqlParser {
+public class TestHiveSqlParser {
 
     private SqlParser sqlParser = null;
     private ParsingOptions parsingOptions = null;
@@ -17,7 +17,7 @@ public class TestSqlParser {
     public void init() {
         sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
         parsingOptions = new ParsingOptions();
-        parsingOptions.setIfUseHiveParser(false);
+        parsingOptions.setIfUseHiveParser(true);
     }
 
     @Test
@@ -56,6 +56,13 @@ public class TestSqlParser {
     public void testQuotedQuery()
     {
         String sql = "SELECT `a`,b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
+        Node node = sqlParser.createStatement(sql, parsingOptions);
+        System.out.println(node);
+    }
+    @Test
+    public void testDoubleEq()
+    {
+        String sql = "SELECT `a`,b,c,d FROM ALGO.t WHERE x==321 LIMIT 100";
         Node node = sqlParser.createStatement(sql, parsingOptions);
         System.out.println(node);
     }

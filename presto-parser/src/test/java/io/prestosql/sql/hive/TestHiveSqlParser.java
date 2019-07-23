@@ -19,7 +19,8 @@ public class TestHiveSqlParser {
         parsingOptions = new ParsingOptions();
         parsingOptions.setIfUseHiveParser(true);
         SqlParser.cache.put(SqlParser.QUETRY_ID, "test");
-        SqlParser.cache.put(SqlParser.cache.get(SqlParser.QUETRY_ID) + SqlParser.ENABLE_HIVEE_SYNTAX, "true");
+        SqlParser.cache.put(SqlParser.cache.get(SqlParser.QUETRY_ID) + SqlParser.ENABLE_HIVEE_SYNTAX,
+                "true");
     }
 
     @Test
@@ -73,6 +74,14 @@ public class TestHiveSqlParser {
     {
         String sql = "select * from tmp.20171014_tmpdata limit 10";
         Node node = sqlParser.createStatement(sql, parsingOptions);
+        System.out.println(node);
+    }
+
+    @Test
+    public void testSplit()
+    {
+        String sql = "\"split\"(\"registertime\", ' ')[BIGINT '1']";
+        Node node = sqlParser.createExpression(sql);
         System.out.println(node);
     }
 

@@ -139,15 +139,20 @@ public class SqlParser
     private Node invokeParser(String name, String sql, Function<SqlBaseParser,
             ParserRuleContext> parseFunction, ParsingOptions parsingOptions, String type)
     {
+        LOG.info("sql:" + sql);
         if (cache.get(QUETRY_ID) == null ||
             cache.get(cache.get(QUETRY_ID) + ENABLE_HIVEE_SYNTAX).equals("false")) {
             LOG.info("use presto sql");
         } else {
             LOG.info("use hive sql");
+            String execSql = sql;
+            if (name.equals("expression")) {
+                execSql = sql.replace("\"", "`");
+            }
             try {
                 HiveSqlBaseLexer lexer =
                         new HiveSqlBaseLexer(
-                                new CaseInsensitiveStream(CharStreams.fromString(sql)));
+                                new CaseInsensitiveStream(CharStreams.fromString(execSql)));
                 CommonTokenStream tokenStream = new CommonTokenStream(lexer);
                 HiveSqlBaseParser parser =
                         new HiveSqlBaseParser(tokenStream);
@@ -190,7 +195,7 @@ public class SqlParser
                 } else if (type.equals("standaloneExpression")) {
                     hiveParseFunction = HiveSqlBaseParser::standaloneExpression;
                 } else {
-                    hiveParseFunction = HiveSqlBaseParser::expression;
+                    hiveParseFunction = HiveSqlBaseParser::standalonePathSpecification;
                 }
                 try {
                     // first, try parsing with potentially faster SLL mode

@@ -27,6 +27,7 @@ import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeManager;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -167,19 +168,24 @@ public class ArraySubscriptOperator
 
     public static void transmitSessionInfo(Session session)
     {
-        Set<String> clientTags = session.getClientTags();
-        String clientTag="presto";
-        for (String str : clientTags){
-            clientTag = str.toLowerCase();
+//        Set<String> clientTags = session.getClientTags();
+//        String clientTag="presto";
+//        for (String str : clientTags){
+//            clientTag = str.toLowerCase();
+//        }
+//
+//        if (clientTag.equals("hive")) {
+//            enable_hive_syntax = true;
+//        }else{
+//            enable_hive_syntax = false;
+//        }
+//        LOG.info("ArraySubscriptOperator_clientTag=%s", clientTag);
+        LOG.info("ArraySubscriptOperator_properties=%s", session.getSystemProperties());
+        Map<String, String> map = session.getSystemProperties();
+        if (map.containsKey("enable_hive_syntax")){
+            enable_hive_syntax = map.get("enable_hive_syntax").equals("true");
         }
-
-        if (clientTag.equals("hive")) {
-            enable_hive_syntax = true;
-        }else{
-            enable_hive_syntax = false;
-        }
-        LOG.info("ArraySubscriptOperator_clientTag=%s", clientTag);
-
+        LOG.info("ArraySubscriptOperator_enable_hive_syntax=%s", enable_hive_syntax);
     }
 
     public static void checkArrayIndex(long index)

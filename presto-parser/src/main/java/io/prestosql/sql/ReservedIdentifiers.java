@@ -14,9 +14,11 @@
 package io.prestosql.sql;
 
 import com.google.common.collect.ImmutableSet;
+import io.airlift.log.Logger;
 import io.prestosql.sql.parser.ParsingException;
 import io.prestosql.sql.parser.SqlBaseLexer;
 import io.prestosql.sql.parser.SqlParser;
+import io.prestosql.sql.tree.Expression;
 import io.prestosql.sql.tree.Identifier;
 import org.antlr.v4.runtime.Vocabulary;
 
@@ -139,9 +141,10 @@ public final class ReservedIdentifiers
         }
         return names.build();
     }
-
+    private static final Logger LOG = Logger.get(ReservedIdentifiers.class);
     private static boolean reserved(String name)
     {
+        LOG.info("from reserved(String name)");
         try {
             return !(PARSER.createExpression(name) instanceof Identifier);
         }

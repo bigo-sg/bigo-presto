@@ -14,6 +14,7 @@
 package io.prestosql.sql.planner.assertions;
 
 import com.google.common.collect.ImmutableList;
+import io.airlift.log.Logger;
 import io.prestosql.Session;
 import io.prestosql.metadata.Metadata;
 import io.prestosql.sql.parser.SqlParser;
@@ -35,6 +36,7 @@ import static java.util.Objects.requireNonNull;
 public class ExpressionMatcher
         implements RvalueMatcher
 {
+    private static final Logger LOG = Logger.get(Expression.class);
     private final String sql;
     private final Expression expression;
 
@@ -47,6 +49,7 @@ public class ExpressionMatcher
     private Expression expression(String sql)
     {
         SqlParser parser = new SqlParser();
+        LOG.info("from Expression ExpressionMatcher::expression(String sql)");
         return rewriteIdentifiersToSymbolReferences(parser.createExpression(sql));
     }
 

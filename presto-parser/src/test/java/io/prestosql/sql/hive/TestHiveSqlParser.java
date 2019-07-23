@@ -66,5 +66,12 @@ public class TestHiveSqlParser {
         Node node = sqlParser.createStatement(sql, parsingOptions);
         System.out.println(node);
     }
+    @Test
+    public void testTableStartWithDigit()
+    {
+        String sql = "select * from tmp.20171014_tmpdata limit 10";
+        Node node = sqlParser.createStatement(sql, parsingOptions);
+        System.out.println(node);
+    }
 
 }

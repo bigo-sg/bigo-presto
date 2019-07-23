@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import io.airlift.log.Logger;
 import io.prestosql.Session;
 import io.prestosql.cost.StatsProvider;
 import io.prestosql.metadata.Metadata;
@@ -27,6 +28,7 @@ import io.prestosql.sql.parser.ParsingOptions;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.planner.Symbol;
 import io.prestosql.sql.planner.iterative.GroupReference;
+import io.prestosql.sql.planner.iterative.rule.test.PlanBuilder;
 import io.prestosql.sql.planner.plan.AggregationNode;
 import io.prestosql.sql.planner.plan.AggregationNode.Step;
 import io.prestosql.sql.planner.plan.ApplyNode;
@@ -373,6 +375,7 @@ public final class PlanMatchPattern
         return join(joinType, expectedEquiCriteria, expectedFilter, expectedDistributionType, Optional.empty(), left, right);
     }
 
+    private static final Logger LOG = Logger.get(PlanMatchPattern.class);
     public static PlanMatchPattern join(
             JoinNode.Type joinType,
             List<ExpectedValueProvider<JoinNode.EquiJoinClause>> expectedEquiCriteria,
@@ -382,6 +385,7 @@ public final class PlanMatchPattern
             PlanMatchPattern left,
             PlanMatchPattern right)
     {
+        LOG.info("from join1");
         return node(JoinNode.class, left, right).with(
                 new JoinMatcher(
                         joinType,
@@ -400,6 +404,7 @@ public final class PlanMatchPattern
             PlanMatchPattern leftSource,
             PlanMatchPattern right)
     {
+        LOG.info("from join2");
         Map<SymbolAlias, SymbolAlias> expectedDynamicFilterAliases = expectedDynamicFilter.entrySet().stream()
                 .collect(toImmutableMap(entry -> new SymbolAlias(entry.getKey()), entry -> new SymbolAlias(entry.getValue())));
         DynamicFilterMatcher dynamicFilterMatcher = new DynamicFilterMatcher(
@@ -488,6 +493,7 @@ public final class PlanMatchPattern
 
     public static PlanMatchPattern filter(String expectedPredicate, PlanMatchPattern source)
     {
+        LOG.info("from filter");
         return filter(rewriteIdentifiersToSymbolReferences(new SqlParser().createExpression(expectedPredicate)), source);
     }
 

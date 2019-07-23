@@ -108,16 +108,19 @@ public class SqlParser
     @Deprecated
     public Expression createExpression(String expression)
     {
+        LOG.info("from Expression createExpression(String expression)");
         return createExpression(expression, new ParsingOptions());
     }
 
     public Expression createExpression(String expression, ParsingOptions parsingOptions)
     {
+        LOG.info("from Expression createExpression(String expression, ParsingOptions parsingOptions)");
         return (Expression) invokeParser("expression", expression, SqlBaseParser::standaloneExpression, parsingOptions, "standaloneExpression");
     }
 
     public PathSpecification createPathSpecification(String expression)
     {
+        LOG.info("from PathSpecification createPathSpecification(String expression)");
         return (PathSpecification) invokeParser("path specification", expression, SqlBaseParser::standalonePathSpecification, new ParsingOptions(), "standalonePathSpecification");
     }
 

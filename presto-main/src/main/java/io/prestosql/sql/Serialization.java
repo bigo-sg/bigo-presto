@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import io.airlift.log.Logger;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.tree.Expression;
 import io.prestosql.sql.tree.FunctionCall;
@@ -56,10 +57,12 @@ public final class Serialization
             this.sqlParser = sqlParser;
         }
 
+        private static final Logger LOG = Logger.get(ExpressionDeserializer.class);
         @Override
         public Expression deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
                 throws IOException
         {
+            LOG.info("from deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)");
             return rewriteIdentifiersToSymbolReferences(sqlParser.createExpression(jsonParser.readValueAs(String.class)));
         }
     }
@@ -74,11 +77,12 @@ public final class Serialization
         {
             this.sqlParser = sqlParser;
         }
-
+        private static final Logger LOG = Logger.get(FunctionCallDeserializer.class);
         @Override
         public FunctionCall deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
                 throws IOException
         {
+            LOG.info("from deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)");
             return (FunctionCall) rewriteIdentifiersToSymbolReferences(sqlParser.createExpression(jsonParser.readValueAs(String.class)));
         }
     }

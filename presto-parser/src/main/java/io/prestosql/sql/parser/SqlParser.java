@@ -13,6 +13,7 @@
  */
 package io.prestosql.sql.parser;
 
+import io.prestosql.sql.parser.hive.HiveAstBuilder;
 import io.prestosql.sql.tree.Expression;
 import io.prestosql.sql.tree.Node;
 import io.prestosql.sql.tree.PathSpecification;

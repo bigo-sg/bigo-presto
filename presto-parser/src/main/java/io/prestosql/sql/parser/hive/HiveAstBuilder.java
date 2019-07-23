@@ -1,9 +1,10 @@
-package io.prestosql.sql.parser;
+package io.prestosql.sql.parser.hive;
 
 import com.google.common.collect.Lists;
 import io.airlift.log.Logger;
 import io.hivesql.sql.parser.SqlBaseLexer;
 import io.hivesql.sql.parser.SqlBaseParser;
+import io.prestosql.sql.parser.ParsingException;
 import io.prestosql.sql.parser.debug.FieldUtils;
 import io.prestosql.sql.tree.*;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -12,22 +13,14 @@ import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
-/**
- * @author tangyun@bigo.sg
- * @date 7/17/19 12:07 PM
- */
 public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Node> {
-
-
     private static final Logger LOG = Logger.get(HiveAstBuilder.class);
-
 
 //    @Override
 //    public Node visitChildren(RuleNode node) {
@@ -37,7 +30,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 //            return null;
 //        }
 //    }
-
 
     @Override
     public Node visitAddTableColumns(SqlBaseParser.AddTableColumnsContext ctx) {
@@ -385,6 +377,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
+    public Node visitQueryTermDefault(SqlBaseParser.QueryTermDefaultContext ctx) {
+        return super.visitQueryTermDefault(ctx);
+    }
+
+    @Override
     public Node visitSingleExpression(SqlBaseParser.SingleExpressionContext ctx) {
         return visit(ctx.namedExpression());
     }
@@ -401,8 +398,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitUse(SqlBaseParser.UseContext ctx) {
-
-
         Use use;
         if (ctx.catalog != null) {
             use = new Use(
@@ -468,24 +463,29 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 //                Optional.empty(),
 //                Optional.empty());
 
-        SqlBaseParser.NamedExpressionSeqContext namedExpressionSeqContext = ctx.namedExpressionSeq();
-        List<SqlBaseParser.NamedExpressionContext> namedExpressionContexts =
-                namedExpressionSeqContext.namedExpression();
+        if (ctx.kind.getType()  == SqlBaseParser.SELECT) {
 
-        List<SelectItem> selectItems = new ArrayList<>();
-        for (SqlBaseParser.NamedExpressionContext namedExpressionContext: namedExpressionContexts) {
-            SelectItem selectItem = new SingleColumn((Expression)visit(namedExpressionContext));
-            selectItems.add(selectItem);
+            SqlBaseParser.NamedExpressionSeqContext namedExpressionSeqContext = ctx.namedExpressionSeq();
+            List<SqlBaseParser.NamedExpressionContext> namedExpressionContexts =
+                    namedExpressionSeqContext.namedExpression();
+
+            List<SelectItem> selectItems = new ArrayList<>();
+            for (SqlBaseParser.NamedExpressionContext namedExpressionContext: namedExpressionContexts) {
+                SelectItem selectItem = new SingleColumn((Expression)visit(namedExpressionContext));
+                selectItems.add(selectItem);
+            }
+
+            NodeLocation nodeLocation = getLocation(ctx);
+            Select select = new Select(getLocation(ctx.SELECT()), isDistinct(ctx.setQuantifier()), selectItems);
+            Optional<Relation> from = Optional.empty();
+
+            TerminalNode where = ctx.WHERE();
+            visit(ctx.namedExpressionSeq());
+
+            return super.visitQuerySpecification(ctx);
+        } else {
+            throw new ParsingException("Don't support kind: " + ctx.kind.getText());
         }
-
-        NodeLocation nodeLocation = getLocation(ctx);
-        Select select = new Select(getLocation(ctx.SELECT()), isDistinct(ctx.setQuantifier()), selectItems);
-        Optional<Relation> from = Optional.empty();
-
-        TerminalNode where = ctx.WHERE();
-        visit(ctx.namedExpressionSeq());
-
-        return super.visitQuerySpecification(ctx);
     }
 
     private static boolean isDistinct(io.hivesql.sql.parser.SqlBaseParser.SetQuantifierContext setQuantifier)

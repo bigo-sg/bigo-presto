@@ -38,6 +38,347 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 //        }
 //    }
 
+
+    @Override
+    public Node visitAddTableColumns(SqlBaseParser.AddTableColumnsContext ctx) {
+        return super.visitAddTableColumns(ctx);
+    }
+
+    @Override
+    public Node visitAddTablePartition(SqlBaseParser.AddTablePartitionContext ctx) {
+        return super.visitAddTablePartition(ctx);
+    }
+
+    @Override
+    public Node visitAlterViewQuery(SqlBaseParser.AlterViewQueryContext ctx) {
+        return super.visitAlterViewQuery(ctx);
+    }
+
+    @Override
+    public Node visitAggregation(SqlBaseParser.AggregationContext ctx) {
+        return super.visitAggregation(ctx);
+    }
+
+    @Override
+    public Node visitAnalyze(SqlBaseParser.AnalyzeContext ctx) {
+        return super.visitAnalyze(ctx);
+    }
+
+    @Override
+    public Node visitBucketSpec(SqlBaseParser.BucketSpecContext ctx) {
+        return super.visitBucketSpec(ctx);
+    }
+
+    @Override
+    public Node visitCacheTable(SqlBaseParser.CacheTableContext ctx) {
+        return super.visitCacheTable(ctx);
+    }
+
+    @Override
+    public Node visitChangeColumn(SqlBaseParser.ChangeColumnContext ctx) {
+        return super.visitChangeColumn(ctx);
+    }
+
+    @Override
+    public Node visitClearCache(SqlBaseParser.ClearCacheContext ctx) {
+        return super.visitClearCache(ctx);
+    }
+
+    @Override
+    public Node visitAliasedQuery(SqlBaseParser.AliasedQueryContext ctx) {
+        return super.visitAliasedQuery(ctx);
+    }
+
+    @Override
+    public Node visitCreateDatabase(SqlBaseParser.CreateDatabaseContext ctx) {
+        return super.visitCreateDatabase(ctx);
+    }
+
+    @Override
+    public Node visitAliasedRelation(SqlBaseParser.AliasedRelationContext ctx) {
+        return super.visitAliasedRelation(ctx);
+    }
+
+    @Override
+    public Node visitConstantList(SqlBaseParser.ConstantListContext ctx) {
+        return super.visitConstantList(ctx);
+    }
+
+    @Override
+    public Node visitCreateFunction(SqlBaseParser.CreateFunctionContext ctx) {
+        return super.visitCreateFunction(ctx);
+    }
+
+    @Override
+    public Node visitCreateHiveTable(SqlBaseParser.CreateHiveTableContext ctx) {
+        return super.visitCreateHiveTable(ctx);
+    }
+
+    @Override
+    public Node visitArithmeticOperator(SqlBaseParser.ArithmeticOperatorContext ctx) {
+        return super.visitArithmeticOperator(ctx);
+    }
+
+    @Override
+    public Node visitCreateFileFormat(SqlBaseParser.CreateFileFormatContext ctx) {
+        return super.visitCreateFileFormat(ctx);
+    }
+
+    @Override
+    public Node visitCreateTableHeader(SqlBaseParser.CreateTableHeaderContext ctx) {
+        return super.visitCreateTableHeader(ctx);
+    }
+
+    @Override
+    public Node visitCreateTableLike(SqlBaseParser.CreateTableLikeContext ctx) {
+        return super.visitCreateTableLike(ctx);
+    }
+
+    @Override
+    public Node visitCreateTempViewUsing(SqlBaseParser.CreateTempViewUsingContext ctx) {
+        return super.visitCreateTempViewUsing(ctx);
+    }
+
+    @Override
+    public Node visitCreateView(SqlBaseParser.CreateViewContext ctx) {
+        return super.visitCreateView(ctx);
+    }
+
+    @Override
+    public Node visitBooleanValue(SqlBaseParser.BooleanValueContext ctx) {
+        return super.visitBooleanValue(ctx);
+    }
+
+    @Override
+    public Node visitColPosition(SqlBaseParser.ColPositionContext ctx) {
+        return super.visitColPosition(ctx);
+    }
+
+    @Override
+    public Node visitCtes(SqlBaseParser.CtesContext ctx) {
+        return super.visitCtes(ctx);
+    }
+
+    @Override
+    public Node visitDescribeColName(SqlBaseParser.DescribeColNameContext ctx) {
+        return super.visitDescribeColName(ctx);
+    }
+
+    @Override
+    public Node visitDescribeDatabase(SqlBaseParser.DescribeDatabaseContext ctx) {
+        return super.visitDescribeDatabase(ctx);
+    }
+
+    @Override
+    public Node visitDescribeFuncName(SqlBaseParser.DescribeFuncNameContext ctx) {
+        return super.visitDescribeFuncName(ctx);
+    }
+
+    @Override
+    public Node visitDescribeFunction(SqlBaseParser.DescribeFunctionContext ctx) {
+        return super.visitDescribeFunction(ctx);
+    }
+
+    @Override
+    public Node visitDescribeTable(SqlBaseParser.DescribeTableContext ctx) {
+        return super.visitDescribeTable(ctx);
+    }
+
+    @Override
+    public Node visitDropDatabase(SqlBaseParser.DropDatabaseContext ctx) {
+        return super.visitDropDatabase(ctx);
+    }
+
+    @Override
+    public Node visitDropFunction(SqlBaseParser.DropFunctionContext ctx) {
+        return super.visitDropFunction(ctx);
+    }
+
+    @Override
+    public Node visitDropTable(SqlBaseParser.DropTableContext ctx) {
+        return super.visitDropTable(ctx);
+    }
+
+    @Override
+    public Node visitRenameTable(SqlBaseParser.RenameTableContext ctx) {
+        return super.visitRenameTable(ctx);
+    }
+
+    @Override
+    public Node visitDropTablePartitions(SqlBaseParser.DropTablePartitionsContext ctx) {
+        return super.visitDropTablePartitions(ctx);
+    }
+
+    @Override
+    public Node visitExplain(SqlBaseParser.ExplainContext ctx) {
+        return super.visitExplain(ctx);
+    }
+
+    @Override
+    public Node visitFailNativeCommand(SqlBaseParser.FailNativeCommandContext ctx) {
+        return super.visitFailNativeCommand(ctx);
+    }
+
+    @Override
+    public Node visitFromClause(SqlBaseParser.FromClauseContext ctx) {
+        return super.visitFromClause(ctx);
+    }
+
+    @Override
+    public Node visitGenericFileFormat(SqlBaseParser.GenericFileFormatContext ctx) {
+        return super.visitGenericFileFormat(ctx);
+    }
+
+    @Override
+    public Node visitFunctionIdentifier(SqlBaseParser.FunctionIdentifierContext ctx) {
+        return super.visitFunctionIdentifier(ctx);
+    }
+
+    @Override
+    public Node visitInsertIntoTable(SqlBaseParser.InsertIntoTableContext ctx) {
+        return super.visitInsertIntoTable(ctx);
+    }
+
+    @Override
+    public Node visitGroupingSet(SqlBaseParser.GroupingSetContext ctx) {
+        return super.visitGroupingSet(ctx);
+    }
+
+    @Override
+    public Node visitHint(SqlBaseParser.HintContext ctx) {
+        return super.visitHint(ctx);
+    }
+
+    @Override
+    public Node visitHintStatement(SqlBaseParser.HintStatementContext ctx) {
+        return super.visitHintStatement(ctx);
+    }
+
+    @Override
+    public Node visitInlineTableDefault1(SqlBaseParser.InlineTableDefault1Context ctx) {
+        return super.visitInlineTableDefault1(ctx);
+    }
+
+    @Override
+    public Node visitInsertOverwriteDir(SqlBaseParser.InsertOverwriteDirContext ctx) {
+        return super.visitInsertOverwriteDir(ctx);
+    }
+
+    @Override
+    public Node visitInsertOverwriteHiveDir(SqlBaseParser.InsertOverwriteHiveDirContext ctx) {
+        return super.visitInsertOverwriteHiveDir(ctx);
+    }
+
+    @Override
+    public Node visitInsertOverwriteTable(SqlBaseParser.InsertOverwriteTableContext ctx) {
+        return super.visitInsertOverwriteTable(ctx);
+    }
+
+    @Override
+    public Node visitIdentifierCommentList(SqlBaseParser.IdentifierCommentListContext ctx) {
+        return super.visitIdentifierCommentList(ctx);
+    }
+
+    @Override
+    public Node visitIdentifierComment(SqlBaseParser.IdentifierCommentContext ctx) {
+        return super.visitIdentifierComment(ctx);
+    }
+
+    @Override
+    public Node visitJoinCriteria(SqlBaseParser.JoinCriteriaContext ctx) {
+        return super.visitJoinCriteria(ctx);
+    }
+
+    @Override
+    public Node visitRecoverPartitions(SqlBaseParser.RecoverPartitionsContext ctx) {
+        return super.visitRecoverPartitions(ctx);
+    }
+
+    @Override
+    public Node visitJoinRelation(SqlBaseParser.JoinRelationContext ctx) {
+        return super.visitJoinRelation(ctx);
+    }
+
+    @Override
+    public Node visitLoadData(SqlBaseParser.LoadDataContext ctx) {
+        return super.visitLoadData(ctx);
+    }
+
+    @Override
+    public Node visitManageResource(SqlBaseParser.ManageResourceContext ctx) {
+        return super.visitManageResource(ctx);
+    }
+
+    @Override
+    public Node visitIdentifierList(SqlBaseParser.IdentifierListContext ctx) {
+        return super.visitIdentifierList(ctx);
+    }
+
+    @Override
+    public Node visitComparisonOperator(SqlBaseParser.ComparisonOperatorContext ctx) {
+        return super.visitComparisonOperator(ctx);
+    }
+
+    @Override
+    public Node visitExpression(SqlBaseParser.ExpressionContext ctx) {
+        return super.visitExpression(ctx);
+    }
+
+    @Override
+    public Node visitLocationSpec(SqlBaseParser.LocationSpecContext ctx) {
+        return super.visitLocationSpec(ctx);
+    }
+
+    @Override
+    public Node visitMultiInsertQuery(SqlBaseParser.MultiInsertQueryContext ctx) {
+        return super.visitMultiInsertQuery(ctx);
+    }
+
+    @Override
+    public Node visitFunctionTable(SqlBaseParser.FunctionTableContext ctx) {
+        return super.visitFunctionTable(ctx);
+    }
+
+    @Override
+    public Node visitRefreshResource(SqlBaseParser.RefreshResourceContext ctx) {
+        return super.visitRefreshResource(ctx);
+    }
+
+    @Override
+    public Node visitIdentifierSeq(SqlBaseParser.IdentifierSeqContext ctx) {
+        return super.visitIdentifierSeq(ctx);
+    }
+
+    @Override
+    public Node visitLateralView(SqlBaseParser.LateralViewContext ctx) {
+        return super.visitLateralView(ctx);
+    }
+
+    @Override
+    public Node visitCreateTable(SqlBaseParser.CreateTableContext ctx) {
+        return super.visitCreateTable(ctx);
+    }
+
+    @Override
+    public Node visitConstantDefault(SqlBaseParser.ConstantDefaultContext ctx) {
+        return super.visitConstantDefault(ctx);
+    }
+
+    @Override
+    public Node visitStatementDefault(SqlBaseParser.StatementDefaultContext ctx) {
+        return super.visitStatementDefault(ctx);
+    }
+
+    @Override
+    public Node visitQuery(SqlBaseParser.QueryContext ctx) {
+        return super.visitQuery(ctx);
+    }
+
+    @Override
+    public Node visitSingleDataType(SqlBaseParser.SingleDataTypeContext ctx) {
+        return super.visitSingleDataType(ctx);
+    }
+
     @Override
     public Node visitSingleStatement(SqlBaseParser.SingleStatementContext ctx) {
         return visit(ctx.statement());

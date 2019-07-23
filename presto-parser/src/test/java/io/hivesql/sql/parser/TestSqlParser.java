@@ -13,6 +13,7 @@ public class TestSqlParser {
 
     private SqlParser sqlParser = null;
     private ParsingOptions parsingOptions = null;
+
     @BeforeTest
     public void init() {
         sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));

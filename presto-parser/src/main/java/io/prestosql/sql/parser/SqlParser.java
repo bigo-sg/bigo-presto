@@ -123,6 +123,64 @@ public class SqlParser
     {
         if (!parsingOptions.isUseHiveSql()) {
             LOG.info("use presto sql");
+
+
+            try {
+                SqlBaseLexer lexer = new SqlBaseLexer(new CaseInsensitiveStream(CharStreams.fromString(sql)));
+                CommonTokenStream tokenStream = new CommonTokenStream(lexer);
+                SqlBaseParser parser = new SqlBaseParser(tokenStream);
+
+                // Override the default error strategy to not attempt inserting or deleting a token.
+                // Otherwise, it messes up error reporting
+                parser.setErrorHandler(new DefaultErrorStrategy()
+                {
+                    @Override
+                    public Token recoverInline(Parser recognizer)
+                            throws RecognitionException
+                    {
+                        if (nextTokensContext == null) {
+                            throw new InputMismatchException(recognizer);
+                        }
+                        else {
+                            throw new InputMismatchException(recognizer, nextTokensState, nextTokensContext);
+                        }
+                    }
+                });
+
+                parser.addParseListener(new PostProcessor(Arrays.asList(parser.getRuleNames())));
+
+                lexer.removeErrorListeners();
+                lexer.addErrorListener(LEXER_ERROR_LISTENER);
+
+                parser.removeErrorListeners();
+
+                if (enhancedErrorHandlerEnabled) {
+                    parser.addErrorListener(PARSER_ERROR_HANDLER);
+                }
+                else {
+                    parser.addErrorListener(LEXER_ERROR_LISTENER);
+                }
+
+                ParserRuleContext tree;
+                try {
+                    // first, try parsing with potentially faster SLL mode
+                    parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+                    tree = parseFunction.apply(parser);
+                }
+                catch (ParseCancellationException ex) {
+                    // if we fail, parse with LL mode
+                    tokenStream.reset(); // rewind input stream
+                    parser.reset();
+
+                    parser.getInterpreter().setPredictionMode(PredictionMode.LL);
+                    tree = parseFunction.apply(parser);
+                }
+
+                return new AstBuilder(parsingOptions).visit(tree);
+            }
+            catch (StackOverflowError e) {
+                throw new ParsingException(name + " is too large (stack overflow while parsing)");
+            }
         } else {
             LOG.info("use hive sql");
             try {
@@ -192,63 +250,6 @@ public class SqlParser
             catch (StackOverflowError e) {
                 throw new ParsingException(name + " is too large (stack overflow while parsing)");
             }
-        }
-
-        try {
-            SqlBaseLexer lexer = new SqlBaseLexer(new CaseInsensitiveStream(CharStreams.fromString(sql)));
-            CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-            SqlBaseParser parser = new SqlBaseParser(tokenStream);
-
-            // Override the default error strategy to not attempt inserting or deleting a token.
-            // Otherwise, it messes up error reporting
-            parser.setErrorHandler(new DefaultErrorStrategy()
-            {
-                @Override
-                public Token recoverInline(Parser recognizer)
-                        throws RecognitionException
-                {
-                    if (nextTokensContext == null) {
-                        throw new InputMismatchException(recognizer);
-                    }
-                    else {
-                        throw new InputMismatchException(recognizer, nextTokensState, nextTokensContext);
-                    }
-                }
-            });
-
-            parser.addParseListener(new PostProcessor(Arrays.asList(parser.getRuleNames())));
-
-            lexer.removeErrorListeners();
-            lexer.addErrorListener(LEXER_ERROR_LISTENER);
-
-            parser.removeErrorListeners();
-
-            if (enhancedErrorHandlerEnabled) {
-                parser.addErrorListener(PARSER_ERROR_HANDLER);
-            }
-            else {
-                parser.addErrorListener(LEXER_ERROR_LISTENER);
-            }
-
-            ParserRuleContext tree;
-            try {
-                // first, try parsing with potentially faster SLL mode
-                parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
-                tree = parseFunction.apply(parser);
-            }
-            catch (ParseCancellationException ex) {
-                // if we fail, parse with LL mode
-                tokenStream.reset(); // rewind input stream
-                parser.reset();
-
-                parser.getInterpreter().setPredictionMode(PredictionMode.LL);
-                tree = parseFunction.apply(parser);
-            }
-
-            return new AstBuilder(parsingOptions).visit(tree);
-        }
-        catch (StackOverflowError e) {
-            throw new ParsingException(name + " is too large (stack overflow while parsing)");
         }
     }
 

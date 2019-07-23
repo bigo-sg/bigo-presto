@@ -30,8 +30,7 @@ public class ParsingUtil
         parsingOptions.setIfUseHiveParser(SystemSessionProperties.isEnableHiveSqlSynTax(session));
         SqlParser.cache.put(session.getQueryId() + SqlParser.ENABLE_HIVEE_SYNTAX,
                 SystemSessionProperties.isEnableHiveSqlSynTax(session)?"true":"false");
-        SqlParser.cache.put(session.getQueryId() + SqlParser.QUERY_ID,
-                session.getQueryId());
+        SqlParser.cache.put(SqlParser.QUETRY_ID, session.getQueryId());
 
         return parsingOptions;
     }

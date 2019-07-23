@@ -48,7 +48,7 @@ public class SqlParser
 {
     private static final Logger LOG = Logger.get(SqlParser.class);
     public static final String ENABLE_HIVEE_SYNTAX = "enable_hive_syntax";
-    public static final String QUERY_ID = "query_id";
+    public static final String QUETRY_ID = "user";
     final static int MAX_ENTRIES;
     public static Map cache;
     static {
@@ -139,8 +139,8 @@ public class SqlParser
     private Node invokeParser(String name, String sql, Function<SqlBaseParser,
             ParserRuleContext> parseFunction, ParsingOptions parsingOptions, String type)
     {
-        if (cache.get(QUERY_ID) == null ||
-            cache.get(cache.get(QUERY_ID) + ENABLE_HIVEE_SYNTAX).equals("false")) {
+        if (cache.get(QUETRY_ID) == null ||
+            cache.get(cache.get(QUETRY_ID) + ENABLE_HIVEE_SYNTAX).equals("false")) {
             LOG.info("use presto sql");
         } else {
             LOG.info("use hive sql");

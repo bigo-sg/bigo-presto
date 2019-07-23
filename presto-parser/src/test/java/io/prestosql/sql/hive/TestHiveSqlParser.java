@@ -18,8 +18,8 @@ public class TestHiveSqlParser {
         sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
         parsingOptions = new ParsingOptions();
         parsingOptions.setIfUseHiveParser(true);
-        SqlParser.cache.put(SqlParser.QUERY_ID, "test");
-        SqlParser.cache.put(SqlParser.cache.get(SqlParser.QUERY_ID) + SqlParser.ENABLE_HIVEE_SYNTAX, "true");
+        SqlParser.cache.put(SqlParser.QUETRY_ID, "test");
+        SqlParser.cache.put(SqlParser.cache.get(SqlParser.QUETRY_ID) + SqlParser.ENABLE_HIVEE_SYNTAX, "true");
     }
 
     @Test

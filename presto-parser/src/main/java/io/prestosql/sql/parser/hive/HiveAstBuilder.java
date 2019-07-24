@@ -51,22 +51,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return currentResult;
         }
 
-        return super.aggregateResult(currentResult, nextResult);
-    }
-
-    @Override
-    public Node visitQueryOrganization(SqlBaseParser.QueryOrganizationContext ctx) {
-        if (ctx.clusterBy != null && !ctx.clusterBy.isEmpty()) {
-            throw new ParsingException("Don't support cluster by");
-        }
-        if (ctx.distributeBy != null && !ctx.distributeBy.isEmpty()) {
-            throw new ParsingException("Don't support distribute by");
-        }
-        if (ctx.sort != null && !ctx.sort.isEmpty()) {
-            throw new ParsingException("Don't support sort by");
-        }
-
-        return super.visitQueryOrganization(ctx);
+        throw new RuntimeException("please check, how should we merge them?");
+        //return super.aggregateResult(currentResult, nextResult);
     }
 
     @Override
@@ -430,29 +416,50 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return super.visitStatementDefault(ctx);
     }
 
-    @Override
-    public Node visitSingleInsertQuery(SqlBaseParser.SingleInsertQueryContext ctx) {
-        QuerySpecification query = (QuerySpecification)visit(ctx.queryTerm());
-        //TODO:
-        Node todo = visit(ctx.queryOrganization());
+    public Node visitQueryOrganization(QuerySpecification querySpecification, SqlBaseParser.QueryOrganizationContext ctx) {
+        if (ctx.clusterBy != null && !ctx.clusterBy.isEmpty()) {
+            throw new ParsingException("Don't support cluster by");
+        }
+        if (ctx.distributeBy != null && !ctx.distributeBy.isEmpty()) {
+            throw new ParsingException("Don't support distribute by");
+        }
+        if (ctx.sort != null && !ctx.sort.isEmpty()) {
+            throw new ParsingException("Don't support sort by");
+        }
+
+        Optional<OrderBy> orderBy = Optional.empty();
+        if (ctx.ORDER() != null) {
+            orderBy = Optional.of(new OrderBy(getLocation(ctx.ORDER()), visit(ctx.sortItem(), SortItem.class)));
+        }
+
+        Optional<Node> limit = Optional.empty();
+        if (ctx.LIMIT() != null) {
+            limit = Optional.of(new Limit(Optional.of(getLocation(ctx.LIMIT())), ctx.limit.getText()));
+        }
 
         return new Query(
                 getLocation(ctx),
                 Optional.empty(),
                 new QuerySpecification(
                         getLocation(ctx),
-                        query.getSelect(),
-                        query.getFrom(),
-                        query.getWhere(),
-                        query.getGroupBy(),
-                        query.getHaving(),
-                        Optional.empty(),//order by
-                        Optional.empty(),//offset,
-                        Optional.empty()//limit
-                ),
+                        querySpecification.getSelect(),
+                        querySpecification.getFrom(),
+                        querySpecification.getWhere(),
+                        querySpecification.getGroupBy(),
+                        querySpecification.getHaving(),
+                        orderBy,
+                        Optional.empty(),
+                        limit),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty());
+    }
+
+    @Override
+    public Node visitSingleInsertQuery(SqlBaseParser.SingleInsertQueryContext ctx) {
+        QuerySpecification querySpecification = (QuerySpecification)visit(ctx.queryTerm());
+
+        return visitQueryOrganization(querySpecification, ctx.queryOrganization());
     }
 
     @Override
@@ -523,6 +530,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
+    public Node visitRelation(SqlBaseParser.RelationContext ctx) {
+        return super.visitRelation(ctx);
+    }
+
+    @Override
+    public Node visitTableName(SqlBaseParser.TableNameContext ctx) {
+        return new Table(getLocation(ctx), getQualifiedName(ctx.tableIdentifier()));
+    }
+
+    @Override
     public Node visitQuerySpecification(SqlBaseParser.QuerySpecificationContext ctx) {
         if (ctx.kind.getType()  == SqlBaseParser.SELECT) {
             SqlBaseParser.NamedExpressionSeqContext namedExpressionSeqContext = ctx.namedExpressionSeq();
@@ -538,8 +555,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             NodeLocation nodeLocation = getLocation(ctx);
             Select select = new Select(getLocation(ctx.SELECT()), isDistinct(ctx.setQuantifier()), selectItems);
 
-            Optional<Relation> from = Optional.empty();
-
+            Optional<Relation> from = visitIfPresent(ctx.fromClause(), Relation.class);
 
             return new QuerySpecification(
                     nodeLocation,
@@ -580,13 +596,79 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 (Expression) visit(ctx.right));
     }
 
+    public Node visitPredicate(Expression expression, SqlBaseParser.PredicateContext ctx) {
+        switch (ctx.kind.getType()) {
+            case SqlBaseParser.NULL:
+                if (ctx.NOT() != null) {
+                    return new IsNotNullPredicate(getLocation(ctx), expression);
+                } else {
+                    return new IsNullPredicate(getLocation(ctx), expression);
+                }
+            case SqlBaseParser.BETWEEN:
+                Expression betweenPredicate = new BetweenPredicate(
+                        getLocation(ctx),
+                        expression,
+                        (Expression) visit(ctx.lower),
+                        (Expression) visit(ctx.upper));
+
+                if (ctx.NOT() != null) {
+                    return new NotExpression(getLocation(ctx), betweenPredicate);
+                } else {
+                    return betweenPredicate;
+                }
+            case SqlBaseParser.IN:
+                if (ctx.query() != null) {
+                    throw new ParsingException("Not supported type: " + ctx.query());
+                }
+                InListExpression inListExpression = new InListExpression(getLocation(ctx), visit(ctx.expression(), Expression.class));
+                Expression inPredicate = new InPredicate(
+                        getLocation(ctx),
+                        expression,
+                        inListExpression);
+
+                if (ctx.NOT() != null) {
+                    return new NotExpression(getLocation(ctx), inPredicate);
+                } else {
+                    return inPredicate;
+                }
+            case SqlBaseParser.LIKE:
+                Expression likePredicate = new LikePredicate(
+                        getLocation(ctx),
+                        expression,
+                        (Expression) visit(ctx.pattern),
+                        Optional.empty());
+
+                if (ctx.NOT() != null) {
+                    return new NotExpression(getLocation(ctx), likePredicate);
+                } else {
+                    return likePredicate;
+                }
+            case SqlBaseParser.DISTINCT:
+                Expression comparisonExpression = new ComparisonExpression(
+                        getLocation(ctx),
+                        ComparisonExpression.Operator.IS_DISTINCT_FROM,
+                        expression,
+                        (Expression) visit(ctx.right));
+
+                if (ctx.NOT() != null) {
+                    return new NotExpression(getLocation(ctx), comparisonExpression);
+                } else {
+                    return comparisonExpression;
+                }
+            default:
+                throw new ParsingException("Not supported type: " + ctx.kind.getText());
+        }
+    }
+
     @Override
     public Node visitPredicated(SqlBaseParser.PredicatedContext ctx) {
+        Expression expression = (Expression) visit(ctx.valueExpression());
+
         if (ctx.predicate() != null) {
-            return visit(ctx.predicate());
+            return visitPredicate(expression, ctx.predicate());
         }
 
-        return visit(ctx.valueExpression());
+        return expression;
     }
 
     @Override
@@ -717,6 +799,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 getLocation(ctx),
                 (Expression) visit(ctx.base),
                 (Identifier) visit(ctx.fieldName));
+    }
+
+    @Override
+    public Node visitQuotedIdentifier(SqlBaseParser.QuotedIdentifierContext ctx) {
+        return new Identifier(getLocation(ctx), unquote(ctx.getText()), false);
+    }
+
+    @Override
+    public Node visitUnquotedIdentifier(SqlBaseParser.UnquotedIdentifierContext ctx) {
+        return new Identifier(getLocation(ctx), ctx.getText(), false);
     }
 
     @Override
@@ -975,6 +1067,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         throw new IllegalArgumentException("Unsupported operator: " + token.getText());
     }
 
+    private QualifiedName getQualifiedName(SqlBaseParser.TableIdentifierContext context)
+    {
+        List<Identifier> identifiers = new ArrayList<>();
+        for (SqlBaseParser.IdentifierContext identifierContext: context.identifier()) {
+            Identifier identifier =
+                    new Identifier(getLocation(identifierContext),
+                            identifierContext.getText(), false);
+            identifiers.add(identifier);
+            visit(identifierContext);
+        }
+        return QualifiedName.of(identifiers);
+    }
+
     private QualifiedName getQualifiedName(SqlBaseParser.QualifiedNameContext context)
     {
         List<Identifier> identifiers = new ArrayList<>();
@@ -1008,6 +1113,12 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 .map(clazz::cast);
     }
 
+    private static Optional<String> getTextIfPresent(Token token)
+    {
+        return Optional.ofNullable(token)
+                .map(Token::getText);
+    }
+
     public static NodeLocation getLocation(ParserRuleContext parserRuleContext)
     {
         requireNonNull(parserRuleContext, "parserRuleContext is null");
@@ -1026,7 +1137,52 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return new NodeLocation(token.getLine(), token.getCharPositionInLine());
     }
 
-    private static String unquote(String value)
+    /**
+     * Used to split attribute name by dot with backticks rule.
+     * Backticks must appear in pairs, and the quoted string must be a complete name part,
+     * which means `ab..c`e.f is not allowed.
+     * Escape character is not supported now, so we can't use backtick inside name part.
+     */
+//    static List<String> parseAttributeName(String name) {
+//        ParsingException e = new ParsingException("syntax error in attribute name: " + name);
+//
+//        List<String> nameParts = new ArrayList<>();
+//        String tmp = "";
+//        boolean inBacktick = false;
+//        int i = 0;
+//        while (i < name.length()) {
+//            char c = name.charAt(i);
+//            if (inBacktick) {
+//                if (c == '`') {
+//                    inBacktick = false;
+//                    if (i + 1 < name.length() && name.charAt(i + 1) != '.') throw e;
+//                } else {
+//                    tmp += c;
+//                }
+//            } else {
+//                if (c == '`') {
+//                    if (!tmp.isEmpty()) throw e;
+//                    inBacktick = true;
+//                } else if (c == '.') {
+//                    if (name.charAt(i - 1) == '.' || i == name.length() - 1) throw e;
+//                    nameParts.add(tmp);
+//                    tmp = "";
+//                } else {
+//                    tmp += c;
+//                }
+//            }
+//            i += 1;
+//        }
+//        if (inBacktick) throw e;
+//
+//        nameParts.add(tmp);
+//        return nameParts;
+//    }
+
+    /**
+     * this will remove single quotation, double quotation and backtick.
+     */
+    static String unquote(String value)
     {
         return value.substring(1, value.length() - 1)
                 .replace("''", "'");

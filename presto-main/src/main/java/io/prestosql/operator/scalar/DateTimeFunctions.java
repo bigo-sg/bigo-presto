@@ -68,6 +68,7 @@ public final class DateTimeFunctions
     private static final ThreadLocalCache<Slice, DateTimeFormatter> DATETIME_FORMATTER_CACHE =
             new ThreadLocalCache<>(100, DateTimeFunctions::createDateTimeFormatter);
     private static final Logger LOG = Logger.get(DateTimeFunctions.class);
+    private static final String defaultFormat = "yyyy-MM-dd HH:mm:ss";
 
     private static final ISOChronology UTC_CHRONOLOGY = ISOChronology.getInstanceUTC();
     private static final DateTimeField SECOND_OF_MINUTE = UTC_CHRONOLOGY.secondOfMinute();
@@ -209,14 +210,12 @@ public final class DateTimeFunctions
     @SqlType(StandardTypes.DOUBLE)
     public static double unixTimestamp (@SqlType(StandardTypes.VARCHAR) Slice sliceTime)
     {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat df = new SimpleDateFormat(defaultFormat);
         try{
             Date date = df.parse(sliceTime.toStringUtf8());
-            long longTime = date.getTime();
-            LOG.info("Test_unix_timestamp", sliceTime.toStringUtf8(), longTime);
-            return toUnixTime(longTime);
+            return toUnixTime(date.getTime());
         }catch(Exception e){
-            LOG.info(e.toString());
+            LOG.info(e.getMessage());
         }
         return 0;
     }
@@ -228,11 +227,9 @@ public final class DateTimeFunctions
         SimpleDateFormat df = new SimpleDateFormat(sliceFormat.toStringUtf8());
         try{
             Date date = df.parse(sliceTime.toStringUtf8());
-            long longTime = date.getTime();
-            LOG.info("Test_unix_timestamp", sliceTime.toStringUtf8(), longTime);
-            return toUnixTime(longTime);
+            return toUnixTime(date.getTime());
         }catch(Exception e){
-            LOG.info(e.toString());
+            LOG.info(e.getMessage());
         }
         return 0;
     }

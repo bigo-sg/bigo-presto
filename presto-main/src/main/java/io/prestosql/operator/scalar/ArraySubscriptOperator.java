@@ -180,7 +180,6 @@ public class ArraySubscriptOperator
 //            enable_hive_syntax = false;
 //        }
 //        LOG.info("ArraySubscriptOperator_clientTag=%s", clientTag);
-        LOG.info("ArraySubscriptOperator_properties=%s", session.getSystemProperties());
         Map<String, String> map = session.getSystemProperties();
         if (map.containsKey("enable_hive_syntax")){
             enable_hive_syntax = map.get("enable_hive_syntax").equals("true");

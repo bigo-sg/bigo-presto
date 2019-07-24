@@ -65,14 +65,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return super.visitAddTablePartition(ctx);
     }
 
+
     @Override
-    public Node visitAlterViewQuery(SqlBaseParser.AlterViewQueryContext ctx) {
-        return super.visitAlterViewQuery(ctx);
+    public Node visitMultiInsertQueryBody(SqlBaseParser.MultiInsertQueryBodyContext ctx) {
+        throw new ParsingException("Don't support MultiInsertQuery");
     }
 
     @Override
-    public Node visitAggregation(SqlBaseParser.AggregationContext ctx) {
-        return super.visitAggregation(ctx);
+    public Node visitAlterViewQuery(SqlBaseParser.AlterViewQueryContext ctx) {
+        return super.visitAlterViewQuery(ctx);
     }
 
     @Override
@@ -537,6 +538,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitTableName(SqlBaseParser.TableNameContext ctx) {
         return new Table(getLocation(ctx), getQualifiedName(ctx.tableIdentifier()));
+    }
+
+    @Override
+    public Node visitAggregation(SqlBaseParser.AggregationContext ctx) {
+        return super.visitAggregation(ctx);
     }
 
     @Override

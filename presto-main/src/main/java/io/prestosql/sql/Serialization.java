@@ -38,11 +38,16 @@ public final class Serialization
     public static class ExpressionSerializer
             extends JsonSerializer<Expression>
     {
+        private static final Logger LOG = Logger.get(ExpressionSerializer.class);
         @Override
         public void serialize(Expression expression, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
                 throws IOException
         {
-            jsonGenerator.writeString(ExpressionFormatter.formatExpression(expression, Optional.empty()));
+            Exception e = new Exception("this is a log from serialize");
+            e.printStackTrace();
+            String fomatedAst = ExpressionFormatter.formatExpression(expression, Optional.empty());
+            LOG.info("fomatedAst:" + fomatedAst);
+            jsonGenerator.writeString(fomatedAst);
         }
     }
 
@@ -62,7 +67,9 @@ public final class Serialization
         public Expression deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
                 throws IOException
         {
-            LOG.info("from deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)");
+            Exception e = new Exception("this is a log from deserialize");
+            e.printStackTrace();
+            LOG.warn("from deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)");
             return rewriteIdentifiersToSymbolReferences(sqlParser.createExpression(jsonParser.readValueAs(String.class)));
         }
     }

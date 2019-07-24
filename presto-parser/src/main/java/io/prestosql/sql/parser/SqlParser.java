@@ -62,6 +62,21 @@ public class SqlParser
         cache = Collections.synchronizedMap(cache);
     }
 
+    public static boolean useHiveSyntax(String queryId) {
+        Object ret = cache.get(queryId);
+        if (ret == null) {
+            return false;
+        }
+        if (ret.equals("true")) {
+            return true;
+        }
+        return false;
+    }
+
+    public static void setUseHiveSyntax(String queryId, boolean useHiveSynmtax) {
+        cache.put(queryId, useHiveSynmtax?"true":"false");
+    }
+
     private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {
         @Override
@@ -111,7 +126,9 @@ public class SqlParser
 
     public Statement createStatement(String sql, ParsingOptions parsingOptions)
     {
-        return (Statement) invokeParser("statement", sql, SqlBaseParser::singleStatement, parsingOptions, "singleStatement");
+        Statement statement = (Statement) invokeParser("statement",
+                sql, SqlBaseParser::singleStatement, parsingOptions, "singleStatement");
+        return statement;
     }
 
     /**
@@ -127,32 +144,31 @@ public class SqlParser
     public Expression createExpression(String expression, ParsingOptions parsingOptions)
     {
         LOG.info("from Expression createExpression(String expression, ParsingOptions parsingOptions)");
-        return (Expression) invokeParser("expression", expression, SqlBaseParser::standaloneExpression, parsingOptions, "standaloneExpression");
+        Expression ex = (Expression) invokeParser("expression", expression,
+                SqlBaseParser::standaloneExpression, parsingOptions, "standaloneExpression");
+        return ex;
     }
 
     public PathSpecification createPathSpecification(String expression)
     {
         LOG.info("from PathSpecification createPathSpecification(String expression)");
-        return (PathSpecification) invokeParser("path specification", expression, SqlBaseParser::standalonePathSpecification, new ParsingOptions(), "standalonePathSpecification");
+        PathSpecification plan = (PathSpecification) invokeParser("path specification",
+                expression, SqlBaseParser::standalonePathSpecification, new ParsingOptions(), "standalonePathSpecification");
+        return plan;
     }
 
     private Node invokeParser(String name, String sql, Function<SqlBaseParser,
             ParserRuleContext> parseFunction, ParsingOptions parsingOptions, String type)
     {
         LOG.info("sql:" + sql);
-        if (cache.get(QUETRY_ID) == null ||
-            cache.get(cache.get(QUETRY_ID) + ENABLE_HIVEE_SYNTAX).equals("false")) {
+        if (!parsingOptions.useHiveParser()) {
             LOG.info("use presto sql");
         } else {
             LOG.info("use hive sql");
-            String execSql = sql;
-            if (name.equals("expression")) {
-                execSql = sql.replace("\"", "`");
-            }
             try {
                 HiveSqlBaseLexer lexer =
                         new HiveSqlBaseLexer(
-                                new CaseInsensitiveStream(CharStreams.fromString(execSql)));
+                                new CaseInsensitiveStream(CharStreams.fromString(sql)));
                 CommonTokenStream tokenStream = new CommonTokenStream(lexer);
                 HiveSqlBaseParser parser =
                         new HiveSqlBaseParser(tokenStream);

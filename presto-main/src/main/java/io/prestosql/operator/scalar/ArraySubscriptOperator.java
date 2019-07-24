@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
 import io.prestosql.Session;
+import io.prestosql.SystemSessionProperties;
 import io.prestosql.annotation.UsedByGeneratedCode;
 import io.prestosql.metadata.BoundVariables;
 import io.prestosql.metadata.FunctionRegistry;
@@ -173,7 +174,7 @@ public class ArraySubscriptOperator
             clientTag = str.toLowerCase();
         }
 
-        if (clientTag.equals("hive")) {
+        if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
             enable_hive_syntax = true;
         }else{
             enable_hive_syntax = false;

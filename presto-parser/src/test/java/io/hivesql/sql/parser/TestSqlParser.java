@@ -2,13 +2,10 @@ package io.hivesql.sql.parser;
 
 import io.prestosql.sql.parser.ParsingOptions;
 import io.prestosql.sql.parser.SqlParser;
-import io.prestosql.sql.parser.SqlParserOptions;
 import io.prestosql.sql.tree.Node;
 import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
-
-import static io.prestosql.sql.parser.IdentifierSymbol.COLON;
 
 public class TestSqlParser {
 
@@ -23,24 +20,28 @@ public class TestSqlParser {
         return sqlParser.createStatement(sql, prestoParsingOptions);
     }
 
-    private void checkASTNode(String sql) {
-        Node prestoNode = usePrestoParser(sql);
+    private void checkASTNode(String prestoSql, String hiveSql) {
+        Node prestoNode = usePrestoParser(prestoSql);
         System.out.println(prestoNode);
 
-        Node hiveNode = useHiveParser(sql);
+        Node hiveNode = useHiveParser(hiveSql);
         System.out.println(hiveNode);
 
-        Assert.assertEquals(hiveNode, prestoNode, "Unmatch SQL: " + sql);
+        Assert.assertEquals(hiveNode, prestoNode);
+    }
+
+    private void checkASTNode(String sql) {
+        checkASTNode(sql, sql);
     }
 
     @BeforeTest
     public void init() {
-        sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
+        sqlParser = new SqlParser();
 
-        hiveParsingOptions = new ParsingOptions();
+        hiveParsingOptions = new ParsingOptions(ParsingOptions.DecimalLiteralTreatment.AS_DECIMAL);
         hiveParsingOptions.setUseHiveSql(true);
 
-        prestoParsingOptions = new ParsingOptions();
+        prestoParsingOptions = new ParsingOptions(ParsingOptions.DecimalLiteralTreatment.AS_DECIMAL);
         prestoParsingOptions.setUseHiveSql(false);
     }
 
@@ -69,11 +70,36 @@ public class TestSqlParser {
 //    }
 
     @Test
-    public void testSelect01()
+    public void testSelectIntegerLiteral()
     {
         String sql = "SELECT 1";
 
         checkASTNode(sql);
+    }
+
+    @Test
+    public void testSelectDoubleLiteral()
+    {
+        String sql = "SELECT 1.5";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSelectStringLiteral()
+    {
+        String sql = "SELECT 'abc'";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSelectStringLiteralWithDoubleQuotation()
+    {
+        String hiveSql = "SELECT \"abc\"";
+        String prestoSql = "SELECT 'abc'";
+
+        checkASTNode(prestoSql, hiveSql);
     }
 
     @Test

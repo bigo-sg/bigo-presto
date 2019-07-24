@@ -246,7 +246,7 @@ public class SqlParser
                     tree = hiveParseFunction.apply(parser);
                 }
 
-                return new HiveAstBuilder().visit(tree);
+                return new HiveAstBuilder(parsingOptions).visit(tree);
             }
             catch (StackOverflowError e) {
                 throw new ParsingException(name + " is too large (stack overflow while parsing)");

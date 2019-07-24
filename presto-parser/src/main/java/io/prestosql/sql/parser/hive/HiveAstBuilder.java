@@ -5,6 +5,7 @@ import io.airlift.log.Logger;
 import io.hivesql.sql.parser.SqlBaseLexer;
 import io.hivesql.sql.parser.SqlBaseParser;
 import io.prestosql.sql.parser.ParsingException;
+import io.prestosql.sql.parser.ParsingOptions;
 import io.prestosql.sql.parser.debug.FieldUtils;
 import io.prestosql.sql.tree.*;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -12,15 +13,25 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static io.prestosql.sql.parser.ParsingOptions.DecimalLiteralTreatment.*;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Node> {
     private static final Logger LOG = Logger.get(HiveAstBuilder.class);
+
+    private final ParsingOptions parsingOptions;
+
+    public HiveAstBuilder(ParsingOptions parsingOptions)
+    {
+        this.parsingOptions = requireNonNull(parsingOptions, "parsingOptions is null");
+    }
 
 //    @Override
 //    public Node visitChildren(RuleNode node) {
@@ -345,10 +356,28 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitNumericLiteral(SqlBaseParser.NumericLiteralContext ctx) {
-        //todo :
+        try {
+            Number num = NumberFormat.getInstance().parse(ctx.getText());
+            if (num instanceof Double) {
+                switch (parsingOptions.getDecimalLiteralTreatment()) {
+                    case AS_DOUBLE:
+                        return new DoubleLiteral(getLocation(ctx), ctx.getText());
+                    case AS_DECIMAL:
+                        return new DecimalLiteral(getLocation(ctx), ctx.getText());
+                    case REJECT:
+                        throw new ParsingException("Unexpected decimal literal: " + ctx.getText());
+                }
+            } else if (num instanceof Integer || num instanceof Long) {
+                return new LongLiteral(getLocation(ctx), ctx.getText());
+            }
+            else {
+                throw new ParsingException("Can't parser number: " + ctx.getText());
+            }
+        } catch (ParseException e) {
+            throw new ParsingException("Can't parser number: " + ctx.getText());
+        }
 
-
-        return new LongLiteral(getLocation(ctx), ctx.getText());
+        throw new ParsingException("Can't parser number: " + ctx.getText());
     }
 
     @Override
@@ -791,10 +820,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return super.visitBigDecimalLiteral(ctx);
     }
 
-    // to be implement: presto have no this func!
     @Override
     public Node visitStringLiteral(SqlBaseParser.StringLiteralContext ctx) {
-        return super.visitStringLiteral(ctx);
+        return new StringLiteral(getLocation(ctx), unquote(ctx.getText()));
     }
 
     // to be implement: presto diff from hive!
@@ -996,5 +1024,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     {
         requireNonNull(token, "token is null");
         return new NodeLocation(token.getLine(), token.getCharPositionInLine());
+    }
+
+    private static String unquote(String value)
+    {
+        return value.substring(1, value.length() - 1)
+                .replace("''", "'");
     }
 }

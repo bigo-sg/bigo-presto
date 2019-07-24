@@ -14,6 +14,7 @@
 package io.prestosql.operator.scalar;
 
 import io.airlift.concurrent.ThreadLocalCache;
+import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
 import io.airlift.units.Duration;
 import io.prestosql.spi.PrestoException;
@@ -35,6 +36,8 @@ import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.DateTimeFormatterBuilder;
 import org.joda.time.format.ISODateTimeFormat;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -64,6 +67,7 @@ public final class DateTimeFunctions
 {
     private static final ThreadLocalCache<Slice, DateTimeFormatter> DATETIME_FORMATTER_CACHE =
             new ThreadLocalCache<>(100, DateTimeFunctions::createDateTimeFormatter);
+    private static final Logger LOG = Logger.get(DateTimeFunctions.class);
 
     private static final ISOChronology UTC_CHRONOLOGY = ISOChronology.getInstanceUTC();
     private static final DateTimeField SECOND_OF_MINUTE = UTC_CHRONOLOGY.secondOfMinute();
@@ -199,6 +203,38 @@ public final class DateTimeFunctions
     public static double toUnixTimeFromTimestampWithTimeZone(@SqlType(StandardTypes.TIMESTAMP_WITH_TIME_ZONE) long timestampWithTimeZone)
     {
         return unpackMillisUtc(timestampWithTimeZone) / 1000.0;
+    }
+
+    @ScalarFunction("unix_timestamp")
+    @SqlType(StandardTypes.DOUBLE)
+    public static double unixTimestamp (@SqlType(StandardTypes.VARCHAR) Slice sliceTime)
+    {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        try{
+            Date date = df.parse(sliceTime.toStringUtf8());
+            long longTime = date.getTime();
+            LOG.info("Test_unix_timestamp", sliceTime.toStringUtf8(), longTime);
+            return toUnixTime(longTime);
+        }catch(Exception e){
+            LOG.info(e.toString());
+        }
+        return 0;
+    }
+
+    @ScalarFunction("unix_timestamp")
+    @SqlType(StandardTypes.DOUBLE)
+    public static double unixTimestamp (@SqlType(StandardTypes.VARCHAR) Slice sliceTime, @SqlType(StandardTypes.VARCHAR) Slice sliceFormat)
+    {
+        SimpleDateFormat df = new SimpleDateFormat(sliceFormat.toStringUtf8());
+        try{
+            Date date = df.parse(sliceTime.toStringUtf8());
+            long longTime = date.getTime();
+            LOG.info("Test_unix_timestamp", sliceTime.toStringUtf8(), longTime);
+            return toUnixTime(longTime);
+        }catch(Exception e){
+            LOG.info(e.toString());
+        }
+        return 0;
     }
 
     @ScalarFunction("to_iso8601")

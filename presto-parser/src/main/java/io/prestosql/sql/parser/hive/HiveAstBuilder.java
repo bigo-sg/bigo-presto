@@ -10,7 +10,6 @@ import io.prestosql.sql.parser.debug.FieldUtils;
 import io.prestosql.sql.tree.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.text.NumberFormat;
@@ -19,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static io.prestosql.sql.parser.ParsingOptions.DecimalLiteralTreatment.*;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -68,7 +66,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitMultiInsertQueryBody(SqlBaseParser.MultiInsertQueryBodyContext ctx) {
-        throw new ParsingException("Don't support MultiInsertQuery");
+        throw parseError("Don't support MultiInsertQuery", ctx);
     }
 
     @Override
@@ -352,19 +350,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     case AS_DECIMAL:
                         return new DecimalLiteral(getLocation(ctx), ctx.getText());
                     case REJECT:
-                        throw new ParsingException("Unexpected decimal literal: " + ctx.getText());
+                        throw parseError("Unexpected decimal literal: " + ctx.getText(), ctx);
                 }
             } else if (num instanceof Integer || num instanceof Long) {
                 return new LongLiteral(getLocation(ctx), ctx.getText());
             }
             else {
-                throw new ParsingException("Can't parser number: " + ctx.getText());
+                throw parseError("Can't parser number: " + ctx.getText(), ctx);
             }
         } catch (ParseException e) {
-            throw new ParsingException("Can't parser number: " + ctx.getText());
+            throw parseError("Can't parser number: " + ctx.getText(), ctx);
         }
 
-        throw new ParsingException("Can't parser number: " + ctx.getText());
+        throw parseError("Can't parser number: " + ctx.getText(), ctx);
     }
 
     @Override
@@ -419,13 +417,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     public Node visitQueryOrganization(QuerySpecification querySpecification, SqlBaseParser.QueryOrganizationContext ctx) {
         if (ctx.clusterBy != null && !ctx.clusterBy.isEmpty()) {
-            throw new ParsingException("Don't support cluster by");
+            throw parseError("Don't support cluster by", ctx);
         }
         if (ctx.distributeBy != null && !ctx.distributeBy.isEmpty()) {
-            throw new ParsingException("Don't support distribute by");
+            throw parseError("Don't support distribute by", ctx);
         }
         if (ctx.sort != null && !ctx.sort.isEmpty()) {
-            throw new ParsingException("Don't support sort by");
+            throw parseError("Don't support sort by", ctx);
         }
 
         Optional<OrderBy> orderBy = Optional.empty();
@@ -574,7 +572,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Optional.empty(),
                     Optional.empty());
         } else {
-            throw new ParsingException("Don't support kind: " + ctx.kind.getText());
+            throw parseError("Don't support kind: " + ctx.kind.getText(), ctx);
         }
     }
 
@@ -624,7 +622,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 }
             case SqlBaseParser.IN:
                 if (ctx.query() != null) {
-                    throw new ParsingException("Not supported type: " + ctx.query());
+                    throw parseError("Not supported type: " + ctx.query(), ctx);
                 }
                 InListExpression inListExpression = new InListExpression(getLocation(ctx), visit(ctx.expression(), Expression.class));
                 Expression inPredicate = new InPredicate(
@@ -662,7 +660,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     return comparisonExpression;
                 }
             default:
-                throw new ParsingException("Not supported type: " + ctx.kind.getText());
+                throw parseError("Not supported type: " + ctx.kind.getText(), ctx);
         }
     }
 

@@ -2,7 +2,7 @@ package io.hivesql.sql.parser;
 
 import org.testng.annotations.Test;
 
-public class TestSqlParser extends SQLTester {
+public class BasicSQLs extends SQLTester {
 //    @Test
 //    public void testUse()
 //    {

@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static io.hivesql.sql.parser.SqlBaseParser.CROSS;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -57,7 +56,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitAliasedQuery(SqlBaseParser.AliasedQueryContext ctx) {
-        return super.visitAliasedQuery(ctx);
+        TableSubquery child = new TableSubquery(getLocation(ctx), (Query) visit(ctx.queryNoWith()));
+
+        return new AliasedRelation(getLocation(ctx), child, (Identifier) visit(ctx.tableAlias()), null);
     }
 
     @Override
@@ -118,16 +119,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitInsertOverwriteTable(SqlBaseParser.InsertOverwriteTableContext ctx) {
         return super.visitInsertOverwriteTable(ctx);
-    }
-
-    @Override
-    public Node visitIdentifierCommentList(SqlBaseParser.IdentifierCommentListContext ctx) {
-        return super.visitIdentifierCommentList(ctx);
-    }
-
-    @Override
-    public Node visitIdentifierComment(SqlBaseParser.IdentifierCommentContext ctx) {
-        return super.visitIdentifierComment(ctx);
     }
 
     @Override
@@ -240,11 +231,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
-    public Node visitRefreshResource(SqlBaseParser.RefreshResourceContext ctx) {
-        return super.visitRefreshResource(ctx);
-    }
-
-    @Override
     public Node visitIdentifierSeq(SqlBaseParser.IdentifierSeqContext ctx) {
         return super.visitIdentifierSeq(ctx);
     }
@@ -262,11 +248,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitConstantDefault(SqlBaseParser.ConstantDefaultContext ctx) {
         return super.visitConstantDefault(ctx);
-    }
-
-    @Override
-    public Node visitStatementDefault(SqlBaseParser.StatementDefaultContext ctx) {
-        return super.visitStatementDefault(ctx);
     }
 
     public Node visitQueryOrganization(QuerySpecification querySpecification, SqlBaseParser.QueryOrganizationContext ctx) {
@@ -510,7 +491,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 (Expression) visit(ctx.right));
     }
 
-    public Node visitPredicate(Expression expression, SqlBaseParser.PredicateContext ctx) {
+    private Node withPredicate(Expression expression, SqlBaseParser.PredicateContext ctx) {
         switch (ctx.kind.getType()) {
             case SqlBaseParser.NULL:
                 if (ctx.NOT() != null) {
@@ -518,6 +499,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 } else {
                     return new IsNullPredicate(getLocation(ctx), expression);
                 }
+            case SqlBaseParser.EXISTS:
+                return new ExistsPredicate(getLocation(ctx), new SubqueryExpression(getLocation(ctx), (Query) visit(ctx.query())));
             case SqlBaseParser.BETWEEN:
                 Expression betweenPredicate = new BetweenPredicate(
                         getLocation(ctx),
@@ -532,18 +515,30 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 }
             case SqlBaseParser.IN:
                 if (ctx.query() != null) {
-                    throw parseError("Not supported type: " + ctx.query(), ctx);
-                }
-                InListExpression inListExpression = new InListExpression(getLocation(ctx), visit(ctx.expression(), Expression.class));
-                Expression inPredicate = new InPredicate(
-                        getLocation(ctx),
-                        expression,
-                        inListExpression);
+                    // In subquery
+                    Expression inPredicate = new InPredicate(
+                            getLocation(ctx),
+                            expression,
+                            new SubqueryExpression(getLocation(ctx), (Query) visit(ctx.query())));
 
-                if (ctx.NOT() != null) {
-                    return new NotExpression(getLocation(ctx), inPredicate);
+                    if (ctx.NOT() != null) {
+                        return new NotExpression(getLocation(ctx), inPredicate);
+                    } else {
+                        return inPredicate;
+                    }
                 } else {
-                    return inPredicate;
+                    // In value list
+                    InListExpression inListExpression = new InListExpression(getLocation(ctx), visit(ctx.expression(), Expression.class));
+                    Expression inPredicate = new InPredicate(
+                            getLocation(ctx),
+                            expression,
+                            inListExpression);
+
+                    if (ctx.NOT() != null) {
+                        return new NotExpression(getLocation(ctx), inPredicate);
+                    } else {
+                        return inPredicate;
+                    }
                 }
             case SqlBaseParser.LIKE:
                 Expression likePredicate = new LikePredicate(
@@ -579,7 +574,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         Expression expression = (Expression) visit(ctx.valueExpression());
 
         if (ctx.predicate() != null) {
-            return visitPredicate(expression, ctx.predicate());
+            return withPredicate(expression, ctx.predicate());
         }
 
         return expression;

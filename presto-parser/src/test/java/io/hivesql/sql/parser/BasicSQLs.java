@@ -238,154 +238,49 @@ public class BasicSQLs extends SQLTester {
     }
 
     @Test
-    public void testGroupBy()
-    {
-        String sql = "SELECT a, b, count(1) as cnt from tb1 group by a, b";
-
-        checkASTNode(sql);
-    }
-
-    @Test
-    public void testGroupByCube()
-    {
-        String prestoSql = "SELECT a, b, count(1) as cnt from tb1 group by CUBE(a, b)";
-        String hiveSql = "SELECT a, b, count(1) as cnt from tb1 group by a, b with CUBE";
-
-        checkASTNode(prestoSql, hiveSql);
-    }
-
-    @Test
-    public void testGroupByRollup()
-    {
-        String prestoSql = "SELECT a, b, count(1) as cnt from tb1 group by ROLLUP(a, b)";
-        String hiveSql = "SELECT a, b, count(1) as cnt from tb1 group by a, b with ROLLUP";
-
-        checkASTNode(prestoSql, hiveSql);
-    }
-
-    @Test
-    public void testGroupByGroupingSets()
-    {
-        String prestoSql = "SELECT a, b, c, count(1) as cnt from tb1 group by GROUPING SETS ( (a, b, c), (a, b), (b, c), (a, c), (a), (b), (c), ( ))";
-        String hiveSql = "SELECT a, b, c, count(1) as cnt from tb1 GROUP BY a, b, c GROUPING SETS ( (a, b, c), (a, b), (b, c), (a, c), (a), (b), (c), ( ))";
-
-        checkASTNode(prestoSql, hiveSql);
-    }
-
-    @Test
-    public void testHaving()
-    {
-        String sql = "SELECT a from tb1 group by a having COUNT(b) > 25";
-
-        checkASTNode(sql);
-    }
-
-    @Test
-    public void testJoin()
+    public void testUnion()
     {
         String sql = "" +
-                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\n" +
-                "FROM Orders\n" +
-                "JOIN Customers ON Orders.CustomerID=Customers.CustomerID" +
-                "";
+                "SELECT  ID, NAME, AMOUNT, DATE\n" +
+                "   FROM CUSTOMERS1\n" +
+                "UNION\n" +
+                "   SELECT  ID, NAME, AMOUNT, DATE\n" +
+                "   FROM CUSTOMERS2\n";
 
         checkASTNode(sql);
     }
 
     @Test
-    public void testInnerJoin()
+    public void testUnionAll()
     {
         String sql = "" +
-                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\n" +
-                "FROM Orders\n" +
-                "INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID" +
-                "";
+                "SELECT  ID, NAME, AMOUNT, DATE\n" +
+                "   FROM CUSTOMERS1\n" +
+                "UNION ALL\n" +
+                "   SELECT  ID, NAME, AMOUNT, DATE\n" +
+                "   FROM CUSTOMERS2\n";
 
         checkASTNode(sql);
     }
 
     @Test
-    public void testLeftOuterJoin()
+    public void testExcept()
     {
         String sql = "" +
-                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\n" +
-                "FROM Orders\n" +
-                "LEFT OUTER JOIN Customers ON Orders.CustomerID=Customers.CustomerID" +
-                "";
+                "SELECT  ID, NAME, AMOUNT, DATE\n" +
+                "   FROM CUSTOMERS1\n" +
+                "EXCEPT\n" +
+                "   SELECT  ID, NAME, AMOUNT, DATE\n" +
+                "   FROM CUSTOMERS2\n";
 
         checkASTNode(sql);
     }
 
-    @Test
-    public void testLeftJoin()
-    {
-        String sql = "" +
-                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\n" +
-                "FROM Orders\n" +
-                "LEFT JOIN Customers ON Orders.CustomerID=Customers.CustomerID" +
-                "";
+    // lateral view
 
-        checkASTNode(sql);
-    }
+    // window func
 
-    @Test
-    public void testRightOuterJoin()
-    {
-        String sql = "" +
-                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\n" +
-                "FROM Orders\n" +
-                "RIGHT OUTER JOIN Customers ON Orders.CustomerID=Customers.CustomerID" +
-                "";
+    // if elif
 
-        checkASTNode(sql);
-    }
-
-    @Test
-    public void testRightJoin()
-    {
-        String sql = "" +
-                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\n" +
-                "FROM Orders\n" +
-                "RIGHT JOIN Customers ON Orders.CustomerID=Customers.CustomerID" +
-                "";
-
-        checkASTNode(sql);
-    }
-
-    @Test
-    public void testFullOuterJoin()
-    {
-        String sql = "" +
-                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\n" +
-                "FROM Orders\n" +
-                "FULL Outer JOIN Customers ON Orders.CustomerID=Customers.CustomerID" +
-                "";
-
-        checkASTNode(sql);
-    }
-
-    @Test
-    public void testFullJoin()
-    {
-        String sql = "" +
-                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\n" +
-                "FROM Orders\n" +
-                "FULL JOIN Customers ON Orders.CustomerID=Customers.CustomerID" +
-                "";
-
-        checkASTNode(sql);
-    }
-
-    @Test
-    public void testThreeJoins()
-    {
-        String sql = "" +
-                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate, Items.Name\n" +
-                "FROM Orders\n" +
-                "JOIN Customers ON Orders.CustomerID=Customers.CustomerID\n" +
-                "JOIN Items ON Orders.ItemID=Items.ID AND Orders.ItemType=Items.Type" +
-                "";
-
-        checkASTNode(sql);
-    }
+    // case when then
 }

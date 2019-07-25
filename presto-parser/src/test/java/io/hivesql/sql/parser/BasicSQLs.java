@@ -69,6 +69,46 @@ public class BasicSQLs extends SQLTester {
     }
 
     @Test
+    public void testColumnAlias()
+    {
+        String sql = "SELECT 1 as cnt";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSelectFrom()
+    {
+        String sql = "SELECT a from tb1";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSelectAllFrom()
+    {
+        String sql = "SELECT a, * from tb1";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSelectFromTableAlias()
+    {
+        String sql = "SELECT t.a from tb1 t";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSelectFromWithDBAndTable()
+    {
+        String sql = "SELECT a from db1.tb1";
+
+        checkASTNode(sql);
+    }
+
+    @Test
     public void testSelectFromWithDistinct()
     {
         String sql = "SELECT distinct a from tb1";
@@ -228,6 +268,30 @@ public class BasicSQLs extends SQLTester {
     public void testHaving()
     {
         String sql = "SELECT a from tb1 group by a having COUNT(b) > 25";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testJoin()
+    {
+        String sql = "" +
+                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\n" +
+                "FROM Orders\n" +
+                "JOIN Customers ON Orders.CustomerID=Customers.CustomerID" +
+                "";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testInnerJoin()
+    {
+        String sql = "" +
+                "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\n" +
+                "FROM Orders\n" +
+                "INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID" +
+                "";
 
         checkASTNode(sql);
     }

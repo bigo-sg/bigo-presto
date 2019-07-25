@@ -7,7 +7,7 @@ import org.testng.annotations.Test;
 public class ParseErrorMessages extends SQLTester {
 
     @Test
-    public void antlr4ParseErrorMessage()
+    public void testAntlr4ParseErrorMessage()
     {
         String sql = "SELECT a from b from c";
 
@@ -20,7 +20,7 @@ public class ParseErrorMessages extends SQLTester {
     }
 
     @Test
-    public void sortByShouldThrowException2()
+    public void testInternalParseErrorMessage()
     {
         String sql = "SELECT a from b sort by c";
 

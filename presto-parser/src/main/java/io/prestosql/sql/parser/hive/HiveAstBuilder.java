@@ -15,6 +15,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,11 +65,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
-    public Node visitAlterViewQuery(SqlBaseParser.AlterViewQueryContext ctx) {
-        return super.visitAlterViewQuery(ctx);
-    }
-
-    @Override
     public Node visitAliasedQuery(SqlBaseParser.AliasedQueryContext ctx) {
         return super.visitAliasedQuery(ctx);
     }
@@ -94,16 +90,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
-    public Node visitCreateFileFormat(SqlBaseParser.CreateFileFormatContext ctx) {
-        return super.visitCreateFileFormat(ctx);
-    }
-
-    @Override
-    public Node visitCreateTableHeader(SqlBaseParser.CreateTableHeaderContext ctx) {
-        return super.visitCreateTableHeader(ctx);
-    }
-
-    @Override
     public Node visitCreateTableLike(SqlBaseParser.CreateTableLikeContext ctx) {
         return super.visitCreateTableLike(ctx);
     }
@@ -124,21 +110,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
-    public Node visitFailNativeCommand(SqlBaseParser.FailNativeCommandContext ctx) {
-        return super.visitFailNativeCommand(ctx);
-    }
-
-    @Override
-    public Node visitFromClause(SqlBaseParser.FromClauseContext ctx) {
-        return super.visitFromClause(ctx);
-    }
-
-    @Override
-    public Node visitGenericFileFormat(SqlBaseParser.GenericFileFormatContext ctx) {
-        return super.visitGenericFileFormat(ctx);
-    }
-
-    @Override
     public Node visitFunctionIdentifier(SqlBaseParser.FunctionIdentifierContext ctx) {
         return super.visitFunctionIdentifier(ctx);
     }
@@ -149,33 +120,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
-    public Node visitGroupingSet(SqlBaseParser.GroupingSetContext ctx) {
-        return super.visitGroupingSet(ctx);
-    }
-
-    @Override
-    public Node visitHint(SqlBaseParser.HintContext ctx) {
-        return super.visitHint(ctx);
-    }
-
-    @Override
-    public Node visitHintStatement(SqlBaseParser.HintStatementContext ctx) {
-        return super.visitHintStatement(ctx);
-    }
-
-    @Override
-    public Node visitInlineTableDefault1(SqlBaseParser.InlineTableDefault1Context ctx) {
-        return super.visitInlineTableDefault1(ctx);
-    }
-
-    @Override
     public Node visitInsertOverwriteDir(SqlBaseParser.InsertOverwriteDirContext ctx) {
-        return super.visitInsertOverwriteDir(ctx);
-    }
-
-    @Override
-    public Node visitInsertOverwriteHiveDir(SqlBaseParser.InsertOverwriteHiveDirContext ctx) {
-        return super.visitInsertOverwriteHiveDir(ctx);
+        throw parseError("Don't support InsertOverwriteDir", ctx);
     }
 
     @Override
@@ -199,23 +145,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
-    public Node visitRecoverPartitions(SqlBaseParser.RecoverPartitionsContext ctx) {
-        return super.visitRecoverPartitions(ctx);
-    }
-
-    @Override
     public Node visitJoinRelation(SqlBaseParser.JoinRelationContext ctx) {
         return super.visitJoinRelation(ctx);
-    }
-
-    @Override
-    public Node visitLoadData(SqlBaseParser.LoadDataContext ctx) {
-        return super.visitLoadData(ctx);
-    }
-
-    @Override
-    public Node visitManageResource(SqlBaseParser.ManageResourceContext ctx) {
-        return super.visitManageResource(ctx);
     }
 
     @Override
@@ -366,12 +297,31 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
+    public Node visitStar(SqlBaseParser.StarContext ctx) {
+        if (ctx.qualifiedName() != null) {
+            throw parseError("", ctx);
+        }
+
+        return new StarExpression(getLocation(ctx));
+    }
+
+    @Override
     public Node visitNamedExpression(SqlBaseParser.NamedExpressionContext ctx) {
         NodeLocation nodeLocation = getLocation(ctx);
         Expression expression = (Expression)visit(ctx.expression());
         Optional<Identifier> identifier = visitIfPresent(ctx.identifier(), Identifier.class);
 
-        return new SingleColumn(nodeLocation, expression, identifier);
+        if (expression instanceof StarExpression) {
+            // select all
+            if (identifier.isPresent()) {
+                throw parseError("", ctx);
+            }
+
+            return new AllColumns(nodeLocation);
+
+        } else {
+            return new SingleColumn(nodeLocation, expression, identifier);
+        }
     }
 
     @Override
@@ -417,8 +367,27 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
+    public Node visitTableIdentifier(SqlBaseParser.TableIdentifierContext ctx) {
+        return new Table(getLocation(ctx), getQualifiedName(ctx));
+    }
+
+    @Override
     public Node visitTableName(SqlBaseParser.TableNameContext ctx) {
-        return new Table(getLocation(ctx), getQualifiedName(ctx.tableIdentifier()));
+        Table table = (Table) visitTableIdentifier(ctx.tableIdentifier());
+
+        if (ctx.tableAlias() != null && ctx.tableAlias().strictIdentifier() != null) {
+            Identifier identifier = (Identifier) visit(ctx.tableAlias().strictIdentifier());
+
+            List<Identifier> aliases = null;
+            if (ctx.tableAlias().identifierList() != null) {
+                throw parseError("todo", ctx);
+                //aliases = visit(ctx.tableAlias().identifierList(), Identifier.class);
+            }
+
+            return new AliasedRelation(getLocation(ctx), table, identifier, aliases);
+        } else {
+            return table;
+        }
     }
 
     @Override
@@ -432,15 +401,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             groupingElements.add(new GroupingSets(getLocation(ctx), expresstionLists));
         } else {
             // GROUP BY .... (WITH CUBE | WITH ROLLUP)?
-            GroupingElement groupingElement;
             if (ctx.CUBE() != null) {
-                groupingElement = new Cube(getLocation(ctx), visit(ctx.groupingExpressions, Expression.class));
+                GroupingElement groupingElement = new Cube(getLocation(ctx), visit(ctx.groupingExpressions, Expression.class));
+                groupingElements.add(groupingElement);
             } else if (ctx.ROLLUP() != null) {
-                groupingElement = new Rollup(getLocation(ctx), visit(ctx.groupingExpressions, Expression.class));
+                GroupingElement groupingElement = new Rollup(getLocation(ctx), visit(ctx.groupingExpressions, Expression.class));
+                groupingElements.add(groupingElement);
             } else {
-                groupingElement = new SimpleGroupBy(getLocation(ctx), visit(ctx.groupingExpressions, Expression.class));
+                // this is a little bit awkward just trying to match whatever presto going to generate.
+                for (SqlBaseParser.ExpressionContext groupingExpression : ctx.groupingExpressions) {
+                    GroupingElement groupingElement = new SimpleGroupBy(getLocation(ctx), visit(Arrays.asList(groupingExpression), Expression.class));
+                    groupingElements.add(groupingElement);
+                }
             }
-            groupingElements.add(groupingElement);
         }
 
         return new GroupBy(getLocation(ctx), false, groupingElements);
@@ -720,11 +693,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitUnquotedIdentifier(SqlBaseParser.UnquotedIdentifierContext ctx) {
         return new Identifier(getLocation(ctx), ctx.getText(), false);
-    }
-
-    @Override
-    public Node visitColumnReference(SqlBaseParser.ColumnReferenceContext ctx) {
-        return visit(ctx.identifier());
     }
 
     @Override

@@ -53,16 +53,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         //return super.aggregateResult(currentResult, nextResult);
     }
 
-    @Override
-    public Node visitAddTableColumns(SqlBaseParser.AddTableColumnsContext ctx) {
-        return super.visitAddTableColumns(ctx);
-    }
 
-    @Override
-    public Node visitAddTablePartition(SqlBaseParser.AddTablePartitionContext ctx) {
-        return super.visitAddTablePartition(ctx);
-    }
-
+    //////////////////
+    //
+    //////////////////
 
     @Override
     public Node visitMultiInsertQueryBody(SqlBaseParser.MultiInsertQueryBodyContext ctx) {
@@ -75,38 +69,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
-    public Node visitAnalyze(SqlBaseParser.AnalyzeContext ctx) {
-        return super.visitAnalyze(ctx);
-    }
-
-    @Override
-    public Node visitBucketSpec(SqlBaseParser.BucketSpecContext ctx) {
-        return super.visitBucketSpec(ctx);
-    }
-
-    @Override
-    public Node visitCacheTable(SqlBaseParser.CacheTableContext ctx) {
-        return super.visitCacheTable(ctx);
-    }
-
-    @Override
-    public Node visitChangeColumn(SqlBaseParser.ChangeColumnContext ctx) {
-        return super.visitChangeColumn(ctx);
-    }
-
-    @Override
-    public Node visitClearCache(SqlBaseParser.ClearCacheContext ctx) {
-        return super.visitClearCache(ctx);
-    }
-
-    @Override
     public Node visitAliasedQuery(SqlBaseParser.AliasedQueryContext ctx) {
         return super.visitAliasedQuery(ctx);
-    }
-
-    @Override
-    public Node visitCreateDatabase(SqlBaseParser.CreateDatabaseContext ctx) {
-        return super.visitCreateDatabase(ctx);
     }
 
     @Override
@@ -117,11 +81,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitConstantList(SqlBaseParser.ConstantListContext ctx) {
         return super.visitConstantList(ctx);
-    }
-
-    @Override
-    public Node visitCreateFunction(SqlBaseParser.CreateFunctionContext ctx) {
-        return super.visitCreateFunction(ctx);
     }
 
     @Override
@@ -150,78 +109,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
-    public Node visitCreateTempViewUsing(SqlBaseParser.CreateTempViewUsingContext ctx) {
-        return super.visitCreateTempViewUsing(ctx);
-    }
-
-    @Override
-    public Node visitCreateView(SqlBaseParser.CreateViewContext ctx) {
-        return super.visitCreateView(ctx);
-    }
-
-    @Override
     public Node visitBooleanValue(SqlBaseParser.BooleanValueContext ctx) {
         return super.visitBooleanValue(ctx);
     }
 
     @Override
-    public Node visitColPosition(SqlBaseParser.ColPositionContext ctx) {
-        return super.visitColPosition(ctx);
-    }
-
-    @Override
     public Node visitCtes(SqlBaseParser.CtesContext ctx) {
         return super.visitCtes(ctx);
-    }
-
-    @Override
-    public Node visitDescribeColName(SqlBaseParser.DescribeColNameContext ctx) {
-        return super.visitDescribeColName(ctx);
-    }
-
-    @Override
-    public Node visitDescribeDatabase(SqlBaseParser.DescribeDatabaseContext ctx) {
-        return super.visitDescribeDatabase(ctx);
-    }
-
-    @Override
-    public Node visitDescribeFuncName(SqlBaseParser.DescribeFuncNameContext ctx) {
-        return super.visitDescribeFuncName(ctx);
-    }
-
-    @Override
-    public Node visitDescribeFunction(SqlBaseParser.DescribeFunctionContext ctx) {
-        return super.visitDescribeFunction(ctx);
-    }
-
-    @Override
-    public Node visitDescribeTable(SqlBaseParser.DescribeTableContext ctx) {
-        return super.visitDescribeTable(ctx);
-    }
-
-    @Override
-    public Node visitDropDatabase(SqlBaseParser.DropDatabaseContext ctx) {
-        return super.visitDropDatabase(ctx);
-    }
-
-    @Override
-    public Node visitDropFunction(SqlBaseParser.DropFunctionContext ctx) {
-        return super.visitDropFunction(ctx);
-    }
-
-    @Override
-    public Node visitDropTable(SqlBaseParser.DropTableContext ctx) {
-        return super.visitDropTable(ctx);
-    }
-
-    @Override
-    public Node visitRenameTable(SqlBaseParser.RenameTableContext ctx) {
-        return super.visitRenameTable(ctx);
-    }
-
-    @Override
-    public Node visitDropTablePartitions(SqlBaseParser.DropTablePartitionsContext ctx) {
-        return super.visitDropTablePartitions(ctx);
     }
 
     @Override
@@ -371,18 +265,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
-    public Node visitLocationSpec(SqlBaseParser.LocationSpecContext ctx) {
-        return super.visitLocationSpec(ctx);
-    }
-
-    @Override
     public Node visitMultiInsertQuery(SqlBaseParser.MultiInsertQueryContext ctx) {
         return super.visitMultiInsertQuery(ctx);
-    }
-
-    @Override
-    public Node visitFunctionTable(SqlBaseParser.FunctionTableContext ctx) {
-        return super.visitFunctionTable(ctx);
     }
 
     @Override
@@ -511,7 +395,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitSetSession(SqlBaseParser.SetSessionContext ctx) {
-
         SqlBaseParser.ExpressionContext expression = ctx.expression();
         SetSession setSession = new SetSession(getLocation(ctx),
                 getQualifiedName(ctx.qualifiedName()), (Expression) visit(expression));
@@ -540,7 +423,27 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitAggregation(SqlBaseParser.AggregationContext ctx) {
-        return super.visitAggregation(ctx);
+        List<GroupingElement> groupingElements = new ArrayList<>();
+
+        if (ctx.GROUPING() != null) {
+            // GROUP BY .... GROUPING SETS (...)
+            List<List<Expression>> expresstionLists = ctx.groupingSet().stream().map(groupingSet -> visit(groupingSet.expression(), Expression.class)).collect(toList());
+
+            groupingElements.add(new GroupingSets(getLocation(ctx), expresstionLists));
+        } else {
+            // GROUP BY .... (WITH CUBE | WITH ROLLUP)?
+            GroupingElement groupingElement;
+            if (ctx.CUBE() != null) {
+                groupingElement = new Cube(getLocation(ctx), visit(ctx.groupingExpressions, Expression.class));
+            } else if (ctx.ROLLUP() != null) {
+                groupingElement = new Rollup(getLocation(ctx), visit(ctx.groupingExpressions, Expression.class));
+            } else {
+                groupingElement = new SimpleGroupBy(getLocation(ctx), visit(ctx.groupingExpressions, Expression.class));
+            }
+            groupingElements.add(groupingElement);
+        }
+
+        return new GroupBy(getLocation(ctx), false, groupingElements);
     }
 
     @Override
@@ -710,6 +613,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public Node visitStruct(SqlBaseParser.StructContext ctx) {
         return super.visitStruct(ctx);
     }
+
     // need to be implemented
     @Override
     public Node visitFirst(SqlBaseParser.FirstContext ctx) {
@@ -741,16 +645,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return new Extract(getLocation(ctx), (Expression) visit(ctx.valueExpression()), field);
     }
 
-    // to be implement: this is very complex!
     @Override
     public Node visitFunctionCall(SqlBaseParser.FunctionCallContext ctx) {
-        return super.visitFunctionCall(ctx);
-    }
+        QualifiedName name = getQualifiedName(ctx.qualifiedName());
+        boolean distinct = isDistinct(ctx.setQuantifier());
 
-    // to be implement: diff from presto!
-    @Override
-    public Node visitLambda(SqlBaseParser.LambdaContext ctx) {
-        return super.visitLambda(ctx);
+        return new FunctionCall(
+                getLocation(ctx),
+                name,
+                Optional.empty(),//window,
+                Optional.empty(),//filter,
+                Optional.empty(),//orderBy,
+                distinct,
+                visit(ctx.expression(), Expression.class));
     }
 
     // to be implement: presto have no this func!

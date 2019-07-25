@@ -53,6 +53,22 @@ public class BasicSQLs extends SQLTester {
     }
 
     @Test
+    public void testFuncCall()
+    {
+        String sql = "SELECT func1(a)";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testFuncNestedCall()
+    {
+        String sql = "SELECT func1(func2(a))";
+
+        checkASTNode(sql);
+    }
+
+    @Test
     public void testSelectFromWithDistinct()
     {
         String sql = "SELECT distinct a from tb1";
@@ -176,25 +192,42 @@ public class BasicSQLs extends SQLTester {
     @Test
     public void testGroupBy()
     {
-        String sql = "SELECT b as cnt from tb1 group by b";
+        String sql = "SELECT a, b, count(1) as cnt from tb1 group by a, b";
 
         checkASTNode(sql);
     }
-
 
     @Test
-    public void testGroupBy2()
+    public void testGroupByCube()
     {
-        String sql = "SELECT b, count(1) as cnt from tb1 group by b";
+        String prestoSql = "SELECT a, b, count(1) as cnt from tb1 group by CUBE(a, b)";
+        String hiveSql = "SELECT a, b, count(1) as cnt from tb1 group by a, b with CUBE";
 
-        checkASTNode(sql);
+        checkASTNode(prestoSql, hiveSql);
     }
 
+    @Test
+    public void testGroupByRollup()
+    {
+        String prestoSql = "SELECT a, b, count(1) as cnt from tb1 group by ROLLUP(a, b)";
+        String hiveSql = "SELECT a, b, count(1) as cnt from tb1 group by a, b with ROLLUP";
+
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testGroupByGroupingSets()
+    {
+        String prestoSql = "SELECT a, b, c, count(1) as cnt from tb1 group by GROUPING SETS ( (a, b, c), (a, b), (b, c), (a, c), (a), (b), (c), ( ))";
+        String hiveSql = "SELECT a, b, c, count(1) as cnt from tb1 GROUP BY a, b, c GROUPING SETS ( (a, b, c), (a, b), (b, c), (a, c), (a), (b), (c), ( ))";
+
+        checkASTNode(prestoSql, hiveSql);
+    }
 
     @Test
     public void testHaving()
     {
-        String sql = "SELECT a from tb1 group by a having a < 10";
+        String sql = "SELECT a from tb1 group by a having COUNT(b) > 25";
 
         checkASTNode(sql);
     }

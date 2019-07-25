@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static io.hivesql.sql.parser.SqlBaseParser.CROSS;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -32,15 +33,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         this.parsingOptions = requireNonNull(parsingOptions, "parsingOptions is null");
     }
 
-//    @Override
-//    public Node visitChildren(RuleNode node) {
-//        if (node.getChildCount() == 1) {
-//            return node.getChild(0).accept(this);
-//        } else {
-//            return null;
-//        }
-//    }
-
     @Override
     protected Node aggregateResult(Node currentResult, Node nextResult) {
         if (currentResult == null) {
@@ -51,7 +43,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         throw new RuntimeException("please check, how should we merge them?");
-        //return super.aggregateResult(currentResult, nextResult);
     }
 
 
@@ -140,13 +131,61 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
-    public Node visitJoinCriteria(SqlBaseParser.JoinCriteriaContext ctx) {
-        return super.visitJoinCriteria(ctx);
+    public Node visitRelation(SqlBaseParser.RelationContext ctx) {
+        Relation left = (Relation) visit(ctx.relationPrimary());
+
+        for (SqlBaseParser.JoinRelationContext joinRelationContext : ctx.joinRelation()) {
+            left = withJoinRelation(left, joinRelationContext);
+        }
+
+        return left;
     }
 
-    @Override
-    public Node visitJoinRelation(SqlBaseParser.JoinRelationContext ctx) {
-        return super.visitJoinRelation(ctx);
+    private Relation withJoinRelation(Relation left, SqlBaseParser.JoinRelationContext ctx) {
+        if (ctx.joinType().ANTI() != null) {
+            throw parseError("Don't support joinType: " + ctx.joinType().getText(), ctx);
+        }
+        else if (ctx.joinType().SEMI() != null) {
+            throw parseError("Don't support joinType: " + ctx.joinType().getText(), ctx);
+        }
+
+        Relation right = (Relation) visit(ctx.right);
+
+        if (ctx.joinType().CROSS() != null) {
+            return new Join(getLocation(ctx), Join.Type.CROSS, left, right, Optional.empty());
+        }
+
+        JoinCriteria criteria;
+        if (ctx.NATURAL() != null) {
+            criteria = new NaturalJoin();
+        }
+        else {
+            if (ctx.joinCriteria().ON() != null) {
+                criteria = new JoinOn((Expression) visit(ctx.joinCriteria().booleanExpression()));
+            }
+            else if (ctx.joinCriteria().USING() != null) {
+                criteria = new JoinUsing(visit(ctx.joinCriteria().identifier(), Identifier.class));
+            }
+            else {
+                throw parseError("Don't support joinCriteria: " + ctx.joinCriteria().getText(), ctx);
+            }
+        }
+
+        Join.Type joinType;
+        if (ctx.joinType().LEFT() != null) {
+            joinType = Join.Type.LEFT;
+        }
+        else if (ctx.joinType().RIGHT() != null) {
+            joinType = Join.Type.RIGHT;
+        }
+        else if (ctx.joinType().FULL() != null) {
+            joinType = Join.Type.FULL;
+        }
+        else {
+            joinType = Join.Type.INNER;
+        }
+
+        return new Join(getLocation(ctx), joinType, left, right, Optional.of(criteria));
     }
 
     @Override
@@ -359,11 +398,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 getLogicalBinaryOperator(ctx.operator),
                 (Expression) visit(ctx.left),
                 (Expression) visit(ctx.right));
-    }
-
-    @Override
-    public Node visitRelation(SqlBaseParser.RelationContext ctx) {
-        return super.visitRelation(ctx);
     }
 
     @Override
@@ -1015,48 +1049,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         requireNonNull(token, "token is null");
         return new NodeLocation(token.getLine(), token.getCharPositionInLine());
     }
-
-    /**
-     * Used to split attribute name by dot with backticks rule.
-     * Backticks must appear in pairs, and the quoted string must be a complete name part,
-     * which means `ab..c`e.f is not allowed.
-     * Escape character is not supported now, so we can't use backtick inside name part.
-     */
-//    static List<String> parseAttributeName(String name) {
-//        ParsingException e = new ParsingException("syntax error in attribute name: " + name);
-//
-//        List<String> nameParts = new ArrayList<>();
-//        String tmp = "";
-//        boolean inBacktick = false;
-//        int i = 0;
-//        while (i < name.length()) {
-//            char c = name.charAt(i);
-//            if (inBacktick) {
-//                if (c == '`') {
-//                    inBacktick = false;
-//                    if (i + 1 < name.length() && name.charAt(i + 1) != '.') throw e;
-//                } else {
-//                    tmp += c;
-//                }
-//            } else {
-//                if (c == '`') {
-//                    if (!tmp.isEmpty()) throw e;
-//                    inBacktick = true;
-//                } else if (c == '.') {
-//                    if (name.charAt(i - 1) == '.' || i == name.length() - 1) throw e;
-//                    nameParts.add(tmp);
-//                    tmp = "";
-//                } else {
-//                    tmp += c;
-//                }
-//            }
-//            i += 1;
-//        }
-//        if (inBacktick) throw e;
-//
-//        nameParts.add(tmp);
-//        return nameParts;
-//    }
 
     /**
      * this will remove single quotation, double quotation and backtick.

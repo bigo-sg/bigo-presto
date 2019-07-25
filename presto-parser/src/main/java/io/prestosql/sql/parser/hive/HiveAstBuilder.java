@@ -1,5 +1,6 @@
 package io.prestosql.sql.parser.hive;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import io.airlift.log.Logger;
 import io.hivesql.sql.parser.SqlBaseLexer;
@@ -15,7 +16,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,6 +48,26 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     //////////////////
     //
     //////////////////
+
+
+    @Override
+    public Node visitSetOperation(SqlBaseParser.SetOperationContext ctx) {
+        QueryBody left = (QueryBody) visit(ctx.left);
+        QueryBody right = (QueryBody) visit(ctx.right);
+
+        boolean distinct = ctx.setQuantifier() == null || ctx.setQuantifier().DISTINCT() != null;
+
+        switch (ctx.operator.getType()) {
+            case SqlBaseLexer.UNION:
+                return new Union(getLocation(ctx.UNION()), ImmutableList.of(left, right), distinct);
+            case SqlBaseLexer.INTERSECT:
+                return new Intersect(getLocation(ctx.INTERSECT()), ImmutableList.of(left, right), distinct);
+            case SqlBaseLexer.EXCEPT:
+                return new Except(getLocation(ctx.EXCEPT()), left, right, distinct);
+        }
+
+        throw parseError("Unsupported set operation: " + ctx.operator.getText(), ctx);
+    }
 
     @Override
     public Node visitMultiInsertQueryBody(SqlBaseParser.MultiInsertQueryBodyContext ctx) {
@@ -250,7 +270,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return super.visitConstantDefault(ctx);
     }
 
-    public Node visitQueryOrganization(QuerySpecification querySpecification, SqlBaseParser.QueryOrganizationContext ctx) {
+    private Node withQueryOrganization(QueryBody term, SqlBaseParser.QueryOrganizationContext ctx) {
         if (ctx.clusterBy != null && !ctx.clusterBy.isEmpty()) {
             throw parseError("Don't support cluster by", ctx);
         }
@@ -271,29 +291,41 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             limit = Optional.of(new Limit(Optional.of(getLocation(ctx.LIMIT())), ctx.limit.getText()));
         }
 
-        return new Query(
-                getLocation(ctx),
-                Optional.empty(),
-                new QuerySpecification(
-                        getLocation(ctx),
-                        querySpecification.getSelect(),
-                        querySpecification.getFrom(),
-                        querySpecification.getWhere(),
-                        querySpecification.getGroupBy(),
-                        querySpecification.getHaving(),
-                        orderBy,
-                        Optional.empty(),
-                        limit),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty());
+        if (term instanceof QuerySpecification) {
+            QuerySpecification querySpecification = (QuerySpecification) term;
+
+            return new Query(
+                    getLocation(ctx),
+                    Optional.empty(),
+                    new QuerySpecification(
+                            getLocation(ctx),
+                            querySpecification.getSelect(),
+                            querySpecification.getFrom(),
+                            querySpecification.getWhere(),
+                            querySpecification.getGroupBy(),
+                            querySpecification.getHaving(),
+                            orderBy,
+                            Optional.empty(),
+                            limit),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty());
+        } else {
+            return new Query(
+                    getLocation(ctx),
+                    Optional.empty(),
+                    term,
+                    orderBy,
+                    Optional.empty(),
+                    limit);
+        }
     }
 
     @Override
     public Node visitSingleInsertQuery(SqlBaseParser.SingleInsertQueryContext ctx) {
-        QuerySpecification querySpecification = (QuerySpecification)visit(ctx.queryTerm());
+        QueryBody term = (QueryBody) visit(ctx.queryTerm());
 
-        return visitQueryOrganization(querySpecification, ctx.queryOrganization());
+        return withQueryOrganization(term, ctx.queryOrganization());
     }
 
     @Override
@@ -425,7 +457,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             } else {
                 // this is a little bit awkward just trying to match whatever presto going to generate.
                 for (SqlBaseParser.ExpressionContext groupingExpression : ctx.groupingExpressions) {
-                    GroupingElement groupingElement = new SimpleGroupBy(getLocation(ctx), visit(Arrays.asList(groupingExpression), Expression.class));
+                    GroupingElement groupingElement = new SimpleGroupBy(getLocation(ctx), visit(ImmutableList.of(groupingExpression), Expression.class));
                     groupingElements.add(groupingElement);
                 }
             }

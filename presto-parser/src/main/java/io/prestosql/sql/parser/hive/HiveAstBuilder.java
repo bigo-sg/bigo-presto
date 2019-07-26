@@ -2,6 +2,7 @@ package io.prestosql.sql.parser.hive;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.sun.javafx.css.Rule;
 import io.airlift.log.Logger;
 import io.hivesql.sql.parser.SqlBaseLexer;
 import io.hivesql.sql.parser.SqlBaseParser;
@@ -10,6 +11,7 @@ import io.prestosql.sql.parser.ParsingOptions;
 import io.prestosql.sql.parser.debug.FieldUtils;
 import io.prestosql.sql.tree.*;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -48,6 +50,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     //////////////////
     //
     //////////////////
+
 
 
     @Override
@@ -145,8 +148,30 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public Node visitRelation(SqlBaseParser.RelationContext ctx) {
         Relation left = (Relation) visit(ctx.relationPrimary());
 
+        left = withLateralView(left, ctx);
+
         for (SqlBaseParser.JoinRelationContext joinRelationContext : ctx.joinRelation()) {
             left = withJoinRelation(left, joinRelationContext);
+        }
+
+        return left;
+    }
+
+    private Relation withLateralView(Relation left, SqlBaseParser.RelationContext ctx) {
+        RuleContext parent = ctx.parent;
+        if (parent instanceof SqlBaseParser.FromClauseContext) {
+            SqlBaseParser.FromClauseContext fromClauseContext = (SqlBaseParser.FromClauseContext) parent;
+
+            List<AliasedRelation> unnests = visit(fromClauseContext.lateralView(), AliasedRelation.class);
+            if (unnests.size() > 1) {
+                throw parseError("todo", ctx);
+            }
+
+            if (unnests.size() == 1) {
+                AliasedRelation unnest = unnests.get(0);
+
+                left = new Join(getLocation(ctx), Join.Type.CROSS, left, unnest, Optional.empty());
+            }
         }
 
         return left;
@@ -256,8 +281,42 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
+    public Node visitFromClause(SqlBaseParser.FromClauseContext ctx) {
+        List<Relation> relations = visit(ctx.relation(), Relation.class);
+
+        if (relations.size() > 1) {
+            throw parseError("todo", ctx);
+        }
+
+        return relations.get(0);
+    }
+
+    @Override
     public Node visitLateralView(SqlBaseParser.LateralViewContext ctx) {
-        return super.visitLateralView(ctx);
+        if (ctx.OUTER() != null) {
+            throw parseError("Don't support Outer Lateral Views", ctx);
+        }
+
+        Identifier qualifiedName = (Identifier) visit(ctx.qualifiedName());
+        String udtfName = qualifiedName.getValue().toLowerCase();
+
+        boolean withOrdinality;
+        if (udtfName.equals("explode")) {
+            withOrdinality = false;
+        } else if (udtfName.equals("posexplode")) {
+            withOrdinality = true;
+        } else {
+            throw parseError("Don't support UDTF: " + udtfName, ctx);
+        }
+
+        Unnest unnest = new Unnest(getLocation(ctx), visit(ctx.expression(), Expression.class), withOrdinality);
+
+        List<Identifier> columnNames = visit(ctx.colName, Identifier.class);
+        if (columnNames.size() > 1) {
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.identifier), columnNames);
+        } else {
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.identifier), null);
+        }
     }
 
     @Override

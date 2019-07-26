@@ -28,11 +28,9 @@ public class ParsingUtil
     public static ParsingOptions createParsingOptions(Session session)
     {
         ParsingOptions parsingOptions = new ParsingOptions(isParseDecimalLiteralsAsDouble(session) ? AS_DOUBLE : AS_DECIMAL);
-
         parsingOptions.setIfUseHiveParser(SystemSessionProperties.isEnableHiveSqlSynTax(session));
         SqlParser.setUseHiveSyntax(session.getQueryId().toString(), SystemSessionProperties.isEnableHiveSqlSynTax(session));
         ArraySubscriptOperator.transmitSessionInfo(session);
-
         return parsingOptions;
     }
 

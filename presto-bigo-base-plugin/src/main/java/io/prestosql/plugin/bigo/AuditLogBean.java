@@ -13,6 +13,7 @@
  */
 package io.prestosql.plugin.bigo;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.CaseFormat;
@@ -81,6 +82,8 @@ public class AuditLogBean
     private String serverAddress;
     private String serverVersion;
     private String environment;
+    private String syntax;
+    private String sessionProperties;
 
     // from failureInfo
     private String failureType;
@@ -149,6 +152,10 @@ public class AuditLogBean
         serverAddress = queryContext.getServerAddress();
         serverVersion = queryContext.getServerVersion();
         environment = queryContext.getEnvironment();
+
+        String enableHiveSyntax = queryContext.getSessionProperties().get("enable_hive_syntax");
+        syntax = enableHiveSyntax == null? "presto":enableHiveSyntax.equals("true")?"hive":"presto";
+        sessionProperties = JSON.toJSONString(queryContext.getSessionProperties());
 
         if (queryCompletedEvent.getFailureInfo().isPresent()) {
             QueryFailureInfo queryFailureInfo = queryCompletedEvent.getFailureInfo().get();

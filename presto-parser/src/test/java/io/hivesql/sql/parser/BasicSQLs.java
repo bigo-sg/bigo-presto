@@ -101,6 +101,14 @@ public class BasicSQLs extends SQLTester {
     }
 
     @Test
+    public void testSelectAllWithQualifierFrom()
+    {
+        String sql = "SELECT tb1.* from tb1";
+
+        checkASTNode(sql);
+    }
+
+    @Test
     public void testSelectFromTableAlias()
     {
         String sql = "SELECT t.a from tb1 t";

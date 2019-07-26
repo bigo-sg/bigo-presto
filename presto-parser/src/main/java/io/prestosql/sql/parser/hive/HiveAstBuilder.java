@@ -350,11 +350,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitStar(SqlBaseParser.StarContext ctx) {
-        if (ctx.qualifiedName() != null) {
-            throw parseError("", ctx);
-        }
-
-        return new StarExpression(getLocation(ctx));
+        return new StarExpression(getLocation(ctx), visitIfPresent(ctx.qualifiedName(), Identifier.class));
     }
 
     @Override
@@ -364,13 +360,17 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         Optional<Identifier> identifier = visitIfPresent(ctx.identifier(), Identifier.class);
 
         if (expression instanceof StarExpression) {
+            StarExpression starExpression = (StarExpression) expression;
             // select all
             if (identifier.isPresent()) {
-                throw parseError("", ctx);
+                throw parseError("todo", ctx);
             }
 
-            return new AllColumns(nodeLocation);
-
+            if (starExpression.getIdentifier().isPresent()) {
+                return new AllColumns(nodeLocation, getQualifiedName(starExpression.getIdentifier().get()));
+            } else {
+                return new AllColumns(nodeLocation);
+            }
         } else {
             return new SingleColumn(nodeLocation, expression, identifier);
         }
@@ -1005,6 +1005,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         throw new IllegalArgumentException("Unsupported operator: " + token.getText());
+    }
+
+    private QualifiedName getQualifiedName(Identifier identifier)
+    {
+        return QualifiedName.of(ImmutableList.of(identifier));
     }
 
     private QualifiedName getQualifiedName(SqlBaseParser.TableIdentifierContext context)

@@ -135,7 +135,7 @@ public final class SystemSessionProperties
             MemoryManagerConfig memoryManagerConfig,
             FeaturesConfig featuresConfig)
     {
-        sessionProperties = ImmutableList.of(
+        for (PropertyMetadata<?> propertyMetadata : sessionProperties = ImmutableList.of(
                 stringProperty(
                         EXECUTION_POLICY,
                         "Policy used for scheduling query tasks",
@@ -516,7 +516,11 @@ public final class SystemSessionProperties
                         ENABLE_HIVE_SQL_SYNTAX,
                         "Experimental: Use hive sql syntax",
                         false,
-                        false));
+                        false)
+        )) {
+
+        }
+        ;
     }
 
     public List<PropertyMetadata<?>> getSessionProperties()

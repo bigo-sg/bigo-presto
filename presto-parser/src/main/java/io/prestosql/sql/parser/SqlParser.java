@@ -13,6 +13,9 @@
  */
 package io.prestosql.sql.parser;
 
+import io.airlift.log.Logger;
+import io.hivesql.presto.sql.parser.HiveSqlBaseLexer;
+import io.hivesql.presto.sql.parser.HiveSqlBaseParser;
 import io.prestosql.sql.tree.Expression;
 import io.prestosql.sql.tree.Node;
 import io.prestosql.sql.tree.PathSpecification;
@@ -35,15 +38,45 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import javax.inject.Inject;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
+import io.prestosql.sql.parser.hive.PrestoHiveAstBuilder;
 
 import static java.util.Objects.requireNonNull;
 
 public class SqlParser
 {
+    private static final Logger LOG = Logger.get(SqlParser.class);
+    public static final String ENABLE_HIVEE_SYNTAX = "enable_hive_syntax";
+    public static final String QUETRY_ID = "user";
+    final static int MAX_ENTRIES;
+    public static Map cache;
+    static {
+        MAX_ENTRIES = 10000;
+        cache = new LinkedHashMap(MAX_ENTRIES + 1, .75F, true) {
+            // This method is called just after a new entry has been added
+            public boolean removeEldestEntry(Map.Entry eldest) {
+                return size() > MAX_ENTRIES;
+            }
+        };
+        cache = Collections.synchronizedMap(cache);
+    }
+
+    public static boolean useHiveSyntax(String queryId) {
+        Object ret = cache.get(queryId);
+        if (ret == null) {
+            return false;
+        }
+        if (ret.equals("true")) {
+            return true;
+        }
+        return false;
+    }
+
+    public static void setUseHiveSyntax(String queryId, boolean useHiveSynmtax) {
+        cache.put(queryId, useHiveSynmtax?"true":"false");
+    }
+
     private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {
         @Override
@@ -93,7 +126,9 @@ public class SqlParser
 
     public Statement createStatement(String sql, ParsingOptions parsingOptions)
     {
-        return (Statement) invokeParser("statement", sql, SqlBaseParser::singleStatement, parsingOptions);
+        Statement statement = (Statement) invokeParser("statement",
+                sql, SqlBaseParser::singleStatement, parsingOptions, "singleStatement");
+        return statement;
     }
 
     /**
@@ -102,21 +137,103 @@ public class SqlParser
     @Deprecated
     public Expression createExpression(String expression)
     {
+        LOG.info("from Expression createExpression(String expression)");
         return createExpression(expression, new ParsingOptions());
     }
 
     public Expression createExpression(String expression, ParsingOptions parsingOptions)
     {
-        return (Expression) invokeParser("expression", expression, SqlBaseParser::standaloneExpression, parsingOptions);
+        LOG.info("from Expression createExpression(String expression, ParsingOptions parsingOptions)");
+        Expression ex = (Expression) invokeParser("expression", expression,
+                SqlBaseParser::standaloneExpression, parsingOptions, "standaloneExpression");
+        return ex;
     }
 
     public PathSpecification createPathSpecification(String expression)
     {
-        return (PathSpecification) invokeParser("path specification", expression, SqlBaseParser::standalonePathSpecification, new ParsingOptions());
+        LOG.info("from PathSpecification createPathSpecification(String expression)");
+        PathSpecification plan = (PathSpecification) invokeParser("path specification",
+                expression, SqlBaseParser::standalonePathSpecification, new ParsingOptions(), "standalonePathSpecification");
+        return plan;
     }
 
-    private Node invokeParser(String name, String sql, Function<SqlBaseParser, ParserRuleContext> parseFunction, ParsingOptions parsingOptions)
+    private Node invokeParser(String name, String sql, Function<SqlBaseParser,
+            ParserRuleContext> parseFunction, ParsingOptions parsingOptions, String type)
     {
+        LOG.info("sql:" + sql);
+        if (!parsingOptions.useHiveParser()) {
+            LOG.info("use presto sql");
+        } else {
+            LOG.info("use hive sql");
+            try {
+                HiveSqlBaseLexer lexer =
+                        new HiveSqlBaseLexer(
+                                new CaseInsensitiveStream(CharStreams.fromString(sql)));
+                CommonTokenStream tokenStream = new CommonTokenStream(lexer);
+                HiveSqlBaseParser parser =
+                        new HiveSqlBaseParser(tokenStream);
+
+                // Override the default error strategy to not attempt inserting or deleting a token.
+                // Otherwise, it messes up error reporting
+                parser.setErrorHandler(new DefaultErrorStrategy()
+                {
+                    @Override
+                    public Token recoverInline(Parser recognizer)
+                            throws RecognitionException
+                    {
+                        if (nextTokensContext == null) {
+                            throw new InputMismatchException(recognizer);
+                        }
+                        else {
+                            throw new InputMismatchException(recognizer, nextTokensState, nextTokensContext);
+                        }
+                    }
+                });
+
+                parser.addParseListener(new PostProcessor(Arrays.asList(parser.getRuleNames())));
+
+                lexer.removeErrorListeners();
+                lexer.addErrorListener(LEXER_ERROR_LISTENER);
+
+                parser.removeErrorListeners();
+
+                if (enhancedErrorHandlerEnabled) {
+                    parser.addErrorListener(PARSER_ERROR_HANDLER);
+                }
+                else {
+                    parser.addErrorListener(LEXER_ERROR_LISTENER);
+                }
+
+                ParserRuleContext tree;
+                Function<HiveSqlBaseParser, ParserRuleContext> hiveParseFunction = null;
+                if (type.equals("singleStatement")) {
+                    hiveParseFunction = HiveSqlBaseParser::singleStatement;
+                } else if (type.equals("standaloneExpression")) {
+                    hiveParseFunction = HiveSqlBaseParser::standaloneExpression;
+                } else {
+                    hiveParseFunction = HiveSqlBaseParser::standalonePathSpecification;
+                }
+                try {
+                    // first, try parsing with potentially faster SLL mode
+                    parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+                    tree = hiveParseFunction.apply(parser);
+                }
+                catch (ParseCancellationException ex) {
+                    // if we fail, parse with LL mode
+                    tokenStream.reset(); // rewind input stream
+                    parser.reset();
+
+                    parser.getInterpreter().setPredictionMode(PredictionMode.LL);
+                    tree = hiveParseFunction.apply(parser);
+                }
+
+                return new PrestoHiveAstBuilder(parsingOptions).visit(tree);
+            }
+            catch (StackOverflowError e) {
+                throw new ParsingException(name + " is too large (stack overflow while parsing)");
+            }
+        }
+
         try {
             SqlBaseLexer lexer = new SqlBaseLexer(new CaseInsensitiveStream(CharStreams.fromString(sql)));
             CommonTokenStream tokenStream = new CommonTokenStream(lexer);

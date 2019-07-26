@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
+import io.airlift.log.Logger;
 import io.prestosql.connector.CatalogName;
 import io.prestosql.metadata.IndexHandle;
 import io.prestosql.metadata.Metadata;
@@ -806,8 +807,10 @@ public class PlanBuilder
         return new RemoteSourceNode(idAllocator.getNextId(), fragmentIds, symbols, Optional.empty(), exchangeType);
     }
 
+    private static final Logger LOG = Logger.get(PlanBuilder.class);
     public static Expression expression(String sql)
     {
+        LOG.info("from Expression PlanBuilder::expression(String sql)");
         return ExpressionUtils.rewriteIdentifiersToSymbolReferences(new SqlParser().createExpression(sql));
     }
 

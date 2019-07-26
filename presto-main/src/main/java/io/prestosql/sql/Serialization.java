@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import io.airlift.log.Logger;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.tree.Expression;
 import io.prestosql.sql.tree.FunctionCall;
@@ -41,7 +42,8 @@ public final class Serialization
         public void serialize(Expression expression, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
                 throws IOException
         {
-            jsonGenerator.writeString(ExpressionFormatter.formatExpression(expression, Optional.empty()));
+            String fomatedAst = ExpressionFormatter.formatExpression(expression, Optional.empty());
+            jsonGenerator.writeString(fomatedAst);
         }
     }
 
@@ -74,7 +76,7 @@ public final class Serialization
         {
             this.sqlParser = sqlParser;
         }
-
+        private static final Logger LOG = Logger.get(FunctionCallDeserializer.class);
         @Override
         public FunctionCall deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
                 throws IOException

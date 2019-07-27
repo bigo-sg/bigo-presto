@@ -172,10 +172,14 @@ sortItem
 
 querySpecification
     : SELECT setQuantifier? selectItem (',' selectItem)*
-      (FROM relation (',' relation)*)?
+      (FROM relation (',' relation)*lateralView*)?
       (WHERE where=booleanExpression)?
       (GROUP BY groupBy)?
       (HAVING having=booleanExpression)?
+    ;
+
+lateralView
+    : LATERAL VIEW (OUTER)? qualifiedName '(' (expression (',' expression)*)? ')' tblName=identifier (AS? colName+=identifier (',' colName+=identifier)*)?
     ;
 
 groupBy
@@ -281,12 +285,18 @@ predicate[ParserRuleContext value]
     ;
 
 valueExpression
-    : primaryExpression                                                                 #valueExpressionDefault
-    | valueExpression AT timeZoneSpecifier                                              #atTimeZone
-    | operator=(MINUS | PLUS) valueExpression                                           #arithmeticUnary
-    | left=valueExpression operator=(ASTERISK | SLASH | PERCENT) right=valueExpression  #arithmeticBinary
-    | left=valueExpression operator=(PLUS | MINUS) right=valueExpression                #arithmeticBinary
-    | left=valueExpression CONCAT right=valueExpression                                 #concatenation
+    : primaryExpression                                                                         #valueExpressionDefault
+    | valueExpression AT timeZoneSpecifier                                                      #atTimeZone
+    | operator=(MINUS | PLUS) valueExpression                                                   #arithmeticUnary
+    | left=valueExpression operator=(ASTERISK | SLASH | PERCENT | DIV) right=valueExpression    #arithmeticBinary
+    | left=valueExpression operator=(PLUS | MINUS) right=valueExpression                        #arithmeticBinary
+    // added
+    | left=valueExpression operator=AMPERSAND right=valueExpression                             #arithmeticBinary
+    // added
+    | left=valueExpression operator=HAT right=valueExpression                                   #arithmeticBinary
+    // added
+    | left=valueExpression operator=PIPE right=valueExpression                                  #arithmeticBinary
+    | left=valueExpression CONCAT right=valueExpression                                         #concatenation
     ;
 
 primaryExpression
@@ -719,9 +729,21 @@ GTE : '>=';
 
 PLUS: '+';
 MINUS: '-';
+
 ASTERISK: '*';
 SLASH: '/';
 PERCENT: '%';
+
+// added
+DIV: 'DIV';
+// added
+AMPERSAND: '&';
+// added
+PIPE: '|';
+// added
+HAT: '^';
+
+
 CONCAT: '||';
 
 STRING

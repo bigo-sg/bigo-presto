@@ -28,6 +28,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -501,6 +502,19 @@ public class PrestoHiveAstBuilder
             from = Optional.of(relation);
         }
 
+        if (context.lateralView().size() >= 0) {
+            HiveSqlBaseParser.LateralViewContext lateralViewContext = context.lateralView(0);
+            Node node = visitLateralView(lateralViewContext);
+            Relation relation = new Join(Join.Type.CROSS, from.get(), (AliasedRelation)node, Optional.empty());
+            from = Optional.of(relation);
+            for (int i = 1; i < context.lateralView().size(); ++i) {
+                HiveSqlBaseParser.LateralViewContext lateralViewContext1 = context.lateralView(0);
+                Node node1 = visitLateralView(lateralViewContext1);
+                Relation relation1 = new Join(Join.Type.CROSS, from.get(), (AliasedRelation)node1, Optional.empty());
+                from = Optional.of(relation1);
+            }
+        }
+
         return new QuerySpecification(
                 getLocation(context),
                 new Select(getLocation(context.SELECT()), isDistinct(context.setQuantifier()), selectItems),
@@ -511,6 +525,34 @@ public class PrestoHiveAstBuilder
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty());
+    }
+
+    @Override public Node visitLateralView(HiveSqlBaseParser.LateralViewContext ctx)
+    {
+        if (ctx.OUTER() != null) {
+            throw parseError("Don't support Outer Lateral Views", ctx);
+        }
+
+        Identifier qualifiedName = (Identifier) visit(ctx.qualifiedName());
+        String udtfName = qualifiedName.getValue().toLowerCase();
+
+        boolean withOrdinality;
+        if (udtfName.equals("explode")) {
+            withOrdinality = false;
+        } else if (udtfName.equals("posexplode")) {
+            withOrdinality = true;
+        } else {
+            throw parseError("Don't support UDTF: " + udtfName, ctx);
+        }
+
+        Unnest unnest = new Unnest(getLocation(ctx), visit(ctx.expression(), Expression.class), withOrdinality);
+
+        List<Identifier> columnNames = visit(ctx.colName, Identifier.class);
+        if (columnNames.size() > 0) {
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
+        } else {
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), null);
+        }
     }
 
     @Override
@@ -1879,6 +1921,14 @@ public class PrestoHiveAstBuilder
                 return ArithmeticBinaryExpression.Operator.DIVIDE;
             case HiveSqlBaseLexer.PERCENT:
                 return ArithmeticBinaryExpression.Operator.MODULUS;
+//            case HiveSqlBaseLexer.DIV:
+//                return ArithmeticBinaryExpression.Operator.DIV;
+//            case HiveSqlBaseLexer.AMPERSAND:
+//                return ArithmeticBinaryExpression.Operator.AMPERSAND;
+//            case HiveSqlBaseLexer.HAT:
+//                return ArithmeticBinaryExpression.Operator.HAT;
+//            case HiveSqlBaseLexer.PIPE:
+//                return ArithmeticBinaryExpression.Operator.PIPE;
         }
 
         throw new UnsupportedOperationException("Unsupported operator: " + operator.getText());

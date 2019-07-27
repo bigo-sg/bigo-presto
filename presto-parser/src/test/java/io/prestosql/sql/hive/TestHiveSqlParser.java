@@ -12,19 +12,22 @@ import static io.prestosql.sql.parser.IdentifierSymbol.COLON;
 public class TestHiveSqlParser {
 
     private SqlParser sqlParser = null;
-    private ParsingOptions parsingOptions = null;
+    private ParsingOptions hiveParsingOptions = null;
+    private ParsingOptions prestoParsingOptions = null;
     @BeforeTest
     public void init() {
         sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
-        parsingOptions = new ParsingOptions();
-        parsingOptions.setIfUseHiveParser(true);
+        hiveParsingOptions = new ParsingOptions();
+        hiveParsingOptions.setIfUseHiveParser(true);
+        prestoParsingOptions = new ParsingOptions();
+        prestoParsingOptions.setIfUseHiveParser(false);
     }
 
     @Test
     public void testUse()
     {
         String sql = "USE hive.tmp";
-        Node node = sqlParser.createStatement(sql, parsingOptions);
+        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
         System.out.println(node);
     }
 
@@ -32,7 +35,7 @@ public class TestHiveSqlParser {
     public void testSetSession()
     {
         String sql = "SET SESSION foo=true";
-        Node node = sqlParser.createStatement(sql, parsingOptions);
+        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
         System.out.println(node);
     }
 
@@ -40,7 +43,7 @@ public class TestHiveSqlParser {
     public void testLogicalBinary()
     {
         String sql = "SELECT x FROM t";
-        Node node = sqlParser.createStatement(sql, parsingOptions);
+        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
         System.out.println(node);
     }
 
@@ -48,7 +51,7 @@ public class TestHiveSqlParser {
     public void testSelect01()
     {
         String sql = "SELECT \"a\",b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
-        Node node = sqlParser.createStatement(sql, parsingOptions);
+        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
         System.out.println(node);
     }
 
@@ -56,21 +59,21 @@ public class TestHiveSqlParser {
     public void testQuotedQuery()
     {
         String sql = "SELECT `a`,b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
-        Node node = sqlParser.createStatement(sql, parsingOptions);
+        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
         System.out.println(node);
     }
     @Test
     public void testDoubleEq()
     {
         String sql = "SELECT `a`,b,c,d FROM ALGO.t WHERE x==321 LIMIT 100";
-        Node node = sqlParser.createStatement(sql, parsingOptions);
+        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
         System.out.println(node);
     }
     @Test
     public void testTableStartWithDigit()
     {
-        String sql = "select * from tmp.20171014_tmpdata limit 10";
-        Node node = sqlParser.createStatement(sql, parsingOptions);
+        String sql = "select * from TMP.20171014_tmpdata limit 10";
+        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
         System.out.println(node);
     }
 
@@ -79,6 +82,62 @@ public class TestHiveSqlParser {
     {
         String sql = "\"split\"(\"registertime\", ' ')[BIGINT '1']";
         Node node = sqlParser.createExpression(sql);
+        System.out.println(node);
+    }
+
+    @Test
+    public void testBinnary()
+    {
+        String sql = "select 111|112 as x from bigolive.presto_job_audit where day='2019-07-26' limit 1";
+        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
+        System.out.println(node);
+    }
+
+    @Test
+    public void testUnnestWithOrdinality()
+    {
+        String prestoSql = "" +
+                "SELECT event.*\n" +
+                "FROM tb1 CROSS JOIN UNNEST(events) WITH ORDINALITY AS event (pos, event)";
+
+        Node node = sqlParser.createStatement(prestoSql, prestoParsingOptions);
+        System.out.println(node);
+    }
+
+    @Test
+    public void testLateralViewWithOrdinality()
+    {
+        String hiveSql = "" +
+                "SELECT event.*\n" +
+                "FROM tb1 lateral view posexplode(events) t1 as pos, event";
+
+        Node node = sqlParser.createStatement(hiveSql, hiveParsingOptions);
+        System.out.println(node);
+    }
+
+    @Test
+    public void testUnnestMultiColumn()
+    {
+        String prestoSql = "" +
+                "SELECT event.*, event1.*" +
+                "FROM tb1 " +
+                "CROSS JOIN UNNEST(events) WITH ORDINALITY AS event1 (c1) " +
+                "CROSS JOIN UNNEST(events1) WITH ORDINALITY AS event (c)";
+
+        Node node = sqlParser.createStatement(prestoSql, prestoParsingOptions);
+        System.out.println(node);
+    }
+
+    @Test
+    public void testLateralViewMultiColumn()
+    {
+        String hiveSql = "" +
+                "SELECT event.*, event1.*" +
+                "FROM tb1 " +
+                "lateral view explode(events) event as c " +
+                "lateral view explode(events1) event1 as c1";
+
+        Node node = sqlParser.createStatement(hiveSql, hiveParsingOptions);
         System.out.println(node);
     }
 

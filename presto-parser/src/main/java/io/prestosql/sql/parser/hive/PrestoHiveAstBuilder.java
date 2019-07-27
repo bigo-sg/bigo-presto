@@ -505,12 +505,12 @@ public class PrestoHiveAstBuilder
         if (context.lateralView().size() >= 0) {
             HiveSqlBaseParser.LateralViewContext lateralViewContext = context.lateralView(0);
             Node node = visitLateralView(lateralViewContext);
-            Relation relation = new Join(Join.Type.CROSS, from.get(), (AliasedRelation)node, Optional.empty());
+            Relation relation = new Join(getLocation(lateralViewContext), Join.Type.CROSS, from.get(), (AliasedRelation)node, Optional.empty());
             from = Optional.of(relation);
             for (int i = 1; i < context.lateralView().size(); ++i) {
-                HiveSqlBaseParser.LateralViewContext lateralViewContext1 = context.lateralView(0);
+                HiveSqlBaseParser.LateralViewContext lateralViewContext1 = context.lateralView(i);
                 Node node1 = visitLateralView(lateralViewContext1);
-                Relation relation1 = new Join(Join.Type.CROSS, from.get(), (AliasedRelation)node1, Optional.empty());
+                Relation relation1 = new Join(getLocation(lateralViewContext1), Join.Type.CROSS, from.get(), (AliasedRelation)node1, Optional.empty());
                 from = Optional.of(relation1);
             }
         }

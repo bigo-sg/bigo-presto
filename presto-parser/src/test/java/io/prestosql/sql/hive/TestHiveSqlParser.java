@@ -121,8 +121,8 @@ public class TestHiveSqlParser {
         String prestoSql = "" +
                 "SELECT event.*, event1.*" +
                 "FROM tb1 " +
-                "CROSS JOIN UNNEST(events) WITH ORDINALITY AS event1 (c1) " +
-                "CROSS JOIN UNNEST(events1) WITH ORDINALITY AS event (c)";
+                "CROSS JOIN UNNEST(events1) WITH ORDINALITY AS event1 (c1) " +
+                "CROSS JOIN UNNEST(events) WITH ORDINALITY AS event (c)";
 
         Node node = sqlParser.createStatement(prestoSql, prestoParsingOptions);
         System.out.println(node);
@@ -140,5 +140,22 @@ public class TestHiveSqlParser {
         Node node = sqlParser.createStatement(hiveSql, hiveParsingOptions);
         System.out.println(node);
     }
+
+    @Test
+    public void testLateralViewMultiColumn1()
+    {
+        String hiveSql = "SELECT numbers, animals,c,c2\n" +
+                "FROM (\n" +
+                "  VALUES\n" +
+                "    (ARRAY[2, 5], ARRAY['dog', 'cat', 'bird']),\n" +
+                "    (ARRAY[7, 8, 9], ARRAY['cow', 'pig'])\n" +
+                ") AS x (numbers, animals)\n" +
+                "lateral view explode(numbers) t as c\n" +
+                " lateral view explode(animals) t1 as c1";
+
+        Node node = sqlParser.createStatement(hiveSql, hiveParsingOptions);
+        System.out.println(node);
+    }
+
 
 }

@@ -47,8 +47,6 @@ import static java.util.Objects.requireNonNull;
 public class SqlParser
 {
     private static final Logger LOG = Logger.get(SqlParser.class);
-    public static final String ENABLE_HIVEE_SYNTAX = "enable_hive_syntax";
-    public static final String QUETRY_ID = "user";
 
     private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {
@@ -138,6 +136,7 @@ public class SqlParser
             LOG.info("use presto sql");
         } else {
             LOG.info("use hive sql");
+            LOG.info("debug for lateral view");
             try {
                 HiveSqlBaseLexer lexer =
                         new HiveSqlBaseLexer(

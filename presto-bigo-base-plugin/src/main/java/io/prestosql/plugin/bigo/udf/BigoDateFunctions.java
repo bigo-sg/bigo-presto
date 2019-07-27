@@ -15,8 +15,6 @@ import static io.airlift.slice.Slices.utf8Slice;
 import static io.prestosql.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 
 public class BigoDateFunctions {
-    private static SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-
     @Description("Returns the date that is num_days after start_date.")
     @ScalarFunction("date_add")
     @SqlType(StandardTypes.VARCHAR)
@@ -24,6 +22,9 @@ public class BigoDateFunctions {
             @SqlType(StandardTypes.VARCHAR) Slice startDate,
             @SqlType(StandardTypes.INTEGER) long daysToAdd)
     {
+        // create SimpleDateFormat in every call as it's not thread safe.
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+
         Calendar c = Calendar.getInstance();
         try {
             c.setTime(formatter.parse(startDate.toStringUtf8()));

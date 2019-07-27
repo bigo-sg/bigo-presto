@@ -49,33 +49,6 @@ public class SqlParser
     private static final Logger LOG = Logger.get(SqlParser.class);
     public static final String ENABLE_HIVEE_SYNTAX = "enable_hive_syntax";
     public static final String QUETRY_ID = "user";
-    final static int MAX_ENTRIES;
-    public static Map cache;
-    static {
-        MAX_ENTRIES = 10000;
-        cache = new LinkedHashMap(MAX_ENTRIES + 1, .75F, true) {
-            // This method is called just after a new entry has been added
-            public boolean removeEldestEntry(Map.Entry eldest) {
-                return size() > MAX_ENTRIES;
-            }
-        };
-        cache = Collections.synchronizedMap(cache);
-    }
-
-    public static boolean useHiveSyntax(String queryId) {
-        Object ret = cache.get(queryId);
-        if (ret == null) {
-            return false;
-        }
-        if (ret.equals("true")) {
-            return true;
-        }
-        return false;
-    }
-
-    public static void setUseHiveSyntax(String queryId, boolean useHiveSynmtax) {
-        cache.put(queryId, useHiveSynmtax?"true":"false");
-    }
 
     private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {

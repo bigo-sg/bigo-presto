@@ -2,7 +2,6 @@ package io.prestosql.sql.parser.hive;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.sun.javafx.css.Rule;
 import io.airlift.log.Logger;
 import io.hivesql.sql.parser.SqlBaseLexer;
 import io.hivesql.sql.parser.SqlBaseParser;
@@ -20,10 +19,8 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
 public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Node> {
@@ -744,31 +741,109 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         QualifiedName name = getQualifiedName(ctx.qualifiedName());
         boolean distinct = isDistinct(ctx.setQuantifier());
 
+        Optional<Window> window = visitIfPresent(ctx.windowSpec(), Window.class);
+
         return new FunctionCall(
                 getLocation(ctx),
                 name,
-                Optional.empty(),//window,
+                window,
                 Optional.empty(),//filter,
                 Optional.empty(),//orderBy,
                 distinct,
                 visit(ctx.expression(), Expression.class));
     }
 
-    // to be implement: presto have no this func!
     @Override
     public Node visitWindowRef(SqlBaseParser.WindowRefContext ctx) {
-        return super.visitWindowRef(ctx);
+        throw parseError("Don't support Window Clause", ctx);
     }
 
-    // to be implement: presto have no this func!
     @Override
     public Node visitWindowDef(SqlBaseParser.WindowDefContext ctx) {
-        return super.visitWindowDef(ctx);
+        if (ctx.SORT() != null) {
+            throw parseError("Don't support SORT", ctx);
+        }
+        if (ctx.CLUSTER() != null) {
+            throw parseError("Don't support CLUSTER", ctx);
+        }
+        if (ctx.DISTRIBUTE() != null) {
+            throw parseError("Don't support DISTRIBUTE", ctx);
+        }
+
+        Optional<OrderBy> orderBy = Optional.empty();
+        if (ctx.ORDER() != null) {
+            orderBy = Optional.of(new OrderBy(getLocation(ctx.ORDER()), visit(ctx.sortItem(), SortItem.class)));
+        }
+
+        return new Window(
+                getLocation(ctx),
+                visit(ctx.partition, Expression.class),
+                orderBy,
+                visitIfPresent(ctx.windowFrame(), WindowFrame.class));
     }
-    // to be implement: presto have no this func!
+
+    private static WindowFrame.Type getFrameType(ParserRuleContext ctx, Token type)
+    {
+        switch (type.getType()) {
+            case SqlBaseLexer.RANGE:
+                return WindowFrame.Type.RANGE;
+            case SqlBaseLexer.ROWS:
+                return WindowFrame.Type.ROWS;
+        }
+
+        throw parseError("Don't support frame type: " + type.getText(), ctx);
+    }
+
+    private static FrameBound.Type getBoundedFrameBoundType(ParserRuleContext ctx, Token token)
+    {
+        switch (token.getType()) {
+            case SqlBaseLexer.PRECEDING:
+                return FrameBound.Type.PRECEDING;
+            case SqlBaseLexer.FOLLOWING:
+                return FrameBound.Type.FOLLOWING;
+            case SqlBaseLexer.CURRENT:
+                return FrameBound.Type.CURRENT_ROW;
+        }
+
+        throw parseError("Don't support bound type: " + token.getText(), ctx);
+    }
+
+    private static FrameBound.Type getUnboundedFrameBoundType(ParserRuleContext ctx, Token token)
+    {
+        switch (token.getType()) {
+            case SqlBaseLexer.PRECEDING:
+                return FrameBound.Type.UNBOUNDED_PRECEDING;
+            case SqlBaseLexer.FOLLOWING:
+                return FrameBound.Type.UNBOUNDED_FOLLOWING;
+        }
+
+        throw parseError("Don't support bound type: " + token.getText(), ctx);
+    }
+
+    @Override
+    public Node visitWindowFrame(SqlBaseParser.WindowFrameContext ctx) {
+        return new WindowFrame(
+                getLocation(ctx),
+                getFrameType(ctx, ctx.frameType),
+                (FrameBound) visit(ctx.start),
+                visitIfPresent(ctx.end, FrameBound.class));
+    }
+
     @Override
     public Node visitFrameBound(SqlBaseParser.FrameBoundContext ctx) {
-        return super.visitFrameBound(ctx);
+        Expression expression = null;
+        if (ctx.expression() != null) {
+            expression = (Expression) visit(ctx.expression());
+        }
+
+        FrameBound.Type frameBoundType = null;
+        if (ctx.UNBOUNDED() == null) {
+            frameBoundType = getBoundedFrameBoundType(ctx, ctx.boundType);
+        } else {
+            frameBoundType = getUnboundedFrameBoundType(ctx, ctx.boundType);
+        }
+
+        return new FrameBound(getLocation(ctx), frameBoundType, expression);
     }
 
     @Override
@@ -1000,18 +1075,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     private String getType(SqlBaseParser.DataTypeContext type)
     {
-        if (type instanceof SqlBaseParser.PrimitiveDataTypeContext) {
-            SqlBaseParser.PrimitiveDataTypeContext primitiveType = (SqlBaseParser.PrimitiveDataTypeContext)type;
-
-            String signature = primitiveType.getText();
-
-//            if (type.baseType().DOUBLE_PRECISION() != null) {
-//                // TODO: Temporary hack that should be removed with new planner.
-//                signature = "DOUBLE";
-//            }
-
-            return signature;
-        } else {
+        if (type instanceof SqlBaseParser.ComplexDataTypeContext) {
             SqlBaseParser.ComplexDataTypeContext complexType = (SqlBaseParser.ComplexDataTypeContext)type;
 
             if (complexType.ARRAY() != null) {
@@ -1039,6 +1103,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 builder.append(")");
                 return "ROW" + builder.toString();
             }
+        } else {
+            return type.getText();
         }
 
         throw parseError("Don't support type specification: " + type.getText(), type);

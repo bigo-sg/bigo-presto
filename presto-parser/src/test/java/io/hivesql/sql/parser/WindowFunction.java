@@ -70,6 +70,39 @@ public class WindowFunction extends SQLTester {
     }
 
     @Test
+    public void testPartitionByOrderByRangeUnBoundedWindowFramePreceding()
+    {
+        String sql = "SELECT a, SUM(b) OVER (PARTITION BY c ORDER BY d RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM T";
+
+        checkASTNode(sql);
+    }
+
+
+    @Test
+    public void testPartitionByOrderByRangeUnBoundedWindowFrameFollowing()
+    {
+        String sql = "SELECT a, AVG(b) OVER (PARTITION BY c ORDER BY d RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) FROM T";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testPartitionByOrderByRangeBoundedWindowFrame()
+    {
+        String sql = "SELECT a, SUM(b) OVER (PARTITION BY c ORDER BY d RANGE BETWEEN 3 PRECEDING AND CURRENT ROW) FROM T";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testPartitionByOrderByRangeBoundedWindowFrameOnBothSide()
+    {
+        String sql = "SELECT a, SUM(b) OVER (PARTITION BY c ORDER BY d RANGE BETWEEN 3 PRECEDING AND 3 FOLLOWING) FROM T";
+
+        checkASTNode(sql);
+    }
+
+    @Test
     public void testMultipleOverClauses()
     {
         String sql = "" +

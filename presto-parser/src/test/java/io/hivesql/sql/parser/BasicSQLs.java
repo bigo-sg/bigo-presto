@@ -211,8 +211,4 @@ public class BasicSQLs extends SQLTester {
 
         checkASTNode(sql);
     }
-
-    // if elif
-
-    // case when then
 }

@@ -45,13 +45,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         throw new RuntimeException("please check, how should we merge them?");
     }
 
-
     //////////////////
     //
     //////////////////
-
-
-
     @Override
     public Node visitSetOperation(SqlBaseParser.SetOperationContext ctx) {
         QueryBody left = (QueryBody) visit(ctx.left);
@@ -743,6 +739,42 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         Optional<Window> window = visitIfPresent(ctx.windowSpec(), Window.class);
 
+        if (name.toString().equalsIgnoreCase("if")) {
+            check(ctx.expression().size() == 2 || ctx.expression().size() == 3, "Invalid number of arguments for 'if' function", ctx);
+            check(!window.isPresent(), "OVER clause not valid for 'if' function", ctx);
+            check(!distinct, "DISTINCT not valid for 'if' function", ctx);
+
+            Expression elseExpression = null;
+            if (ctx.expression().size() == 3) {
+                elseExpression = (Expression) visit(ctx.expression(2));
+            }
+
+            return new IfExpression(
+                    getLocation(ctx),
+                    (Expression) visit(ctx.expression(0)),
+                    (Expression) visit(ctx.expression(1)),
+                    elseExpression);
+        }
+
+        if (name.toString().equalsIgnoreCase("nullif")) {
+            check(ctx.expression().size() == 2, "Invalid number of arguments for 'nullif' function", ctx);
+            check(!window.isPresent(), "OVER clause not valid for 'nullif' function", ctx);
+            check(!distinct, "DISTINCT not valid for 'nullif' function", ctx);
+
+            return new NullIfExpression(
+                    getLocation(ctx),
+                    (Expression) visit(ctx.expression(0)),
+                    (Expression) visit(ctx.expression(1)));
+        }
+
+        if (name.toString().equalsIgnoreCase("coalesce")) {
+            check(ctx.expression().size() >= 2, "The 'coalesce' function must have at least two arguments", ctx);
+            check(!window.isPresent(), "OVER clause not valid for 'coalesce' function", ctx);
+            check(!distinct, "DISTINCT not valid for 'coalesce' function", ctx);
+
+            return new CoalesceExpression(getLocation(ctx), visit(ctx.expression(), Expression.class));
+        }
+
         return new FunctionCall(
                 getLocation(ctx),
                 name,
@@ -866,6 +898,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
+    public Node visitWhenClause(SqlBaseParser.WhenClauseContext ctx) {
+        return new WhenClause(getLocation(ctx), (Expression) visit(ctx.condition), (Expression) visit(ctx.result));
+    }
+
+    @Override
     public Node visitSearchedCase(SqlBaseParser.SearchedCaseContext ctx) {
         return new SearchedCaseExpression(
                 getLocation(ctx),
@@ -942,7 +979,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return new NullLiteral(getLocation(ctx));
     }
 
-    // to be implement: presto have no this func!
     @Override
     public Node visitBooleanLiteral(SqlBaseParser.BooleanLiteralContext ctx) {
         return new BooleanLiteral(getLocation(ctx), ctx.getText());
@@ -958,88 +994,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return new DoubleLiteral(getLocation(ctx), ctx.getText());
     }
 
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitTinyIntLiteral(SqlBaseParser.TinyIntLiteralContext ctx) {
-        return super.visitTinyIntLiteral(ctx);
-    }
-
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitSmallIntLiteral(SqlBaseParser.SmallIntLiteralContext ctx) {
-        return super.visitSmallIntLiteral(ctx);
-    }
-
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitBigIntLiteral(SqlBaseParser.BigIntLiteralContext ctx) {
-        return super.visitBigIntLiteral(ctx);
-    }
-
     @Override
     public Node visitDoubleLiteral(SqlBaseParser.DoubleLiteralContext ctx) {
         return new DoubleLiteral(getLocation(ctx), ctx.getText());
-    }
-
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitBigDecimalLiteral(SqlBaseParser.BigDecimalLiteralContext ctx) {
-        return super.visitBigDecimalLiteral(ctx);
     }
 
     @Override
     public Node visitStringLiteral(SqlBaseParser.StringLiteralContext ctx) {
         return new StringLiteral(getLocation(ctx), unquote(ctx.getText()));
     }
-
-    // to be implement: presto diff from hive!
-    @Override
-    public Node visitInterval(SqlBaseParser.IntervalContext ctx) {
-        return super.visitInterval(ctx);
-    }
-
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitIntervalField(SqlBaseParser.IntervalFieldContext ctx) {
-        return super.visitIntervalField(ctx);
-    }
-
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitPrimitiveDataType(SqlBaseParser.PrimitiveDataTypeContext ctx) {
-        return super.visitPrimitiveDataType(ctx);
-    }
-
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitComplexDataType(SqlBaseParser.ComplexDataTypeContext ctx) {
-        return super.visitComplexDataType(ctx);
-    }
-
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitColTypeList(SqlBaseParser.ColTypeListContext ctx) {
-        return super.visitColTypeList(ctx);
-    }
-
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitColType(SqlBaseParser.ColTypeContext ctx) {
-        return super.visitColType(ctx);
-    }
-
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitComplexColTypeList(SqlBaseParser.ComplexColTypeListContext ctx) {
-        return super.visitComplexColTypeList(ctx);
-    }
-
-    // to be implement: presto have no this func!
-    @Override
-    public Node visitComplexColType(SqlBaseParser.ComplexColTypeContext ctx) {
-        return super.visitComplexColType(ctx);
-    }
-
 
     /////////////////////
     // Utility methods //
@@ -1247,6 +1210,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     {
         requireNonNull(token, "token is null");
         return new NodeLocation(token.getLine(), token.getCharPositionInLine());
+    }
+
+    private static void check(boolean condition, String message, ParserRuleContext context)
+    {
+        if (!condition) {
+            throw parseError(message, context);
+        }
     }
 
     /**

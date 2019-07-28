@@ -20,8 +20,10 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
 public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Node> {
@@ -243,7 +245,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public Node visitNumericLiteral(SqlBaseParser.NumericLiteralContext ctx) {
         try {
             Number num = NumberFormat.getInstance().parse(ctx.getText());
-            if (num instanceof Double) {
+            // need to make sure it keeps it's original value, e.g. 1.0 is double not integer.
+            if (num instanceof Double || !num.toString().equals(ctx.getText())) {
                 switch (parsingOptions.getDecimalLiteralTreatment()) {
                     case AS_DOUBLE:
                         return new DoubleLiteral(getLocation(ctx), ctx.getText());
@@ -694,10 +697,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
     }
 
-    // need to be implemented
     @Override
     public Node visitCast(SqlBaseParser.CastContext ctx) {
-        LOG.info("---------- data type:" + ctx.dataType().getText());
         return new Cast(getLocation(ctx), (Expression) visit(ctx.expression()), getType(ctx.dataType()), false);
     }
 
@@ -999,7 +1000,48 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     private String getType(SqlBaseParser.DataTypeContext type)
     {
-        throw new IllegalArgumentException("Unsupported type specification: " + type.getText());
+        if (type instanceof SqlBaseParser.PrimitiveDataTypeContext) {
+            SqlBaseParser.PrimitiveDataTypeContext primitiveType = (SqlBaseParser.PrimitiveDataTypeContext)type;
+
+            String signature = primitiveType.getText();
+
+//            if (type.baseType().DOUBLE_PRECISION() != null) {
+//                // TODO: Temporary hack that should be removed with new planner.
+//                signature = "DOUBLE";
+//            }
+
+            return signature;
+        } else {
+            SqlBaseParser.ComplexDataTypeContext complexType = (SqlBaseParser.ComplexDataTypeContext)type;
+
+            if (complexType.ARRAY() != null) {
+                return "ARRAY(" + getType((complexType.dataType(0))) + ")";
+            }
+
+            if (complexType.MAP() != null) {
+                return "MAP(" + getType((complexType.dataType(0))) + "," + getType((complexType.dataType(1))) + ")";
+            }
+
+            if (complexType.STRUCT() != null) {
+                StringBuilder builder = new StringBuilder("(");
+
+                for (int i = 0; i < complexType.complexColTypeList().complexColType().size(); i++) {
+                    SqlBaseParser.ComplexColTypeContext complexColTypeContext = complexType.complexColTypeList().complexColType().get(i);
+
+                    if (i != 0) {
+                        builder.append(",");
+                    }
+
+                    builder.append(visit(complexColTypeContext.identifier()))
+                            .append(" ")
+                            .append(getType(complexColTypeContext.dataType()));
+                }
+                builder.append(")");
+                return "ROW" + builder.toString();
+            }
+        }
+
+        throw parseError("Don't support type specification: " + type.getText(), type);
     }
 
     private static ArithmeticBinaryExpression.Operator getArithmeticBinaryOperator(Token operator)

@@ -4,6 +4,7 @@ import io.prestosql.sql.parser.ParsingOptions;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.parser.SqlParserOptions;
 import io.prestosql.sql.tree.Node;
+import io.prestosql.sql.tree.ShowSchemas;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -228,6 +229,16 @@ public class TestHiveSqlParser {
 
         Node node = sqlParser.createStatement(hiveSql, hiveParsingOptions);
         System.out.println(node);
+    }
+
+    @Test
+    public void testHiveShowDatabases()
+    {
+        String hiveSql = "SHOW DATABASES like '%tmp%'";
+        String prestoSql = "SHOW SCHEMAS like '%tmp%'";
+        Node hiveNode = sqlParser.createStatement(hiveSql, hiveParsingOptions);
+        Node prestoNode = sqlParser.createStatement(hiveSql, hiveParsingOptions);
+        System.out.println(hiveSql);
     }
 
 }

@@ -559,23 +559,23 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitGroupBy(HiveSqlBaseParser.GroupByContext context)
     {
-        List<GroupingElement> groupingSetContexts = visit(context.groupingElement(), GroupingElement.class);
+        List<GroupingElement> groupingElements = visit(context.groupingElement(), GroupingElement.class);
         if (context.kind.getType() == HiveSqlBaseLexer.CUBE) {
             List<Expression> expressions = new ArrayList<>();
-            for (GroupingElement groupingElement: groupingSetContexts) {
+            for (GroupingElement groupingElement: groupingElements) {
                 expressions.addAll(groupingElement.getExpressions());
             }
             Cube cube = new Cube(getLocation(context), expressions);
             return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), ImmutableList.of(cube));
         } else if (context.kind.getType() == HiveSqlBaseLexer.ROLLUP){
             List<Expression> expressions = new ArrayList<>();
-            for (GroupingElement groupingElement: groupingSetContexts) {
+            for (GroupingElement groupingElement: groupingElements) {
                 expressions.addAll(groupingElement.getExpressions());
             }
             Rollup rollup = new Rollup(getLocation(context), expressions);
             return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), ImmutableList.of(rollup));
         }
-        return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), visit(context.groupingElement(), GroupingElement.class));
+        return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), groupingElements);
     }
 
     @Override
@@ -714,6 +714,17 @@ public class PrestoHiveAstBuilder
 
     @Override
     public Node visitShowSchemas(HiveSqlBaseParser.ShowSchemasContext context)
+    {
+        return new ShowSchemas(
+                getLocation(context),
+                visitIfPresent(context.identifier(), Identifier.class),
+                getTextIfPresent(context.pattern)
+                        .map(PrestoHiveAstBuilder::unquote),
+                getTextIfPresent(context.escape)
+                        .map(PrestoHiveAstBuilder::unquote));
+    }
+
+    @Override public Node visitShowDatabases(HiveSqlBaseParser.ShowDatabasesContext context)
     {
         return new ShowSchemas(
                 getLocation(context),

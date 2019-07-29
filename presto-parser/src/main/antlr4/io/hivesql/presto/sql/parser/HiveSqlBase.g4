@@ -94,6 +94,8 @@ statement
         (LIKE pattern=string (ESCAPE escape=string)?)?                 #showTables
     | SHOW SCHEMAS ((FROM | IN) identifier)?
         (LIKE pattern=string (ESCAPE escape=string)?)?                 #showSchemas
+    | SHOW DATABASES ((FROM | IN) identifier)?
+        (LIKE pattern=string (ESCAPE escape=string)?)?                 #showDatabases
     | SHOW CATALOGS (LIKE pattern=string)?                             #showCatalogs
     | SHOW COLUMNS (FROM | IN) qualifiedName                           #showColumns
     | SHOW STATS FOR qualifiedName                                     #showStats
@@ -677,6 +679,7 @@ ROW: 'ROW';
 ROWS: 'ROWS';
 SCHEMA: 'SCHEMA';
 SCHEMAS: 'SCHEMAS';
+DATABASES: 'DATABASES';
 SECOND: 'SECOND';
 SECURITY: 'SECURITY';
 SELECT: 'SELECT';

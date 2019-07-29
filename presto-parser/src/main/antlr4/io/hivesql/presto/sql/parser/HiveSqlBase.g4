@@ -183,7 +183,10 @@ lateralView
     ;
 
 groupBy
-    : setQuantifier? groupingElement (',' groupingElement)*
+    : setQuantifier? groupingElement (',' groupingElement)* (
+      WITH kind=ROLLUP
+    | WITH kind=CUBE
+    | kind=GROUPING SETS '(' groupingSet (',' groupingSet)* ')')?
     ;
 
 groupingElement
@@ -633,7 +636,8 @@ NFKD : 'NFKD';
 NO: 'NO';
 NONE: 'NONE';
 NORMALIZE: 'NORMALIZE';
-NOT: 'NOT';
+// add ! support
+NOT: 'NOT' | '!';
 NULL: 'NULL';
 NULLIF: 'NULLIF';
 NULLS: 'NULLS';

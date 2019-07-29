@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Iterables.get;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -502,7 +503,7 @@ public class PrestoHiveAstBuilder
             from = Optional.of(relation);
         }
 
-        if (context.lateralView().size() >= 0) {
+        if (context.lateralView().size() > 0) {
             HiveSqlBaseParser.LateralViewContext lateralViewContext = context.lateralView(0);
             Node node = visitLateralView(lateralViewContext);
             Relation relation = new Join(getLocation(lateralViewContext), Join.Type.CROSS, from.get(), (AliasedRelation)node, Optional.empty());
@@ -558,6 +559,22 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitGroupBy(HiveSqlBaseParser.GroupByContext context)
     {
+        List<GroupingElement> groupingSetContexts = visit(context.groupingElement(), GroupingElement.class);
+        if (context.kind.getType() == HiveSqlBaseLexer.CUBE) {
+            List<Expression> expressions = new ArrayList<>();
+            for (GroupingElement groupingElement: groupingSetContexts) {
+                expressions.addAll(groupingElement.getExpressions());
+            }
+            Cube cube = new Cube(getLocation(context), expressions);
+            return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), ImmutableList.of(cube));
+        } else if (context.kind.getType() == HiveSqlBaseLexer.ROLLUP){
+            List<Expression> expressions = new ArrayList<>();
+            for (GroupingElement groupingElement: groupingSetContexts) {
+                expressions.addAll(groupingElement.getExpressions());
+            }
+            Rollup rollup = new Rollup(getLocation(context), expressions);
+            return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), ImmutableList.of(rollup));
+        }
         return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), visit(context.groupingElement(), GroupingElement.class));
     }
 

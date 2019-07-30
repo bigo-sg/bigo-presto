@@ -31,9 +31,10 @@ public class ArithmeticBinaryExpression
         MODULUS("%"),
         DIV("DIV"),
         AMPERSAND("&"),
-        HAT("^"),
-        PIPE("|")
-        ;
+        PIPE("|"),
+        TILDE("~"),
+        CONCAT_PIPE("||"),
+        HAT("^");
         private final String value;
 
         Operator(String value)

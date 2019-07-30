@@ -1,105 +1,48 @@
 package io.prestosql.sql.hive;
 
-import io.prestosql.sql.parser.ParsingOptions;
-import io.prestosql.sql.parser.SqlParser;
-import io.prestosql.sql.parser.SqlParserOptions;
+import io.hivesql.sql.parser.SQLTester;
 import io.prestosql.sql.tree.Node;
-import io.prestosql.sql.tree.ShowSchemas;
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import static io.prestosql.sql.parser.IdentifierSymbol.COLON;
-
-public class TestHiveSqlParser {
-
-    private SqlParser sqlParser = null;
-    private ParsingOptions hiveParsingOptions = null;
-    private ParsingOptions prestoParsingOptions = null;
-    @BeforeTest
-    public void init() {
-        sqlParser = new SqlParser(new SqlParserOptions().allowIdentifierSymbol(COLON));
-        hiveParsingOptions = new ParsingOptions();
-        hiveParsingOptions.setIfUseHiveParser(true);
-        prestoParsingOptions = new ParsingOptions();
-        prestoParsingOptions.setIfUseHiveParser(false);
-    }
-
-    @Test
-    public void testUse()
-    {
-        String sql = "USE hive.tmp";
-        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-        System.out.println(node);
-    }
+public class TestHiveSqlParserWithCheck extends SQLTester {
 
     @Test
     public void testSetSession()
     {
         String sql = "SET SESSION foo=true";
-        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-        System.out.println(node);
+        checkASTNode(sql);
     }
 
     @Test
     public void testHiveSimple()
     {
-        String sql = "SELECT x FROM `t.x.m`";
-        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-        System.out.println(node);
-    }
-
-    @Test
-    public void testPrestoSimple()
-    {
-        String sql = "SELECT x FROM t.x.m";
-        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-        System.out.println(node);
+        String sql1 = "SELECT x FROM `t.x.m`";
+        String sql2 = "SELECT x FROM t.x.m";
+        Node node1 = useHiveParser(sql1);
+        Node node2 = useHiveParser(sql2);
+        checkASTNode(node1, node2);
     }
 
     @Test
     public void testSelect01()
     {
-        String sql = "SELECT \"a\",b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
-        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-        System.out.println(node);
-    }
-
-    @Test
-    public void testQuotedQuery()
-    {
-        String sql = "SELECT `a`,b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
-        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-        System.out.println(node);
+        String presto = "SELECT \"a\",b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
+        String hive = "SELECT `a`,b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
+        checkASTNode(presto, hive);
     }
     @Test
     public void testDoubleEq()
     {
-        String sql = "SELECT `a`,b,c,d FROM ALGO.t WHERE x==321 LIMIT 100";
-        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-        System.out.println(node);
+        String presto = "SELECT a,b,c,d FROM ALGO.t WHERE x=321 LIMIT 100";
+        String hive = "SELECT `a`,b,c,d FROM ALGO.t WHERE x==321 LIMIT 100";
+        checkASTNode(presto, hive);
     }
     @Test
     public void testTableStartWithDigit()
     {
-        String sql = "select * from TMP.20171014_tmpdata limit 10";
-        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-        System.out.println(node);
-    }
-
-    @Test
-    public void testSplit()
-    {
-        String sql = "\"split\"(\"registertime\", ' ')[BIGINT '1']";
-        Node node = sqlParser.createExpression(sql);
-        System.out.println(node);
-    }
-
-    @Test
-    public void testBinnary()
-    {
-        String sql = "select 111|112 as x from bigolive.presto_job_audit where day='2019-07-26' limit 1";
-        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-        System.out.println(node);
+        String hive = "select * from TMP.20171014_tmpdata limit 10";
+        String presto = "select * from TMP.\"20171014_tmpdata\" limit 10";
+        checkASTNode(presto, hive);
     }
 
     @Test
@@ -107,21 +50,12 @@ public class TestHiveSqlParser {
     {
         String prestoSql = "" +
                 "SELECT event.*\n" +
-                "FROM tb1 CROSS JOIN UNNEST(events) WITH ORDINALITY AS event (pos, event)";
-
-        Node node = sqlParser.createStatement(prestoSql, prestoParsingOptions);
-        System.out.println(node);
-    }
-
-    @Test
-    public void testLateralViewWithOrdinality()
-    {
+                "FROM tb1 CROSS JOIN UNNEST(events) WITH ORDINALITY AS event (pos, c1)";
         String hiveSql = "" +
                 "SELECT event.*\n" +
-                "FROM tb1 lateral view posexplode(events) t1 as pos, event";
+                "FROM tb1 lateral view posexplode(events) event as pos, c1";
 
-        Node node = sqlParser.createStatement(hiveSql, hiveParsingOptions);
-        System.out.println(node);
+        checkASTNode(prestoSql, hiveSql);
     }
 
     @Test
@@ -130,24 +64,15 @@ public class TestHiveSqlParser {
         String prestoSql = "" +
                 "SELECT event.*, event1.*" +
                 "FROM tb1 " +
-                "CROSS JOIN UNNEST(events1) WITH ORDINALITY AS event1 (c1) " +
-                "CROSS JOIN UNNEST(events) WITH ORDINALITY AS event (c)";
-
-        Node node = sqlParser.createStatement(prestoSql, prestoParsingOptions);
-        System.out.println(node);
-    }
-
-    @Test
-    public void testLateralViewMultiColumn()
-    {
+                "CROSS JOIN UNNEST(events) AS event (c) " +
+                "CROSS JOIN UNNEST(events1) AS event1 (c1)";
         String hiveSql = "" +
                 "SELECT event.*, event1.*" +
                 "FROM tb1 " +
                 "lateral view explode(events) event as c " +
                 "lateral view explode(events1) event1 as c1";
 
-        Node node = sqlParser.createStatement(hiveSql, hiveParsingOptions);
-        System.out.println(node);
+        checkASTNode(prestoSql, hiveSql);
     }
 
     @Test
@@ -162,7 +87,7 @@ public class TestHiveSqlParser {
                 "lateral view explode(numbers) t as c\n" +
                 " lateral view explode(animals) t1 as c1";
 
-        Node node = sqlParser.createStatement(hiveSql, hiveParsingOptions);
+        Node node = useHiveParser(hiveSql);
         System.out.println(node);
     }
 
@@ -208,7 +133,7 @@ public class TestHiveSqlParser {
                 ") t0\n" +
                 "group by session_id,uid,hdid,country,client_version,phone_lang,os,net_type,login_status,market_source,follow_source,followed_uid LIMIT 10";
 
-        Node node = sqlParser.createStatement(hiveSql, hiveParsingOptions);
+        Node node = useHiveParser(hiveSql);
         System.out.println(node);
     }
 
@@ -216,27 +141,18 @@ public class TestHiveSqlParser {
     @Test
     public void testPrestoWithCube()
     {
-        String hiveSql = "SELECT day, user, count(1)\n" +
+        String prestoSql = "SELECT day, user, count(1)\n" +
                 "FROM bigolive.presto_job_audit\n" +
                 "where user = 'weijing'\n" +
                 "GROUP by cube(day, user)\n" +
                 "limit 10";
 
-        Node node = sqlParser.createStatement(hiveSql, prestoParsingOptions);
-        System.out.println(node);
-    }
-
-    @Test
-    public void testHiveWithCube()
-    {
         String hiveSql = "SELECT day, `user`, count(1)\n" +
                 "FROM bigolive.presto_job_audit\n" +
                 "where user == \"weijing\"\n" +
                 "GROUP by `day`, user with cube\n" +
                 "limit 10";
-
-        Node node = sqlParser.createStatement(hiveSql, hiveParsingOptions);
-        System.out.println(node);
+        checkASTNode(prestoSql, hiveSql);
     }
 
     @Test
@@ -244,9 +160,7 @@ public class TestHiveSqlParser {
     {
         String hiveSql = "SHOW DATABASES like '%tmp%'";
         String prestoSql = "SHOW SCHEMAS like '%tmp%'";
-        Node hiveNode = sqlParser.createStatement(hiveSql, hiveParsingOptions);
-        Node prestoNode = sqlParser.createStatement(hiveSql, hiveParsingOptions);
-        System.out.println(hiveSql);
+        checkASTNode(prestoSql, hiveSql);
     }
 
 }

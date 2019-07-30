@@ -18,24 +18,21 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import io.hivesql.presto.sql.parser.HiveSqlBaseBaseVisitor;
+import io.hivesql.presto.sql.parser.HiveSqlBaseLexer;
 import io.hivesql.presto.sql.parser.HiveSqlBaseParser;
 import io.prestosql.sql.parser.ParsingException;
 import io.prestosql.sql.parser.ParsingOptions;
-import io.hivesql.presto.sql.parser.HiveSqlBaseLexer;
 import io.prestosql.sql.tree.*;
+import io.prestosql.sql.util.ArrayUtils;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Iterables.get;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -199,9 +196,14 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitDelete(HiveSqlBaseParser.DeleteContext context)
     {
+        String tableName = context.qualifiedName().getText();
+        QualifiedName qualifiedName = getQualifiedName(tableName);
+        if (qualifiedName == null) {
+            throw parseError("need table name!", context.qualifiedName());
+        }
         return new Delete(
                 getLocation(context),
-                new Table(getLocation(context), getQualifiedName(context.qualifiedName())),
+                new Table(getLocation(context), qualifiedName),
                 visitIfPresent(context.booleanExpression(), Expression.class));
     }
 
@@ -428,6 +430,15 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitQueryNoWith(HiveSqlBaseParser.QueryNoWithContext context)
     {
+        if (context.clusterBy != null && !context.clusterBy.isEmpty()) {
+            throw parseError("Don't support cluster by", context);
+        }
+        if (context.distributeBy != null && !context.distributeBy.isEmpty()) {
+            throw parseError("Don't support distribute by", context);
+        }
+        if (context.sort != null && !context.sort.isEmpty()) {
+            throw parseError("Don't support sort by", context);
+        }
         QueryBody term = (QueryBody) visit(context.queryTerm());
 
         Optional<OrderBy> orderBy = Optional.empty();
@@ -508,10 +519,15 @@ public class PrestoHiveAstBuilder
             Node node = visitLateralView(lateralViewContext);
             Relation relation = new Join(getLocation(lateralViewContext), Join.Type.CROSS, from.get(), (AliasedRelation)node, Optional.empty());
             from = Optional.of(relation);
-            for (int i = 1; i < context.lateralView().size(); ++i) {
-                HiveSqlBaseParser.LateralViewContext lateralViewContext1 = context.lateralView(i);
+            List<HiveSqlBaseParser.LateralViewContext> lateralViewContexts =
+                    new ArrayUtils<HiveSqlBaseParser.LateralViewContext>().copyAndReverse(
+                            context.lateralView());
+            Collections.reverse(lateralViewContexts);
+            for (int i = 1; i < lateralViewContexts.size(); ++i) {
+                HiveSqlBaseParser.LateralViewContext lateralViewContext1 = lateralViewContexts.get(i);
                 Node node1 = visitLateralView(lateralViewContext1);
-                Relation relation1 = new Join(getLocation(lateralViewContext1), Join.Type.CROSS, from.get(), (AliasedRelation)node1, Optional.empty());
+                Relation relation1 = new Join(getLocation(lateralViewContext1), Join.Type.CROSS,
+                        from.get(), (AliasedRelation)node1, Optional.empty());
                 from = Optional.of(relation1);
             }
         }
@@ -560,20 +576,22 @@ public class PrestoHiveAstBuilder
     public Node visitGroupBy(HiveSqlBaseParser.GroupByContext context)
     {
         List<GroupingElement> groupingElements = visit(context.groupingElement(), GroupingElement.class);
-        if (context.kind.getType() == HiveSqlBaseLexer.CUBE) {
-            List<Expression> expressions = new ArrayList<>();
-            for (GroupingElement groupingElement: groupingElements) {
-                expressions.addAll(groupingElement.getExpressions());
+        if (context.kind != null) {
+            if (context.kind.getType() == HiveSqlBaseLexer.CUBE) {
+                List<Expression> expressions = new ArrayList<>();
+                for (GroupingElement groupingElement : groupingElements) {
+                    expressions.addAll(groupingElement.getExpressions());
+                }
+                Cube cube = new Cube(getLocation(context), expressions);
+                return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), ImmutableList.of(cube));
+            } else if (context.kind.getType() == HiveSqlBaseLexer.ROLLUP) {
+                List<Expression> expressions = new ArrayList<>();
+                for (GroupingElement groupingElement : groupingElements) {
+                    expressions.addAll(groupingElement.getExpressions());
+                }
+                Rollup rollup = new Rollup(getLocation(context), expressions);
+                return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), ImmutableList.of(rollup));
             }
-            Cube cube = new Cube(getLocation(context), expressions);
-            return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), ImmutableList.of(cube));
-        } else if (context.kind.getType() == HiveSqlBaseLexer.ROLLUP){
-            List<Expression> expressions = new ArrayList<>();
-            for (GroupingElement groupingElement: groupingElements) {
-                expressions.addAll(groupingElement.getExpressions());
-            }
-            Rollup rollup = new Rollup(getLocation(context), expressions);
-            return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), ImmutableList.of(rollup));
         }
         return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), groupingElements);
     }
@@ -646,7 +664,12 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitTable(HiveSqlBaseParser.TableContext context)
     {
-        return new Table(getLocation(context), getQualifiedName(context.qualifiedName()));
+        String tableName = context.qualifiedName().getText();
+        QualifiedName qualifiedName = getQualifiedName(tableName);
+        if (qualifiedName == null) {
+            throw parseError("need table name!", context.qualifiedName());
+        }
+        return new Table(getLocation(context), qualifiedName);
     }
 
     @Override
@@ -752,7 +775,12 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitShowStats(HiveSqlBaseParser.ShowStatsContext context)
     {
-        return new ShowStats(Optional.of(getLocation(context)), new Table(getQualifiedName(context.qualifiedName())));
+        String tableName = context.qualifiedName().getText();
+        QualifiedName qualifiedName = getQualifiedName(tableName);
+        if (qualifiedName == null) {
+            throw parseError("need table name!", context.qualifiedName());
+        }
+        return new ShowStats(Optional.of(getLocation(context)), new Table(qualifiedName));
     }
 
     @Override
@@ -1027,7 +1055,12 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitTableName(HiveSqlBaseParser.TableNameContext context)
     {
-        return new Table(getLocation(context), getQualifiedName(context.qualifiedName()));
+        String tableName = context.qualifiedName().getText();
+        QualifiedName qualifiedName = getQualifiedName(tableName);
+        if (qualifiedName == null) {
+            throw parseError("need table name!", context.qualifiedName());
+        }
+        return new Table(getLocation(context), qualifiedName);
     }
 
     @Override
@@ -1901,6 +1934,18 @@ public class PrestoHiveAstBuilder
     {
         return QualifiedName.of(visit(context.identifier(), Identifier.class));
     }
+    private QualifiedName getQualifiedName(String qualifiedName)
+    {
+        if (qualifiedName == null) {
+            return null;
+        }
+        String[] tmp = qualifiedName.replace("`", "").
+                replace("\"", "").split("\\.");
+        if (tmp.length == 0) {
+            return null;
+        }
+        return QualifiedName.of(tmp[0], Arrays.copyOfRange(tmp, 1, tmp.length));
+    }
 
     private static boolean isDistinct(HiveSqlBaseParser.SetQuantifierContext setQuantifier)
     {
@@ -2160,6 +2205,19 @@ public class PrestoHiveAstBuilder
         }
 
         if (type.ROW() != null) {
+            StringBuilder builder = new StringBuilder("(");
+            for (int i = 0; i < type.identifier().size(); i++) {
+                if (i != 0) {
+                    builder.append(",");
+                }
+                builder.append(visit(type.identifier(i)))
+                        .append(" ")
+                        .append(getType(type.type(i)));
+            }
+            builder.append(")");
+            return "ROW" + builder.toString();
+        }
+        if (type.STRUCT() != null) {
             StringBuilder builder = new StringBuilder("(");
             for (int i = 0; i < type.identifier().size(); i++) {
                 if (i != 0) {

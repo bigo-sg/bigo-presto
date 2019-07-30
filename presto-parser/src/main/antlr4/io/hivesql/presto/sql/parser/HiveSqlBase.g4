@@ -150,7 +150,10 @@ property
 
 queryNoWith:
       queryTerm
-      (ORDER BY sortItem (',' sortItem)*)?
+      ((ORDER) BY sortItem (',' sortItem)*)?
+      (CLUSTER BY clusterBy+=expression (',' clusterBy+=expression)*)?
+      (DISTRIBUTE BY distributeBy+=expression (',' distributeBy+=expression)*)?
+      (SORT BY sort+=sortItem (',' sort+=sortItem)*)?
       (OFFSET offset=INTEGER_VALUE (ROW | ROWS)?)?
       ((LIMIT limit=(INTEGER_VALUE | ALL)) | (FETCH (FIRST | NEXT) (fetchFirst=INTEGER_VALUE)? (ROW | ROWS) (ONLY | WITH TIES)))?
     ;
@@ -388,6 +391,17 @@ type
     | ROW '(' identifier type (',' identifier type)* ')'
     | baseType ('(' typeParameter (',' typeParameter)* ')')?
     | INTERVAL from=intervalField TO to=intervalField
+    // added
+    | complex=STRUCT ('<' complexColTypeList? '>' | '<>')
+    | identifier ('(' INTEGER_VALUE (',' INTEGER_VALUE)* ')')?
+    ;
+
+complexColTypeList
+    : complexColType (',' complexColType)*
+    ;
+
+complexColType
+    : identifier ':' type (COMMENT STRING)?
     ;
 
 typeParameter
@@ -649,6 +663,10 @@ ONLY: 'ONLY';
 OPTION: 'OPTION';
 OR: 'OR';
 ORDER: 'ORDER';
+//added
+SORT: 'SORT';
+CLUSTER: 'CLUSTER';
+DISTRIBUTE: 'DISTRIBUTE';
 ORDINALITY: 'ORDINALITY';
 OUTER: 'OUTER';
 OUTPUT: 'OUTPUT';
@@ -676,6 +694,8 @@ ROLES: 'ROLES';
 ROLLBACK: 'ROLLBACK';
 ROLLUP: 'ROLLUP';
 ROW: 'ROW';
+// added
+STRUCT: 'STRUCT';
 ROWS: 'ROWS';
 SCHEMA: 'SCHEMA';
 SCHEMAS: 'SCHEMAS';

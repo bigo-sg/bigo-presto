@@ -7,7 +7,6 @@ import io.hivesql.sql.parser.SqlBaseLexer;
 import io.hivesql.sql.parser.SqlBaseParser;
 import io.prestosql.sql.parser.ParsingException;
 import io.prestosql.sql.parser.ParsingOptions;
-import io.prestosql.sql.parser.debug.FieldUtils;
 import io.prestosql.sql.tree.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RuleContext;
@@ -17,6 +16,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +24,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Node> {
-    private static final Logger LOG = Logger.get(HiveAstBuilder.class);
 
     private final ParsingOptions parsingOptions;
 
@@ -65,6 +64,62 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         throw parseError("Unsupported set operation: " + ctx.operator.getText(), ctx);
+    }
+
+    @Override public Node visitCreateDatabase(SqlBaseParser.CreateDatabaseContext ctx)
+    {
+        List<Property> properties = new ArrayList<>();
+        SqlBaseParser.TablePropertyListContext tablePropertyListContext = ctx.tablePropertyList();
+        if (tablePropertyListContext != null) {
+            List<SqlBaseParser.TablePropertyContext> tablePropertyContexts =
+                    tablePropertyListContext.tableProperty();
+            for (SqlBaseParser.TablePropertyContext tablePropertyContext: tablePropertyContexts) {
+                Property property = (Property) visitTableProperty(tablePropertyContext);
+                properties.add(property);
+            }
+        }
+        return new CreateSchema(
+                getLocation(ctx),
+                getQualifiedName(ctx.identifier().getText()),
+                ctx.EXISTS() != null,
+                properties);
+    }
+    @Override public Node visitTableProperty(SqlBaseParser.TablePropertyContext ctx)
+    {
+        Expression value = null;
+        Object type = ctx.value.STRING();
+        if (type != null) {
+            value = new StringLiteral(ctx.value.getText().
+                    replace("\"", "").
+                    replace("\'", ""));
+        }
+        type = ctx.value.booleanValue();
+        if (type != null) {
+            value = new BooleanLiteral(ctx.value.getText());
+        }
+        type = ctx.value.DECIMAL_VALUE();
+        if (type != null) {
+            value = new DecimalLiteral(ctx.value.getText());
+        }
+        type = ctx.value.INTEGER_VALUE();
+        if (type != null) {
+            value = new LongLiteral(ctx.value.getText());
+        }
+        return new Property(getLocation(ctx),
+                new Identifier(ctx.key.getText(), false), value);
+    }
+
+    @Override public Node visitDropDatabase(SqlBaseParser.DropDatabaseContext ctx)
+    {
+        return new DropSchema(
+                getLocation(ctx),
+                getQualifiedName(ctx.identifier().getText()),
+                ctx.EXISTS() != null,
+                false);
+    }
+    @Override public Node visitSetDatabaseProperties(SqlBaseParser.SetDatabasePropertiesContext ctx)
+    {
+        throw parseError("not support alter properties in presto hive sql", ctx);
     }
 
     @Override
@@ -138,6 +193,24 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public Node visitInsertOverwriteTable(SqlBaseParser.InsertOverwriteTableContext ctx) {
         return super.visitInsertOverwriteTable(ctx);
     }
+    @Override public Node visitShowDatabases(SqlBaseParser.ShowDatabasesContext ctx)
+    {
+        return new ShowSchemas(
+                getLocation(ctx), Optional.empty(), getTextIfPresent(ctx.pattern)
+                        .map(HiveAstBuilder::unquote), Optional.empty());
+    }
+    @Override public Node visitShowTables(SqlBaseParser.ShowTablesContext ctx)
+    {
+        Optional<QualifiedName> database;
+        if (ctx.db != null) {
+            database = Optional.of(getQualifiedName(ctx.db.getText()));
+        } else {
+            database = Optional.empty();
+        }
+        return new ShowTables(
+                getLocation(ctx), database,getTextIfPresent(ctx.pattern)
+                .map(HiveAstBuilder::unquote), Optional.empty());
+    }
 
     @Override
     public Node visitRelation(SqlBaseParser.RelationContext ctx) {
@@ -158,14 +231,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             SqlBaseParser.FromClauseContext fromClauseContext = (SqlBaseParser.FromClauseContext) parent;
 
             List<AliasedRelation> unnests = visit(fromClauseContext.lateralView(), AliasedRelation.class);
-            if (unnests.size() > 1) {
-                throw parseError("todo", ctx);
-            }
-
-            if (unnests.size() == 1) {
+            if (unnests.size() >= 1) {
                 AliasedRelation unnest = unnests.get(0);
-
                 left = new Join(getLocation(ctx), Join.Type.CROSS, left, unnest, Optional.empty());
+
+                for (int i = 1; i < unnests.size(); ++i) {
+                    left = new Join(getLocation(ctx), Join.Type.CROSS, left, unnests.get(i), Optional.empty());
+                }
             }
         }
 
@@ -308,10 +380,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         Unnest unnest = new Unnest(getLocation(ctx), visit(ctx.expression(), Expression.class), withOrdinality);
 
         List<Identifier> columnNames = visit(ctx.colName, Identifier.class);
-        if (columnNames.size() > 1) {
-            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.identifier), columnNames);
+        if (columnNames.size() > 0) {
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
         } else {
-            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.identifier), null);
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), null);
         }
     }
 
@@ -455,7 +527,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         SqlBaseParser.ExpressionContext expression = ctx.expression();
         SetSession setSession = new SetSession(getLocation(ctx),
                 getQualifiedName(ctx.qualifiedName()), (Expression) visit(expression));
-        LOG.info("-------setSession:" + FieldUtils.filedsToString(setSession));
         return setSession;
     }
 
@@ -1146,11 +1217,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     {
         List<Identifier> identifiers = new ArrayList<>();
         for (SqlBaseParser.IdentifierContext identifierContext: context.identifier()) {
-            Identifier identifier =
-                    new Identifier(getLocation(identifierContext),
-                            identifierContext.getText(), false);
-            identifiers.add(identifier);
-            visit(identifierContext);
+            String qualifiedName = identifierContext.getText();
+            String[] tmp = qualifiedName.replace("`", "").
+                    replace("\"", "").split("\\.");
+
+            for (String id: tmp) {
+                Identifier identifier =
+                        new Identifier(getLocation(identifierContext),
+                                id, false);
+                identifiers.add(identifier);
+            }
         }
         return QualifiedName.of(identifiers);
     }
@@ -1218,6 +1294,20 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             throw parseError(message, context);
         }
     }
+
+    private static QualifiedName getQualifiedName(String qualifiedName)
+    {
+        if (qualifiedName == null) {
+            return null;
+        }
+        String[] tmp = qualifiedName.replace("`", "").
+                replace("\"", "").split("\\.");
+        if (tmp.length == 0) {
+            return null;
+        }
+        return QualifiedName.of(tmp[0], Arrays.copyOfRange(tmp, 1, tmp.length));
+    }
+
 
     /**
      * this will remove single quotation, double quotation and backtick.

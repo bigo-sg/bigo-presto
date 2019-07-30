@@ -18,9 +18,16 @@ public class TestHiveSqlParserWithCheck extends SQLTester {
     {
         String sql1 = "SELECT x FROM `t.x.m`";
         String sql2 = "SELECT x FROM t.x.m";
-        Node node1 = useHiveParser(sql1);
-        Node node2 = useHiveParser(sql2);
-        checkASTNode(node1, node2);
+
+        checkASTNode(sql2, sql1);
+    }
+    @Test
+    public void testHiveSimple1()
+    {
+        String sql1 = "SELECT x FROM `t`.`x.m`";
+        String sql2 = "SELECT x FROM t.x.m";
+
+        checkASTNode(sql2, sql1);
     }
 
     @Test
@@ -73,22 +80,6 @@ public class TestHiveSqlParserWithCheck extends SQLTester {
                 "lateral view explode(events1) event1 as c1";
 
         checkASTNode(prestoSql, hiveSql);
-    }
-
-    @Test
-    public void testLateralViewMultiColumn1()
-    {
-        String hiveSql = "SELECT numbers, animals,c,c2\n" +
-                "FROM (\n" +
-                "  VALUES\n" +
-                "    (ARRAY[2, 5], ARRAY['dog', 'cat', 'bird']),\n" +
-                "    (ARRAY[7, 8, 9], ARRAY['cow', 'pig'])\n" +
-                ") AS x (numbers, animals)\n" +
-                "lateral view explode(numbers) t as c\n" +
-                " lateral view explode(animals) t1 as c1";
-
-        Node node = useHiveParser(hiveSql);
-        System.out.println(node);
     }
 
     @Test

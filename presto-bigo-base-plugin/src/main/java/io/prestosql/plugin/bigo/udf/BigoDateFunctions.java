@@ -10,11 +10,16 @@ import io.prestosql.spi.type.StandardTypes;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
+import io.airlift.log.Logger;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.prestosql.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 
 public class BigoDateFunctions {
+    private static final Logger LOG = Logger.get(BigoDateFunctions.class);
+    private static final String defaultFormat = "yyyy-MM-dd HH:mm:ss";
+
     @Description("Returns the date that is num_days after start_date.")
     @ScalarFunction("date_add")
     @SqlType(StandardTypes.VARCHAR)
@@ -45,5 +50,40 @@ public class BigoDateFunctions {
             @SqlType(StandardTypes.INTEGER) long daysToAdd)
     {
         return dateAdd(startDate, -daysToAdd);
+    }
+
+    @ScalarFunction("unix_timestamp")
+    @SqlType(StandardTypes.DOUBLE)
+    public static double unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice sliceTime)
+    {
+        SimpleDateFormat df = new SimpleDateFormat(defaultFormat);
+        try{
+            Date date = df.parse(sliceTime.toStringUtf8());
+            return toUnixTime(date.getTime());
+        }catch(Exception e){
+            LOG.info(e.getMessage());
+        }
+        return 0;
+    }
+
+    @ScalarFunction("toUnixTime")
+    @SqlType(StandardTypes.DOUBLE)
+    public static double toUnixTime(@SqlType(StandardTypes.TIMESTAMP) long timestamp)
+    {
+        return timestamp / 1000.0;
+    }
+
+    @ScalarFunction("unix_timestamp")
+    @SqlType(StandardTypes.DOUBLE)
+    public static double unixTimestamp (@SqlType(StandardTypes.VARCHAR) Slice sliceTime, @SqlType(StandardTypes.VARCHAR) Slice sliceFormat)
+    {
+        SimpleDateFormat df = new SimpleDateFormat(sliceFormat.toStringUtf8());
+        try{
+            Date date = df.parse(sliceTime.toStringUtf8());
+            return toUnixTime(date.getTime());
+        }catch(Exception e){
+            LOG.info(e.getMessage());
+        }
+        return 0;
     }
 }

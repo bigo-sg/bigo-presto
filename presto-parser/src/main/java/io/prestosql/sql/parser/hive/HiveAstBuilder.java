@@ -2,7 +2,6 @@ package io.prestosql.sql.parser.hive;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import io.airlift.log.Logger;
 import io.hivesql.sql.parser.SqlBaseLexer;
 import io.hivesql.sql.parser.SqlBaseParser;
 import io.prestosql.sql.parser.ParsingException;
@@ -89,9 +88,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         Expression value = null;
         Object type = ctx.value.STRING();
         if (type != null) {
-            value = new StringLiteral(ctx.value.getText().
-                    replace("\"", "").
-                    replace("\'", ""));
+            value = new StringLiteral(tryUnquote(ctx.value.getText()));
         }
         type = ctx.value.booleanValue();
         if (type != null) {
@@ -106,7 +103,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             value = new LongLiteral(ctx.value.getText());
         }
         return new Property(getLocation(ctx),
-                new Identifier(ctx.key.getText(), false), value);
+                new Identifier(tryUnquote(ctx.key.getText()), false), value);
     }
 
     @Override public Node visitDropDatabase(SqlBaseParser.DropDatabaseContext ctx)
@@ -146,7 +143,73 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitCreateHiveTable(SqlBaseParser.CreateHiveTableContext ctx) {
-        return super.visitCreateHiveTable(ctx);
+        Optional<String> comment = Optional.empty();
+        if (ctx.comment != null && ctx.comment.getText() != null) {
+            comment = Optional.of(ctx.comment.getText());
+        }
+        List<Property> properties = new ArrayList<>();
+//        if (ctx.tableProps != null) {
+//            List<SqlBaseParser.TablePropertyContext> tablePropertyContexts =
+//                    ctx.tableProps.tableProperty();
+//            for (SqlBaseParser.TablePropertyContext tablePropertyContext: tablePropertyContexts) {
+//                Property property = (Property) visitTableProperty(tablePropertyContext);
+//                properties.add(property);
+//            }
+//        }
+        if (ctx.partitionColumns != null) {
+            List<SqlBaseParser.ColTypeContext> colTypeListContexts =
+                    ctx.partitionColumns.colType();
+            List<Expression> partitionedCol = new ArrayList<>();
+            for (SqlBaseParser.ColTypeContext colTypeContext: colTypeListContexts) {
+                partitionedCol.add(new StringLiteral(tryUnquote(colTypeContext.identifier().getText())));
+            }
+            Property partitionedBy =
+                    new Property(new Identifier("partitioned_by", false),
+                            new ArrayConstructor(partitionedCol));
+            properties.add(partitionedBy);
+
+        }
+        if (ctx.rowFormat() != null && ctx.rowFormat(0) != null) {
+            SqlBaseParser.RowFormatContext rowFormatContext = ctx.rowFormat(0);
+            if (rowFormatContext instanceof SqlBaseParser.RowFormatSerdeContext) {
+                if (((SqlBaseParser.RowFormatSerdeContext) rowFormatContext).name.getText().
+                        contains("org.apache.hadoop.hive.ql.io.orc.OrcSerde")) {
+                    Property property = new Property(new Identifier("format", false),
+                            new StringLiteral("ORC"));
+                    properties.add(property);
+                }
+            }
+        }
+
+
+        List<TableElement> elements = new ArrayList<>();
+        List<SqlBaseParser.ColTypeContext> colTypeListContexts = ctx.columns.colType();
+        if (ctx.partitionColumns != null) {
+            colTypeListContexts.addAll(ctx.partitionColumns.colType());
+        }
+        if (colTypeListContexts.size() > 0) {
+            for (SqlBaseParser.ColTypeContext colTypeContext: colTypeListContexts) {
+                Optional colComment = Optional.empty();
+                if (colTypeContext.COMMENT() != null) {
+                    colComment = Optional.of(colTypeContext.COMMENT().getText());
+                }
+                TableElement tableElement = new ColumnDefinition(
+                        new Identifier(getLocation(colTypeContext),
+                                tryUnquote(colTypeContext.identifier().getText()), false),
+                        colTypeTransform(colTypeContext.dataType().getText()),
+                        true,
+                        new ArrayList<>(),
+                        colComment);
+                elements.add(tableElement);
+            }
+        }
+        return new CreateTable(
+                getLocation(ctx),
+                getQualifiedName(ctx.createTableHeader().tableIdentifier()),
+                elements,
+                ctx.createTableHeader().EXISTS() != null,
+                properties,
+                comment);
     }
 
     @Override
@@ -1218,8 +1281,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         List<Identifier> identifiers = new ArrayList<>();
         for (SqlBaseParser.IdentifierContext identifierContext: context.identifier()) {
             String qualifiedName = identifierContext.getText();
-            String[] tmp = qualifiedName.replace("`", "").
-                    replace("\"", "").split("\\.");
+            String[] tmp = tryUnquote(qualifiedName).split("\\.");
 
             for (String id: tmp) {
                 Identifier identifier =
@@ -1312,9 +1374,27 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     /**
      * this will remove single quotation, double quotation and backtick.
      */
-    static String unquote(String value)
+    public static String unquote(String value)
     {
         return value.substring(1, value.length() - 1)
                 .replace("''", "'");
     }
+
+    public static String tryUnquote(String value)
+    {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\'", "").
+                replace("\"", "").
+                replace("`", "");
+    }
+
+    public static String colTypeTransform(String hiveColType) {
+        return hiveColType.
+                replace("int", "integer").
+                replace("biginteger", "bigint").
+                replace("string", "varchar");
+    }
+
 }

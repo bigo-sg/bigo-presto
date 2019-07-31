@@ -58,11 +58,6 @@
 
         <dependency>
             <groupId>io.prestosql</groupId>
-            <artifactId>presto-hive-parser</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.prestosql</groupId>
             <artifactId>presto-parser</artifactId>
         </dependency>
 

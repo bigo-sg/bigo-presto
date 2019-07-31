@@ -517,8 +517,10 @@ public final class SystemSessionProperties
                         "Experimental: Use hive sql syntax",
                         false,
                         false)
-            )
-        );
+        )) {
+
+        }
+        ;
     }
 
     public List<PropertyMetadata<?>> getSessionProperties()

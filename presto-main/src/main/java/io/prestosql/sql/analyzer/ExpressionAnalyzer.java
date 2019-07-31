@@ -17,6 +17,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
+import io.airlift.log.Logger;
 import io.airlift.slice.SliceUtf8;
 import io.prestosql.Session;
 import io.prestosql.SystemSessionProperties;
@@ -195,6 +196,8 @@ public class ExpressionAnalyzer
     private final Session session;
     private final List<Expression> parameters;
     private final WarningCollector warningCollector;
+
+    private static final Logger LOG = Logger.get(ExpressionAnalyzer.class);
 
     public ExpressionAnalyzer(
             FunctionRegistry functionRegistry,
@@ -481,6 +484,11 @@ public class ExpressionAnalyzer
         protected Type visitComparisonExpression(ComparisonExpression node, StackableAstVisitorContext<Context> context)
         {
             OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
+            //todo
+            LOG.info("test_visitComparisonExpression, ", node.getLeft(), node.getOperator(), node.getRight());
+            Cast cast = new Cast(node.getLeft(), VARCHAR.getDisplayName());
+            node.setRight(cast);
+
             return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
         }
 

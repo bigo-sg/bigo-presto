@@ -338,12 +338,12 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>io.prestosql</groupId>
-            <artifactId>presto-parser</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.prestosql</groupId>-->
+<!--            <artifactId>presto-parser</artifactId>-->
+<!--            <type>test-jar</type>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>io.prestosql</groupId>

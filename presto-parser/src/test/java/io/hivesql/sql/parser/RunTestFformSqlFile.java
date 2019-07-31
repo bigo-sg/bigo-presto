@@ -17,6 +17,14 @@ public class RunTestFformSqlFile extends SQLTester {
         checkASTNode(sqlArray[1], sqlArray[0]);
     }
 
+    public void readAndRunSqlFile(String fileName)
+    {
+        byte[] data = FileUtils.getFileAsBytes(fileName);
+        String sql = new String(data);
+        System.out.println("run sql file:" + fileName);
+        runHiveSQL(sql);
+    }
+
     @Test
     public void test01() {
         String rootPath = this.getClass().getResource("../../../../").getFile();
@@ -25,8 +33,20 @@ public class RunTestFformSqlFile extends SQLTester {
     }
 
     @Test
+    public void test02() {
+        String rootPath = this.getClass().getResource("../../../../").getFile();
+        System.out.println(rootPath);
+
+        byte[] data = FileUtils.getFileAsBytes(rootPath +  "hive/parser/pass/pass6.sql");
+        String sqls = new String(data);
+        System.out.println(sqls);
+        readAndRunSqlFile(rootPath +  "hive/parser/pass/pass6.sql");
+
+    }
+
+    @Test
     public void testByScanDir() {
-        String rootPath = this.getClass().getResource("../../../../hive/parser/pass").getFile();
+        String rootPath = this.getClass().getResource("../../../../hive/parser/compare").getFile();
         List<String> sqlFiles = FileUtils.scanDirectory(rootPath);
         sqlFiles.stream().forEach(new Consumer<String>() {
             @Override
@@ -37,4 +57,18 @@ public class RunTestFformSqlFile extends SQLTester {
             }
         });
     }
+    @Test
+    public void testRunByScanDir() {
+        String rootPath = this.getClass().getResource("../../../../hive/parser/pass").getFile();
+        List<String> sqlFiles = FileUtils.scanDirectory(rootPath);
+        sqlFiles.stream().forEach(new Consumer<String>() {
+            @Override
+            public void accept(String s) {
+                if (s.endsWith(".sql")) {
+                    readAndRunSqlFile(s);
+                }
+            }
+        });
+    }
+
 }

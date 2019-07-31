@@ -785,6 +785,18 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 } else {
                     return comparisonExpression;
                 }
+             case SqlBaseParser.RLIKE:
+                 Expression rLikePredicate = new RlikePredicate(
+                         getLocation(ctx),
+                         expression,
+                         (Expression) visit(ctx.pattern),
+                         Optional.empty());
+
+                 if (ctx.NOT() != null) {
+                     return new NotExpression(getLocation(ctx), rLikePredicate);
+                 } else {
+                     return rLikePredicate;
+                 }
             default:
                 throw parseError("Not supported type: " + ctx.kind.getText(), ctx);
         }
@@ -1054,7 +1066,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitQuotedIdentifier(SqlBaseParser.QuotedIdentifierContext ctx) {
-        return new Identifier(getLocation(ctx), unquote(ctx.getText()), false);
+        return new Identifier(getLocation(ctx), unquote(ctx.getText()), true);
     }
 
     @Override

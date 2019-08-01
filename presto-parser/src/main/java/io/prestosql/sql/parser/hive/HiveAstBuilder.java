@@ -827,9 +827,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         Expression child = (Expression) visit(ctx.valueExpression());
 
         switch (ctx.operator.getType()) {
-            case io.prestosql.sql.parser.SqlBaseLexer.MINUS:
+            case SqlBaseLexer.MINUS:
                 return ArithmeticUnaryExpression.negative(getLocation(ctx), child);
-            case io.prestosql.sql.parser.SqlBaseLexer.PLUS:
+            case SqlBaseLexer.PLUS:
                 return ArithmeticUnaryExpression.positive(getLocation(ctx), child);
             default:
                 throw new UnsupportedOperationException("Unsupported sign: " + ctx.operator.getText());
@@ -1234,6 +1234,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 return ArithmeticBinaryExpression.Operator.MODULUS;
             case io.hivesql.sql.parser.SqlBaseLexer.DIV:
                 return ArithmeticBinaryExpression.Operator.DIV;
+            case io.hivesql.sql.parser.SqlBaseLexer.PIPE:
+                return ArithmeticBinaryExpression.Operator.PIPE;
             case io.hivesql.sql.parser.SqlBaseLexer.TILDE:
                 return ArithmeticBinaryExpression.Operator.TILDE;
             case io.hivesql.sql.parser.SqlBaseLexer.AMPERSAND:

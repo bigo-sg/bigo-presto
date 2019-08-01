@@ -484,10 +484,30 @@ public class ExpressionAnalyzer
         protected Type visitComparisonExpression(ComparisonExpression node, StackableAstVisitorContext<Context> context)
         {
             OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
-            //todo
-            LOG.info("test_visitComparisonExpression, ", node.getLeft(), node.getOperator(), node.getRight());
-            Cast cast = new Cast(node.getLeft(), VARCHAR.getDisplayName());
-            node.setRight(cast);
+
+            if(session.getSystemProperty(SystemSessionProperties.ENABLE_HIVE_SQL_SYNTAX, Boolean.class)) {
+                TypeConversion tc = new TypeConversion();
+                Type leftType = process(node.getLeft(), context);
+                Type rightType = process(node.getRight(), context);
+
+                if (tc.compareTypeOrder(leftType, rightType) == leftType) {
+                    if (tc.canConvertType(leftType, rightType)) {
+                        Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
+                        node.setLeft(cast);
+                    } else if (tc.canConvertType(rightType, leftType)) {
+                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
+                        node.setRight(cast);
+                    }
+                } else if (tc.compareTypeOrder(leftType, rightType) == rightType) {
+                    if (tc.canConvertType(rightType, leftType)) {
+                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
+                        node.setRight(cast);
+                    } else if (tc.canConvertType(leftType, rightType)) {
+                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
+                        node.setRight(cast);
+                    }
+                }
+            }
 
             return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
         }

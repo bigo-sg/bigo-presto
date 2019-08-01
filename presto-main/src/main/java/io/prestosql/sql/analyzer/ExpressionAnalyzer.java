@@ -485,7 +485,7 @@ public class ExpressionAnalyzer
         {
             OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
 
-            if(session.getSystemProperty(SystemSessionProperties.ENABLE_HIVE_SQL_SYNTAX, Boolean.class)) {
+            if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
                 TypeConversion tc = new TypeConversion();
                 Type leftType = process(node.getLeft(), context);
                 Type rightType = process(node.getRight(), context);
@@ -503,8 +503,8 @@ public class ExpressionAnalyzer
                         Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
                         node.setRight(cast);
                     } else if (tc.canConvertType(leftType, rightType)) {
-                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
-                        node.setRight(cast);
+                        Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
+                        node.setLeft(cast);
                     }
                 }
             }

@@ -786,7 +786,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     return comparisonExpression;
                 }
              case SqlBaseParser.RLIKE:
-                 Expression rLikePredicate = new RlikePredicate(
+                 Expression rLikePredicate = new RLikePredicate(
                          getLocation(ctx),
                          expression,
                          (Expression) visit(ctx.pattern),

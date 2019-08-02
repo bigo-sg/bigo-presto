@@ -20,26 +20,26 @@ import io.prestosql.sql.tree.NodeLocation;
 
 import java.util.Optional;
 
-public class RlikePredicate
+public class RLikePredicate
         extends LikePredicate
 {
 
-    public RlikePredicate(Expression value, Expression pattern, Expression escape)
+    public RLikePredicate(Expression value, Expression pattern, Expression escape)
     {
         this(Optional.empty(), value, pattern, Optional.of(escape));
     }
 
-    public RlikePredicate(NodeLocation location, Expression value, Expression pattern, Optional<Expression> escape)
+    public RLikePredicate(NodeLocation location, Expression value, Expression pattern, Optional<Expression> escape)
     {
         this(Optional.of(location), value, pattern, escape);
     }
 
-    public RlikePredicate(Expression value, Expression pattern, Optional<Expression> escape)
+    public RLikePredicate(Expression value, Expression pattern, Optional<Expression> escape)
     {
         this(Optional.empty(), value, pattern, escape);
     }
 
-    private RlikePredicate(Optional<NodeLocation> location, Expression value, Expression pattern, Optional<Expression> escape)
+    private RLikePredicate(Optional<NodeLocation> location, Expression value, Expression pattern, Optional<Expression> escape)
     {
         super(location, value, pattern, escape);
     }
@@ -47,7 +47,7 @@ public class RlikePredicate
     @Override
     public <R, C> R accept(AstVisitor<R, C> visitor, C context)
     {
-        return visitor.visitRlikePredicate(this, context);
+        return visitor.visitRLikePredicate(this, context);
     }
 
 }

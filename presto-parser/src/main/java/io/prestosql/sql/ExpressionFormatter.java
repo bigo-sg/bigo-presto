@@ -16,7 +16,7 @@ package io.prestosql.sql;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import io.prestosql.sql.parser.hive.RlikePredicate;
+import io.prestosql.sql.parser.hive.RLikePredicate;
 import io.prestosql.sql.tree.AllColumns;
 import io.prestosql.sql.tree.ArithmeticBinaryExpression;
 import io.prestosql.sql.tree.ArithmeticUnaryExpression;
@@ -528,7 +528,7 @@ public final class ExpressionFormatter
             return builder.toString();
         }
 
-        public String visitRlikePredicate(RlikePredicate node, Void context)
+        public String visitRLikePredicate(RLikePredicate node, Void context)
         {
             StringBuilder builder = new StringBuilder();
 

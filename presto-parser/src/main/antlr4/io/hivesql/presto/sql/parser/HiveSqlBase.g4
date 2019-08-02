@@ -94,6 +94,8 @@ statement
         (LIKE pattern=string (ESCAPE escape=string)?)?                 #showTables
     | SHOW SCHEMAS ((FROM | IN) identifier)?
         (LIKE pattern=string (ESCAPE escape=string)?)?                 #showSchemas
+    | SHOW DATABASES ((FROM | IN) identifier)?
+        (LIKE pattern=string (ESCAPE escape=string)?)?                 #showDatabases
     | SHOW CATALOGS (LIKE pattern=string)?                             #showCatalogs
     | SHOW COLUMNS (FROM | IN) qualifiedName                           #showColumns
     | SHOW STATS FOR qualifiedName                                     #showStats
@@ -148,7 +150,10 @@ property
 
 queryNoWith:
       queryTerm
-      (ORDER BY sortItem (',' sortItem)*)?
+      ((ORDER) BY sortItem (',' sortItem)*)?
+      (CLUSTER BY clusterBy+=expression (',' clusterBy+=expression)*)?
+      (DISTRIBUTE BY distributeBy+=expression (',' distributeBy+=expression)*)?
+      (SORT BY sort+=sortItem (',' sort+=sortItem)*)?
       (OFFSET offset=INTEGER_VALUE (ROW | ROWS)?)?
       ((LIMIT limit=(INTEGER_VALUE | ALL)) | (FETCH (FIRST | NEXT) (fetchFirst=INTEGER_VALUE)? (ROW | ROWS) (ONLY | WITH TIES)))?
     ;
@@ -172,14 +177,21 @@ sortItem
 
 querySpecification
     : SELECT setQuantifier? selectItem (',' selectItem)*
-      (FROM relation (',' relation)*)?
+      (FROM relation (',' relation)*lateralView*)?
       (WHERE where=booleanExpression)?
       (GROUP BY groupBy)?
       (HAVING having=booleanExpression)?
     ;
 
+lateralView
+    : LATERAL VIEW (OUTER)? qualifiedName '(' (expression (',' expression)*)? ')' tblName=identifier (AS? colName+=identifier (',' colName+=identifier)*)?
+    ;
+
 groupBy
-    : setQuantifier? groupingElement (',' groupingElement)*
+    : setQuantifier? groupingElement (',' groupingElement)* (
+      WITH kind=ROLLUP
+    | WITH kind=CUBE
+    | kind=GROUPING SETS '(' groupingSet (',' groupingSet)* ')')?
     ;
 
 groupingElement
@@ -281,12 +293,18 @@ predicate[ParserRuleContext value]
     ;
 
 valueExpression
-    : primaryExpression                                                                 #valueExpressionDefault
-    | valueExpression AT timeZoneSpecifier                                              #atTimeZone
-    | operator=(MINUS | PLUS) valueExpression                                           #arithmeticUnary
-    | left=valueExpression operator=(ASTERISK | SLASH | PERCENT) right=valueExpression  #arithmeticBinary
-    | left=valueExpression operator=(PLUS | MINUS) right=valueExpression                #arithmeticBinary
-    | left=valueExpression CONCAT right=valueExpression                                 #concatenation
+    : primaryExpression                                                                         #valueExpressionDefault
+    | valueExpression AT timeZoneSpecifier                                                      #atTimeZone
+    | operator=(MINUS | PLUS) valueExpression                                                   #arithmeticUnary
+    | left=valueExpression operator=(ASTERISK | SLASH | PERCENT | DIV) right=valueExpression    #arithmeticBinary
+    | left=valueExpression operator=(PLUS | MINUS) right=valueExpression                        #arithmeticBinary
+    // added
+    | left=valueExpression operator=AMPERSAND right=valueExpression                             #arithmeticBinary
+    // added
+    | left=valueExpression operator=HAT right=valueExpression                                   #arithmeticBinary
+    // added
+    | left=valueExpression operator=PIPE right=valueExpression                                  #arithmeticBinary
+    | left=valueExpression CONCAT right=valueExpression                                         #concatenation
     ;
 
 primaryExpression
@@ -373,6 +391,17 @@ type
     | ROW '(' identifier type (',' identifier type)* ')'
     | baseType ('(' typeParameter (',' typeParameter)* ')')?
     | INTERVAL from=intervalField TO to=intervalField
+    // added
+    | complex=STRUCT ('<' complexColTypeList? '>' | '<>')
+    | identifier ('(' INTEGER_VALUE (',' INTEGER_VALUE)* ')')?
+    ;
+
+complexColTypeList
+    : complexColType (',' complexColType)*
+    ;
+
+complexColType
+    : identifier ':' type (COMMENT STRING)?
     ;
 
 typeParameter
@@ -623,7 +652,8 @@ NFKD : 'NFKD';
 NO: 'NO';
 NONE: 'NONE';
 NORMALIZE: 'NORMALIZE';
-NOT: 'NOT';
+// add ! support
+NOT: 'NOT' | '!';
 NULL: 'NULL';
 NULLIF: 'NULLIF';
 NULLS: 'NULLS';
@@ -633,6 +663,10 @@ ONLY: 'ONLY';
 OPTION: 'OPTION';
 OR: 'OR';
 ORDER: 'ORDER';
+//added
+SORT: 'SORT';
+CLUSTER: 'CLUSTER';
+DISTRIBUTE: 'DISTRIBUTE';
 ORDINALITY: 'ORDINALITY';
 OUTER: 'OUTER';
 OUTPUT: 'OUTPUT';
@@ -660,9 +694,12 @@ ROLES: 'ROLES';
 ROLLBACK: 'ROLLBACK';
 ROLLUP: 'ROLLUP';
 ROW: 'ROW';
+// added
+STRUCT: 'STRUCT';
 ROWS: 'ROWS';
 SCHEMA: 'SCHEMA';
 SCHEMAS: 'SCHEMAS';
+DATABASES: 'DATABASES';
 SECOND: 'SECOND';
 SECURITY: 'SECURITY';
 SELECT: 'SELECT';
@@ -719,9 +756,21 @@ GTE : '>=';
 
 PLUS: '+';
 MINUS: '-';
+
 ASTERISK: '*';
 SLASH: '/';
 PERCENT: '%';
+
+// added
+DIV: 'DIV';
+// added
+AMPERSAND: '&';
+// added
+PIPE: '|';
+// added
+HAT: '^';
+
+
 CONCAT: '||';
 
 STRING

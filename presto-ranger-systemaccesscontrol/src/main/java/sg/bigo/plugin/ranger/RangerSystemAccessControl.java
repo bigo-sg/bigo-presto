@@ -13,6 +13,7 @@
  */
 package sg.bigo.plugin.ranger;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.log.Logger;
@@ -65,8 +66,6 @@ import static io.prestosql.spi.security.AccessDeniedException.denyShowTablesMeta
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static sg.bigo.plugin.ranger.RangerAccessControlConfig.SECURITY_CONFIG_FILE;
-import static sg.bigo.plugin.ranger.RangerAccessControlConfig.SECURITY_REFRESH_PERIOD;
 
 public class RangerSystemAccessControl
         implements SystemAccessControl
@@ -98,13 +97,13 @@ public class RangerSystemAccessControl
         {
             requireNonNull(config, "config is null");
 
-            String configFileName = config.get(SECURITY_CONFIG_FILE);
-            checkState(configFileName != null, "Security configuration must contain the '%s' property", SECURITY_CONFIG_FILE);
+            String configFileName = config.get(RangerAccessControlConfig.SECURITY_CONFIG_FILE);
+            Preconditions.checkState(configFileName != null, "Security configuration must contain the '%s' property", RangerAccessControlConfig.SECURITY_CONFIG_FILE);
 
-            if (config.containsKey(SECURITY_REFRESH_PERIOD)) {
+            if (config.containsKey(RangerAccessControlConfig.SECURITY_REFRESH_PERIOD)) {
                 Duration refreshPeriod;
                 try {
-                    refreshPeriod = Duration.valueOf(config.get(SECURITY_REFRESH_PERIOD));
+                    refreshPeriod = Duration.valueOf(config.get(RangerAccessControlConfig.SECURITY_REFRESH_PERIOD));
                 }
                 catch (IllegalArgumentException e) {
                     throw invalidRefreshPeriodException(config, configFileName);
@@ -127,7 +126,7 @@ public class RangerSystemAccessControl
         {
             return new PrestoException(
                     CONFIGURATION_INVALID,
-                    format("Invalid duration value '%s' for property '%s' in '%s'", config.get(SECURITY_REFRESH_PERIOD), SECURITY_REFRESH_PERIOD, configFileName));
+                    String.format("Invalid duration value '%s' for property '%s' in '%s'", config.get(RangerAccessControlConfig.SECURITY_REFRESH_PERIOD), RangerAccessControlConfig.SECURITY_REFRESH_PERIOD, configFileName));
         }
 
         private SystemAccessControl create(String configFileName)

@@ -15,9 +15,7 @@ package io.prestosql.sql;
 
 import io.prestosql.Session;
 import io.prestosql.SystemSessionProperties;
-import io.prestosql.operator.scalar.ArraySubscriptOperator;
 import io.prestosql.sql.parser.ParsingOptions;
-import io.prestosql.sql.parser.SqlParser;
 
 import static io.prestosql.SystemSessionProperties.isParseDecimalLiteralsAsDouble;
 import static io.prestosql.sql.parser.ParsingOptions.DecimalLiteralTreatment.AS_DECIMAL;

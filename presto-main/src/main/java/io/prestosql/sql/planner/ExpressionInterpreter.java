@@ -48,6 +48,7 @@ import io.prestosql.sql.analyzer.ExpressionAnalyzer;
 import io.prestosql.sql.analyzer.Scope;
 import io.prestosql.sql.analyzer.SemanticErrorCode;
 import io.prestosql.sql.analyzer.SemanticException;
+import io.prestosql.sql.parser.hive.RLikePredicate;
 import io.prestosql.sql.planner.iterative.rule.DesugarCurrentPath;
 import io.prestosql.sql.planner.iterative.rule.DesugarCurrentUser;
 import io.prestosql.sql.tree.ArithmeticBinaryExpression;
@@ -154,6 +155,7 @@ public class ExpressionInterpreter
 
     // identity-based cache for LIKE expressions with constant pattern and escape char
     private final IdentityHashMap<LikePredicate, Regex> likePatternCache = new IdentityHashMap<>();
+    // identity-based cache for RLIKE expressions with constant pattern and escape char
     private final IdentityHashMap<InListExpression, Set<?>> inListCache = new IdentityHashMap<>();
 
     public static ExpressionInterpreter expressionInterpreter(Expression expression, Metadata metadata, Session session, Map<NodeRef<Expression>, Type> expressionTypes)
@@ -1023,6 +1025,41 @@ public class ExpressionInterpreter
             }
 
             return new LikePredicate(
+                    toExpression(value, type(node.getValue())),
+                    toExpression(pattern, type(node.getPattern())),
+                    optimizedEscape);
+        }
+
+        @Override
+        public Object visitRLikePredicate(RLikePredicate node, Object context)
+        {
+            Object value = process(node.getValue(), context);
+
+            if (value == null) {
+                return null;
+            }
+
+            Object pattern = process(node.getPattern(), context);
+
+            if (pattern == null) {
+                return null;
+            }
+
+            Object escape = null;
+            if (node.getEscape().isPresent()) {
+                escape = process(node.getEscape().get(), context);
+
+                if (escape == null) {
+                    return null;
+                }
+            }
+
+            Optional<Expression> optimizedEscape = Optional.empty();
+            if (node.getEscape().isPresent()) {
+                optimizedEscape = Optional.of(toExpression(escape, type(node.getEscape().get())));
+            }
+
+            return new RLikePredicate(
                     toExpression(value, type(node.getValue())),
                     toExpression(pattern, type(node.getPattern())),
                     optimizedEscape);

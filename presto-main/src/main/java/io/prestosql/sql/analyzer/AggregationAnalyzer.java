@@ -15,6 +15,7 @@ package io.prestosql.sql.analyzer;
 
 import com.google.common.collect.ImmutableList;
 import io.prestosql.metadata.Metadata;
+import io.prestosql.sql.parser.hive.RLikePredicate;
 import io.prestosql.sql.planner.ParameterRewriter;
 import io.prestosql.sql.tree.ArithmeticBinaryExpression;
 import io.prestosql.sql.tree.ArithmeticUnaryExpression;
@@ -295,6 +296,12 @@ class AggregationAnalyzer
 
         @Override
         protected Boolean visitLikePredicate(LikePredicate node, Void context)
+        {
+            return process(node.getValue(), context) && process(node.getPattern(), context);
+        }
+
+        @Override
+        public Boolean visitRLikePredicate(RLikePredicate node, Void context)
         {
             return process(node.getValue(), context) && process(node.getPattern(), context);
         }

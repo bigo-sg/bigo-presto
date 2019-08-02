@@ -626,6 +626,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
     }
 
+    @Override public Node visitShowCreateTable(SqlBaseParser.ShowCreateTableContext ctx)
+    {
+        throw parseError("show create table not support yet!", ctx);
+    }
+
     @Override
     public Node visitAggregation(SqlBaseParser.AggregationContext ctx) {
         List<GroupingElement> groupingElements = new ArrayList<>();

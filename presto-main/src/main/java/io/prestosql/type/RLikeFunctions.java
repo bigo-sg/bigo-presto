@@ -32,10 +32,7 @@ public final class RLikeFunctions
     @SqlType(StandardTypes.BOOLEAN)
     public static boolean likeVarchar(@SqlType("varchar(x)") Slice value, @SqlType("varchar(x)") Slice pattern)
     {
-        // Joni can infinite loop with UTF8Encoding when invalid UTF-8 is encountered.
-        // NonStrictUTF8Encoding must be used to avoid this issue.
-        String data = new String(value.getBytes());
-        String p = new String(pattern.getBytes());
-        return Pattern.matches(p, data);
+        Pattern p = Pattern.compile(new String(pattern.getBytes()));
+        return p.matcher(new String(value.getBytes())).find();
     }
 }

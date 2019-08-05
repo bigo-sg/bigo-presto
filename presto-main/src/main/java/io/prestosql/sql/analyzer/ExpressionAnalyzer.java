@@ -17,6 +17,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
+import io.airlift.log.Logger;
 import io.airlift.slice.SliceUtf8;
 import io.prestosql.Session;
 import io.prestosql.SystemSessionProperties;
@@ -195,6 +196,8 @@ public class ExpressionAnalyzer
     private final Session session;
     private final List<Expression> parameters;
     private final WarningCollector warningCollector;
+
+    private static final Logger LOG = Logger.get(ExpressionAnalyzer.class);
 
     public ExpressionAnalyzer(
             FunctionRegistry functionRegistry,
@@ -481,6 +484,31 @@ public class ExpressionAnalyzer
         protected Type visitComparisonExpression(ComparisonExpression node, StackableAstVisitorContext<Context> context)
         {
             OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
+
+            if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                TypeConversion tc = new TypeConversion();
+                Type leftType = process(node.getLeft(), context);
+                Type rightType = process(node.getRight(), context);
+
+                if (tc.compareTypeOrder(leftType, rightType) == leftType) {
+                    if (tc.canConvertType(leftType, rightType)) {
+                        Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
+                        node.setLeft(cast);
+                    } else if (tc.canConvertType(rightType, leftType)) {
+                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
+                        node.setRight(cast);
+                    }
+                } else if (tc.compareTypeOrder(leftType, rightType) == rightType) {
+                    if (tc.canConvertType(rightType, leftType)) {
+                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
+                        node.setRight(cast);
+                    } else if (tc.canConvertType(leftType, rightType)) {
+                        Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
+                        node.setLeft(cast);
+                    }
+                }
+            }
+
             return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
         }
 

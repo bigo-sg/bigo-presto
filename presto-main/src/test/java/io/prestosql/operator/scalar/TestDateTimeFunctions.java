@@ -20,12 +20,9 @@ import io.prestosql.spi.type.TimestampType;
 import org.joda.time.DateTime;
 import org.testng.annotations.Test;
 
-import static io.airlift.slice.Slices.utf8Slice;
-import static io.prestosql.operator.scalar.DateTimeFunctions.unixTimestamp;
 import static io.prestosql.spi.type.TimeWithTimeZoneType.TIME_WITH_TIME_ZONE;
 import static io.prestosql.spi.type.TimestampWithTimeZoneType.TIMESTAMP_WITH_TIME_ZONE;
 import static io.prestosql.spi.type.VarcharType.createVarcharType;
-import static org.testng.Assert.assertEquals;
 
 public class TestDateTimeFunctions
         extends TestDateTimeFunctionsBase
@@ -95,19 +92,5 @@ public class TestDateTimeFunctions
             localAssertion.assertFunctionString("CURRENT_TIMESTAMP", TIMESTAMP_WITH_TIME_ZONE, "2017-03-01 14:30:00.000 " + DATE_TIME_ZONE.getID());
             localAssertion.assertFunctionString("NOW()", TIMESTAMP_WITH_TIME_ZONE, "2017-03-01 14:30:00.000 " + DATE_TIME_ZONE.getID());
         }
-    }
-
-    @Test
-    public void testUnixTimestamp()
-    {
-        double uts = unixTimestamp(utf8Slice("2019-07-22 00:00:00"));
-        assertEquals(uts, 1563724800);
-    }
-
-    @Test
-    public void testUnixTimestampWithFormat()
-    {
-        double uts = unixTimestamp(utf8Slice("2019-07-22"), utf8Slice("yyyy-MM-dd"));
-        assertEquals(uts, 1563724800);
     }
 }

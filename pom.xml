@@ -329,6 +329,12 @@
 
             <dependency>
                 <groupId>io.prestosql</groupId>
+                <artifactId>presto-hive-parser</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.prestosql</groupId>
                 <artifactId>presto-parser</artifactId>
                 <version>${project.version}</version>
             </dependency>

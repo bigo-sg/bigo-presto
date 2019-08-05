@@ -18,19 +18,18 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import io.hivesql.presto.sql.parser.HiveSqlBaseBaseVisitor;
+import io.hivesql.presto.sql.parser.HiveSqlBaseLexer;
 import io.hivesql.presto.sql.parser.HiveSqlBaseParser;
 import io.prestosql.sql.parser.ParsingException;
 import io.prestosql.sql.parser.ParsingOptions;
-import io.hivesql.presto.sql.parser.HiveSqlBaseLexer;
 import io.prestosql.sql.tree.*;
+import io.prestosql.sql.util.ArrayUtils;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -197,9 +196,14 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitDelete(HiveSqlBaseParser.DeleteContext context)
     {
+        String tableName = context.qualifiedName().getText();
+        QualifiedName qualifiedName = getQualifiedName(tableName);
+        if (qualifiedName == null) {
+            throw parseError("need table name!", context.qualifiedName());
+        }
         return new Delete(
                 getLocation(context),
-                new Table(getLocation(context), getQualifiedName(context.qualifiedName())),
+                new Table(getLocation(context), qualifiedName),
                 visitIfPresent(context.booleanExpression(), Expression.class));
     }
 
@@ -426,6 +430,15 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitQueryNoWith(HiveSqlBaseParser.QueryNoWithContext context)
     {
+        if (context.clusterBy != null && !context.clusterBy.isEmpty()) {
+            throw parseError("Don't support cluster by", context);
+        }
+        if (context.distributeBy != null && !context.distributeBy.isEmpty()) {
+            throw parseError("Don't support distribute by", context);
+        }
+        if (context.sort != null && !context.sort.isEmpty()) {
+            throw parseError("Don't support sort by", context);
+        }
         QueryBody term = (QueryBody) visit(context.queryTerm());
 
         Optional<OrderBy> orderBy = Optional.empty();
@@ -501,6 +514,24 @@ public class PrestoHiveAstBuilder
             from = Optional.of(relation);
         }
 
+        if (context.lateralView().size() > 0) {
+            HiveSqlBaseParser.LateralViewContext lateralViewContext = context.lateralView(0);
+            Node node = visitLateralView(lateralViewContext);
+            Relation relation = new Join(getLocation(lateralViewContext), Join.Type.CROSS, from.get(), (AliasedRelation)node, Optional.empty());
+            from = Optional.of(relation);
+            List<HiveSqlBaseParser.LateralViewContext> lateralViewContexts =
+                    new ArrayUtils<HiveSqlBaseParser.LateralViewContext>().copyAndReverse(
+                            context.lateralView());
+            Collections.reverse(lateralViewContexts);
+            for (int i = 1; i < lateralViewContexts.size(); ++i) {
+                HiveSqlBaseParser.LateralViewContext lateralViewContext1 = lateralViewContexts.get(i);
+                Node node1 = visitLateralView(lateralViewContext1);
+                Relation relation1 = new Join(getLocation(lateralViewContext1), Join.Type.CROSS,
+                        from.get(), (AliasedRelation)node1, Optional.empty());
+                from = Optional.of(relation1);
+            }
+        }
+
         return new QuerySpecification(
                 getLocation(context),
                 new Select(getLocation(context.SELECT()), isDistinct(context.setQuantifier()), selectItems),
@@ -513,10 +544,56 @@ public class PrestoHiveAstBuilder
                 Optional.empty());
     }
 
+    @Override public Node visitLateralView(HiveSqlBaseParser.LateralViewContext ctx)
+    {
+        if (ctx.OUTER() != null) {
+            throw parseError("Don't support Outer Lateral Views", ctx);
+        }
+
+        Identifier qualifiedName = (Identifier) visit(ctx.qualifiedName());
+        String udtfName = qualifiedName.getValue().toLowerCase();
+
+        boolean withOrdinality;
+        if (udtfName.equals("explode")) {
+            withOrdinality = false;
+        } else if (udtfName.equals("posexplode")) {
+            withOrdinality = true;
+        } else {
+            throw parseError("Don't support UDTF: " + udtfName, ctx);
+        }
+
+        Unnest unnest = new Unnest(getLocation(ctx), visit(ctx.expression(), Expression.class), withOrdinality);
+
+        List<Identifier> columnNames = visit(ctx.colName, Identifier.class);
+        if (columnNames.size() > 0) {
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
+        } else {
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), null);
+        }
+    }
+
     @Override
     public Node visitGroupBy(HiveSqlBaseParser.GroupByContext context)
     {
-        return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), visit(context.groupingElement(), GroupingElement.class));
+        List<GroupingElement> groupingElements = visit(context.groupingElement(), GroupingElement.class);
+        if (context.kind != null) {
+            if (context.kind.getType() == HiveSqlBaseLexer.CUBE) {
+                List<Expression> expressions = new ArrayList<>();
+                for (GroupingElement groupingElement : groupingElements) {
+                    expressions.addAll(groupingElement.getExpressions());
+                }
+                Cube cube = new Cube(getLocation(context), expressions);
+                return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), ImmutableList.of(cube));
+            } else if (context.kind.getType() == HiveSqlBaseLexer.ROLLUP) {
+                List<Expression> expressions = new ArrayList<>();
+                for (GroupingElement groupingElement : groupingElements) {
+                    expressions.addAll(groupingElement.getExpressions());
+                }
+                Rollup rollup = new Rollup(getLocation(context), expressions);
+                return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), ImmutableList.of(rollup));
+            }
+        }
+        return new GroupBy(getLocation(context), isDistinct(context.setQuantifier()), groupingElements);
     }
 
     @Override
@@ -587,7 +664,12 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitTable(HiveSqlBaseParser.TableContext context)
     {
-        return new Table(getLocation(context), getQualifiedName(context.qualifiedName()));
+        String tableName = context.qualifiedName().getText();
+        QualifiedName qualifiedName = getQualifiedName(tableName);
+        if (qualifiedName == null) {
+            throw parseError("need table name!", context.qualifiedName());
+        }
+        return new Table(getLocation(context), qualifiedName);
     }
 
     @Override
@@ -665,6 +747,17 @@ public class PrestoHiveAstBuilder
                         .map(PrestoHiveAstBuilder::unquote));
     }
 
+    @Override public Node visitShowDatabases(HiveSqlBaseParser.ShowDatabasesContext context)
+    {
+        return new ShowSchemas(
+                getLocation(context),
+                visitIfPresent(context.identifier(), Identifier.class),
+                getTextIfPresent(context.pattern)
+                        .map(PrestoHiveAstBuilder::unquote),
+                getTextIfPresent(context.escape)
+                        .map(PrestoHiveAstBuilder::unquote));
+    }
+
     @Override
     public Node visitShowCatalogs(HiveSqlBaseParser.ShowCatalogsContext context)
     {
@@ -682,7 +775,12 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitShowStats(HiveSqlBaseParser.ShowStatsContext context)
     {
-        return new ShowStats(Optional.of(getLocation(context)), new Table(getQualifiedName(context.qualifiedName())));
+        String tableName = context.qualifiedName().getText();
+        QualifiedName qualifiedName = getQualifiedName(tableName);
+        if (qualifiedName == null) {
+            throw parseError("need table name!", context.qualifiedName());
+        }
+        return new ShowStats(Optional.of(getLocation(context)), new Table(qualifiedName));
     }
 
     @Override
@@ -957,7 +1055,12 @@ public class PrestoHiveAstBuilder
     @Override
     public Node visitTableName(HiveSqlBaseParser.TableNameContext context)
     {
-        return new Table(getLocation(context), getQualifiedName(context.qualifiedName()));
+        String tableName = context.qualifiedName().getText();
+        QualifiedName qualifiedName = getQualifiedName(tableName);
+        if (qualifiedName == null) {
+            throw parseError("need table name!", context.qualifiedName());
+        }
+        return new Table(getLocation(context), qualifiedName);
     }
 
     @Override
@@ -1831,6 +1934,18 @@ public class PrestoHiveAstBuilder
     {
         return QualifiedName.of(visit(context.identifier(), Identifier.class));
     }
+    private QualifiedName getQualifiedName(String qualifiedName)
+    {
+        if (qualifiedName == null) {
+            return null;
+        }
+        String[] tmp = qualifiedName.replace("`", "").
+                replace("\"", "").split("\\.");
+        if (tmp.length == 0) {
+            return null;
+        }
+        return QualifiedName.of(tmp[0], Arrays.copyOfRange(tmp, 1, tmp.length));
+    }
 
     private static boolean isDistinct(HiveSqlBaseParser.SetQuantifierContext setQuantifier)
     {
@@ -1879,6 +1994,14 @@ public class PrestoHiveAstBuilder
                 return ArithmeticBinaryExpression.Operator.DIVIDE;
             case HiveSqlBaseLexer.PERCENT:
                 return ArithmeticBinaryExpression.Operator.MODULUS;
+//            case HiveSqlBaseLexer.DIV:
+//                return ArithmeticBinaryExpression.Operator.DIV;
+//            case HiveSqlBaseLexer.AMPERSAND:
+//                return ArithmeticBinaryExpression.Operator.AMPERSAND;
+//            case HiveSqlBaseLexer.HAT:
+//                return ArithmeticBinaryExpression.Operator.HAT;
+//            case HiveSqlBaseLexer.PIPE:
+//                return ArithmeticBinaryExpression.Operator.PIPE;
         }
 
         throw new UnsupportedOperationException("Unsupported operator: " + operator.getText());
@@ -2082,6 +2205,19 @@ public class PrestoHiveAstBuilder
         }
 
         if (type.ROW() != null) {
+            StringBuilder builder = new StringBuilder("(");
+            for (int i = 0; i < type.identifier().size(); i++) {
+                if (i != 0) {
+                    builder.append(",");
+                }
+                builder.append(visit(type.identifier(i)))
+                        .append(" ")
+                        .append(getType(type.type(i)));
+            }
+            builder.append(")");
+            return "ROW" + builder.toString();
+        }
+        if (type.STRUCT() != null) {
             StringBuilder builder = new StringBuilder("(");
             for (int i = 0; i < type.identifier().size(); i++) {
                 if (i != 0) {

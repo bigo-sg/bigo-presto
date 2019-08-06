@@ -67,6 +67,18 @@ public final class Signatures
         return internalScalarFunction("LIKE", parseTypeSignature(StandardTypes.BOOLEAN), valueType.getTypeSignature(), parseTypeSignature(LikePatternType.NAME));
     }
 
+
+    public static Signature rLikeVarcharSignature()
+    {
+        return internalScalarFunction("RLIKE", parseTypeSignature(StandardTypes.BOOLEAN), parseTypeSignature(StandardTypes.VARCHAR), parseTypeSignature(StandardTypes.VARCHAR));
+    }
+
+    public static Signature rLikeCharSignature(Type valueType)
+    {
+        checkArgument(valueType instanceof CharType, "Expected CHAR value type");
+        return internalScalarFunction("RLIKE", parseTypeSignature(StandardTypes.BOOLEAN), valueType.getTypeSignature(), parseTypeSignature(StandardTypes.VARCHAR));
+    }
+
     public static Signature likePatternSignature()
     {
         return internalScalarFunction("LIKE_PATTERN", parseTypeSignature(LikePatternType.NAME), parseTypeSignature(StandardTypes.VARCHAR), parseTypeSignature(StandardTypes.VARCHAR));

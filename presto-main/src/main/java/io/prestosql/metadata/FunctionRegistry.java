@@ -196,6 +196,7 @@ import io.prestosql.type.UnknownOperators;
 import io.prestosql.type.UuidOperators;
 import io.prestosql.type.VarbinaryOperators;
 import io.prestosql.type.VarcharOperators;
+import io.prestosql.type.RLikeFunctions;
 import io.prestosql.type.setdigest.BuildSetDigestAggregation;
 import io.prestosql.type.setdigest.MergeSetDigestAggregation;
 import io.prestosql.type.setdigest.SetDigestFunctions;
@@ -536,6 +537,7 @@ public class FunctionRegistry
                 .scalars(UuidOperators.class)
                 .scalar(UuidOperators.UuidDistinctFromOperator.class)
                 .scalars(LikeFunctions.class)
+                .scalars(RLikeFunctions.class)
                 .scalars(ArrayFunctions.class)
                 .scalars(HmacFunctions.class)
                 .scalars(DataSizeFunctions.class)

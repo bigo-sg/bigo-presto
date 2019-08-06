@@ -87,8 +87,9 @@ public class SqlParser
 
     public Statement createStatement(String sql, ParsingOptions parsingOptions)
     {
-        Statement statement = (Statement) invokeParser("statement",
+        Node node = invokeParser("statement",
                 sql, SqlBaseParser::singleStatement, parsingOptions, "singleStatement");
+        Statement statement = (Statement) node;
         return statement;
     }
 

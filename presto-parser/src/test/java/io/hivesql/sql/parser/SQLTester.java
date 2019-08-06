@@ -3,6 +3,7 @@ package io.hivesql.sql.parser;
 import io.prestosql.sql.parser.ParsingOptions;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.tree.Node;
+import io.utils.FileUtils;
 import org.testng.Assert;
 
 public abstract class SQLTester {
@@ -46,9 +47,37 @@ public abstract class SQLTester {
         usePrestoParser(prestoSql);
     }
 
+    public void checkASTNodeFromFile(String prestoPath, String hivePath) {
+        String prestoSql = getResourceContent(prestoPath);
+        String hiveSql = getResourceContent(hivePath);
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    public void checkASTNodeFromFile(String sqlPath) {
+        String sql = getResourceContent(sqlPath);
+        checkASTNode(sql, sql);
+    }
+
+    public void runHiveSQLFromFile(String hiveSqlPath) {
+        String hiveSql = getResourceContent(hiveSqlPath);
+        useHiveParser(hiveSql);
+    }
+
+    public void runPrestoSQLFromFile(String prestoSqlPath) {
+        String prestoSql = getResourceContent(prestoSqlPath);
+        usePrestoParser(prestoSql);
+    }
+
     static {
         hiveParsingOptions.setIfUseHiveParser(true);
         prestoParsingOptions.setIfUseHiveParser(false);
     }
 
+    public String getResourceContent(String path) {
+        String fullPath =
+                this.getClass().
+                        getResource("../../../../").
+                        getFile() + path;
+        return new String(FileUtils.getFileAsBytes(fullPath));
+    }
 }

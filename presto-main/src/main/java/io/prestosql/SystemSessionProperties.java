@@ -516,7 +516,6 @@ public final class SystemSessionProperties
                         "Enable dynamic filtering",
                         featuresConfig.isEnableDynamicFiltering(),
                         false),
-<<<<<<< HEAD
                 dataSizeProperty(
                         QUERY_MAX_MEMORY_PER_NODE,
                         "Maximum amount of memory a query can use per node",
@@ -526,14 +525,12 @@ public final class SystemSessionProperties
                         QUERY_MAX_TOTAL_MEMORY_PER_NODE,
                         "Maximum amount of total memory a query can use per node",
                         nodeMemoryConfig.getMaxQueryTotalMemoryPerNode(),
-                        true));
-=======
+                        true),
                 booleanProperty(
                         ENABLE_HIVE_SQL_SYNTAX,
                         "Experimental: Use hive sql syntax",
                         false,
                         false));
->>>>>>> port hive parser from bigo-315 & support rlike & support &|^DIV & add tests for hive parser & fix presto-hive-hadoop2 json libs problem & add switch for hive/presto parser
     }
 
     public List<PropertyMetadata<?>> getSessionProperties()

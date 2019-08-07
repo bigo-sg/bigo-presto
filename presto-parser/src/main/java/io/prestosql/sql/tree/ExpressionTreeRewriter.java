@@ -15,6 +15,7 @@ package io.prestosql.sql.tree;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import io.prestosql.sql.parser.hive.RLikePredicate;
 
 import java.util.Iterator;
 import java.util.List;
@@ -626,6 +627,28 @@ public final class ExpressionTreeRewriter<C>
 
             if (value != node.getValue() || pattern != node.getPattern() || !sameElements(node.getEscape(), rewrittenEscape)) {
                 return new LikePredicate(value, pattern, rewrittenEscape);
+            }
+
+            return node;
+        }
+
+        @Override
+        public Expression visitRLikePredicate(RLikePredicate node, Context<C> context)
+        {
+            if (!context.isDefaultRewrite()) {
+                Expression result = rewriter.rewriteRLikePredicate(node, context.get(), ExpressionTreeRewriter.this);
+                if (result != null) {
+                    return result;
+                }
+            }
+
+            Expression value = rewrite(node.getValue(), context.get());
+            Expression pattern = rewrite(node.getPattern(), context.get());
+            Optional<Expression> rewrittenEscape = node.getEscape()
+                    .map(escape -> rewrite(escape, context.get()));
+
+            if (value != node.getValue() || pattern != node.getPattern() || !sameElements(node.getEscape(), rewrittenEscape)) {
+                return new RLikePredicate(value, pattern, rewrittenEscape);
             }
 
             return node;

@@ -140,6 +140,7 @@ import io.prestosql.operator.scalar.StringFunctions;
 import io.prestosql.operator.scalar.TryFunction;
 import io.prestosql.operator.scalar.TypeOfFunction;
 import io.prestosql.operator.scalar.UrlFunctions;
+import io.prestosql.operator.scalar.udf.BigoJsonFunctions;
 import io.prestosql.operator.scalar.VarbinaryFunctions;
 import io.prestosql.operator.scalar.WilsonInterval;
 import io.prestosql.operator.scalar.WordStemFunction;
@@ -583,6 +584,7 @@ public class FunctionRegistry
                 .scalar(EmptyMapConstructor.class)
                 .scalar(MapIndeterminateOperator.class)
                 .scalar(TypeOfFunction.class)
+                .scalar(BigoJsonFunctions.class)
                 .scalar(TryFunction.class)
                 .scalar(DynamicFilters.Function.class)
                 .functions(ZIP_WITH_FUNCTION, MAP_ZIP_WITH_FUNCTION)

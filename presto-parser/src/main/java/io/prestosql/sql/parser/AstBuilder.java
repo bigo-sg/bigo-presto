@@ -17,6 +17,7 @@ package io.prestosql.sql.parser;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import io.prestosql.sql.parser.hive.RLikePredicate;
 import io.prestosql.sql.tree.AddColumn;
 import io.prestosql.sql.tree.AliasedRelation;
 import io.prestosql.sql.tree.AllColumns;
@@ -1264,17 +1265,32 @@ class AstBuilder
     @Override
     public Node visitLike(SqlBaseParser.LikeContext context)
     {
-        Expression result = new LikePredicate(
-                getLocation(context),
-                (Expression) visit(context.value),
-                (Expression) visit(context.pattern),
-                visitIfPresent(context.escape, Expression.class));
+        if (context.RLIKE() != null) {
+            Expression result = new RLikePredicate(
+                    getLocation(context),
+                    (Expression) visit(context.value),
+                    (Expression) visit(context.pattern),
+                    visitIfPresent(context.escape, Expression.class));
 
-        if (context.NOT() != null) {
-            result = new NotExpression(getLocation(context), result);
+            if (context.NOT() != null) {
+                result = new NotExpression(getLocation(context), result);
+            }
+
+            return result;
+
+        } else {
+            Expression result = new LikePredicate(
+                    getLocation(context),
+                    (Expression) visit(context.value),
+                    (Expression) visit(context.pattern),
+                    visitIfPresent(context.escape, Expression.class));
+
+            if (context.NOT() != null) {
+                result = new NotExpression(getLocation(context), result);
+            }
+
+            return result;
         }
-
-        return result;
     }
 
     @Override

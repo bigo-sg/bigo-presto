@@ -156,19 +156,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitCreateHiveTable(SqlBaseParser.CreateHiveTableContext ctx) {
+
+        // get table comment
         Optional<String> comment = Optional.empty();
         if (ctx.comment != null && ctx.comment.getText() != null) {
             comment = Optional.of(ctx.comment.getText());
         }
+
         List<Property> properties = new ArrayList<>();
-//        if (ctx.tableProps != null) {
-//            List<SqlBaseParser.TablePropertyContext> tablePropertyContexts =
-//                    ctx.tableProps.tableProperty();
-//            for (SqlBaseParser.TablePropertyContext tablePropertyContext: tablePropertyContexts) {
-//                Property property = (Property) visitTableProperty(tablePropertyContext);
-//                properties.add(property);
-//            }
-//        }
+
+        // get partition columns
         if (ctx.partitionColumns != null) {
             List<SqlBaseParser.ColTypeContext> colTypeListContexts =
                     ctx.partitionColumns.colType();
@@ -180,42 +177,115 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     new Property(new Identifier("partitioned_by", false),
                             new ArrayConstructor(partitionedCol));
             properties.add(partitionedBy);
-
         }
+
+        // get store format
         if (ctx.rowFormat() != null && ctx.rowFormat(0) != null) {
             SqlBaseParser.RowFormatContext rowFormatContext = ctx.rowFormat(0);
+            String format = ((SqlBaseParser.RowFormatSerdeContext) rowFormatContext).name.getText();
             if (rowFormatContext instanceof SqlBaseParser.RowFormatSerdeContext) {
-                if (((SqlBaseParser.RowFormatSerdeContext) rowFormatContext).name.getText().
-                        contains("org.apache.hadoop.hive.ql.io.orc.OrcSerde")) {
+                if (format.contains("org.apache.hive.hcatalog.data.JsonSerDe")) {
+                    Property property = new Property(new Identifier("format", false),
+                            new StringLiteral("JSON"));
+                    properties.add(property);
+                } else if (format.contains("ParquetHiveSerDe")) {
+                    Property property = new Property(new Identifier("format", false),
+                            new StringLiteral("PARQUET"));
+                    properties.add(property);
+                } else if (format.contains("org.apache.hadoop.hive.serde2.avro.AvroSerDe")) {
+                    Property property = new Property(new Identifier("format", false),
+                            new StringLiteral("AVRO"));
+                    properties.add(property);
+                } else {
                     Property property = new Property(new Identifier("format", false),
                             new StringLiteral("ORC"));
                     properties.add(property);
                 }
             }
-        }
-
-
-        List<TableElement> elements = new ArrayList<>();
-        List<SqlBaseParser.ColTypeContext> colTypeListContexts = ctx.columns.colType();
-        if (ctx.partitionColumns != null) {
-            colTypeListContexts.addAll(ctx.partitionColumns.colType());
-        }
-        if (colTypeListContexts.size() > 0) {
-            for (SqlBaseParser.ColTypeContext colTypeContext: colTypeListContexts) {
-                Optional colComment = Optional.empty();
-                if (colTypeContext.COMMENT() != null) {
-                    colComment = Optional.of(colTypeContext.COMMENT().getText());
-                }
-                TableElement tableElement = new ColumnDefinition(
-                        new Identifier(getLocation(colTypeContext),
-                                tryUnquote(colTypeContext.identifier().getText()), false),
-                        colTypeTransform(colTypeContext.dataType().getText()),
-                        true,
-                        new ArrayList<>(),
-                        colComment);
-                elements.add(tableElement);
+        } else if (ctx.createFileFormat() != null && ctx.createFileFormat(0) != null) {
+            SqlBaseParser.CreateFileFormatContext createFileFormatContext = ctx.createFileFormat(0);
+            String format = createFileFormatContext.fileFormat().getText();
+            if (format.contains("org.apache.hadoop.hive.ql.io.RCFileInputFormat")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("RCTEXT"));
+                properties.add(property);
+            } else if (format.contains("org.apache.hadoop.mapred.SequenceFileInputFormat")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("SEQUENCEFILE"));
+                properties.add(property);
+            } else if (format.contains("org.apache.hadoop.mapred.TextInputFormat")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("TEXTFILE"));
+                properties.add(property);
+            } else {
+                throw parseError("create table format " + format + " not supported!",
+                        createFileFormatContext);
             }
         }
+
+        // if external table
+        if (ctx.createTableHeader().EXTERNAL() != null) {
+            if (ctx.locationSpec() == null || ctx.locationSpec().size() == 0) {
+                throw parseError("external table need a location", ctx);
+            }
+            String loc = tryUnquote(ctx.locationSpec(0).STRING().getText());
+            Property location = new Property(new Identifier("external_location", true),
+                    new StringLiteral(getLocation(ctx.locationSpec(0)), loc));
+            properties.add(location);
+        } else {
+            if (ctx.locationSpec() != null && ctx.locationSpec().size() > 0) {
+                String loc = tryUnquote(ctx.locationSpec(0).STRING().getText());
+                Property location = new Property(new Identifier("location", true),
+                        new StringLiteral(getLocation(ctx.locationSpec(0)), loc));
+                properties.add(location);
+            }
+        }
+
+        // get normal columns
+        List<TableElement> elements = new ArrayList<>();
+        if (ctx.columns != null) {
+            List<SqlBaseParser.ColTypeContext> colTypeListContexts = ctx.columns.colType();
+            if (ctx.partitionColumns != null) {
+                colTypeListContexts.addAll(ctx.partitionColumns.colType());
+            }
+            if (colTypeListContexts.size() > 0) {
+                for (SqlBaseParser.ColTypeContext colTypeContext : colTypeListContexts) {
+                    Optional colComment = Optional.empty();
+                    if (colTypeContext.COMMENT() != null) {
+                        colComment = Optional.of(colTypeContext.COMMENT().getText());
+                    }
+                    TableElement tableElement = new ColumnDefinition(
+                            new Identifier(getLocation(colTypeContext),
+                                    tryUnquote(colTypeContext.identifier().getText()), false),
+                            colTypeTransform(colTypeContext.dataType().getText()),
+                            true,
+                            new ArrayList<>(),
+                            colComment);
+                    elements.add(tableElement);
+                }
+            }
+        }
+
+        // process create table as select
+        if (ctx.AS() != null && ctx.query() != null) {
+
+            SqlBaseParser.SingleInsertQueryContext singleInsertQueryContext =
+                    (SqlBaseParser.SingleInsertQueryContext)ctx.query().queryNoWith();
+            QueryBody term = (QueryBody) visit(singleInsertQueryContext.queryTerm());
+
+            Query query = (Query)withQueryOrganization(term, singleInsertQueryContext.queryOrganization());
+                    QualifiedName target = getQualifiedName(ctx.createTableHeader().tableIdentifier());
+            return new CreateTableAsSelect(
+                    target,
+                    query,
+                    ctx.createTableHeader().EXISTS() != null,
+                    properties,
+                    true,
+                    Optional.empty(),
+                    comment);
+        }
+
+        // only create table
         return new CreateTable(
                 getLocation(ctx),
                 getQualifiedName(ctx.createTableHeader().tableIdentifier()),
@@ -242,7 +312,21 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitCtes(SqlBaseParser.CtesContext ctx) {
-        return super.visitCtes(ctx);
+
+        With with = null;
+        List<SqlBaseParser.NamedQueryContext> namedQueryContexts = ctx.namedQuery();
+        List<WithQuery> queries = new ArrayList<>();
+        for (SqlBaseParser.NamedQueryContext namedQueryContext: namedQueryContexts) {
+
+            WithQuery withQuery = new WithQuery(
+                    new Identifier(getLocation(namedQueryContext), namedQueryContext.name.getText(), false),
+                    (Query) visitQuery(namedQueryContext.query()),
+                    Optional.empty()
+            );
+            queries.add(withQuery);
+        }
+        with = new With(getLocation(ctx), false, queries);
+        return with;
     }
 
     @Override
@@ -528,7 +612,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public Node visitSingleInsertQuery(SqlBaseParser.SingleInsertQueryContext ctx) {
         QueryBody term = (QueryBody) visit(ctx.queryTerm());
 
-        return withQueryOrganization(term, ctx.queryOrganization());
+        Query query = (Query)withQueryOrganization(term, ctx.queryOrganization());
+        if (ctx.insertInto() == null) {
+            return query;
+        }
+        QualifiedName target = null;
+        if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
+            target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
+        }
+        return new Insert(target, Optional.empty(), query);
     }
 
     @Override
@@ -641,7 +733,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override public Node visitShowCreateTable(SqlBaseParser.ShowCreateTableContext ctx)
     {
-        throw parseError("show create table not support yet!", ctx);
+        return new ShowCreate(
+                getLocation(ctx),
+                ctx.TABLE() != null?ShowCreate.Type.TABLE: ShowCreate.Type.VIEW,
+                getQualifiedName(ctx.tableIdentifier())
+                );
     }
 
     @Override
@@ -671,6 +767,21 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         return new GroupBy(getLocation(ctx), false, groupingElements);
+    }
+
+    @Override public Node visitQuery(SqlBaseParser.QueryContext ctx)
+    {
+        if (ctx.ctes() != null) {
+            Query query = (Query) visit(ctx.queryNoWith());
+            return new Query(
+                    Optional.of((With)visitCtes(ctx.ctes())),
+                    query.getQueryBody(),
+                    query.getOrderBy(),
+                    query.getOffset(),
+                    query.getLimit()
+            );
+        }
+        return visitChildren(ctx);
     }
 
     @Override
@@ -939,6 +1050,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return new CoalesceExpression(getLocation(ctx), visit(ctx.expression(), Expression.class));
         }
 
+        List<Expression> expressions = visit(ctx.expression(), Expression.class);
+        if (expressions.size() == 1 && expressions.get(0) instanceof StarExpression) {
+            return new FunctionCall(
+                    Optional.of(getLocation(ctx)),
+                    name,
+                    window,
+                    Optional.empty(),//filter,
+                    Optional.empty(),//orderBy,
+                    distinct,
+                    new ArrayList<>()
+            );
+        }
+
         return new FunctionCall(
                 Optional.of(getLocation(ctx)),
                 name,
@@ -946,7 +1070,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 Optional.empty(),//filter,
                 Optional.empty(),//orderBy,
                 distinct,
-                visit(ctx.expression(), Expression.class));
+                expressions
+                );
     }
 
     @Override

@@ -122,6 +122,8 @@ public final class SystemSessionProperties
     public static final String QUERY_MAX_MEMORY_PER_NODE = "query_max_memory_per_node";
     public static final String QUERY_MAX_TOTAL_MEMORY_PER_NODE = "query_max_total_memory_per_node";
 
+    public static final String ENABLE_HIVE_SQL_SYNTAX = "enable_hive_syntax";
+
     private final List<PropertyMetadata<?>> sessionProperties;
 
     public SystemSessionProperties()
@@ -523,7 +525,12 @@ public final class SystemSessionProperties
                         QUERY_MAX_TOTAL_MEMORY_PER_NODE,
                         "Maximum amount of total memory a query can use per node",
                         nodeMemoryConfig.getMaxQueryTotalMemoryPerNode(),
-                        true));
+                        true),
+                booleanProperty(
+                        ENABLE_HIVE_SQL_SYNTAX,
+                        "Experimental: Use hive sql syntax",
+                        false,
+                        false));
     }
 
     public List<PropertyMetadata<?>> getSessionProperties()
@@ -926,8 +933,11 @@ public final class SystemSessionProperties
         return session.getSystemProperty(QUERY_MAX_MEMORY_PER_NODE, DataSize.class);
     }
 
-    public static DataSize getQueryMaxTotalMemoryPerNode(Session session)
-    {
+    public static DataSize getQueryMaxTotalMemoryPerNode(Session session) {
         return session.getSystemProperty(QUERY_MAX_TOTAL_MEMORY_PER_NODE, DataSize.class);
+    }
+    public static boolean isEnableHiveSqlSynTax(Session session)
+    {
+        return session.getSystemProperty(ENABLE_HIVE_SQL_SYNTAX, Boolean.class);
     }
 }

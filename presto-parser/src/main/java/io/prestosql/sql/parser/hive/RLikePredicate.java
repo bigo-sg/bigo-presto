@@ -13,11 +13,11 @@
  */
 package io.prestosql.sql.parser.hive;
 
-import com.google.common.collect.ImmutableList;
-import io.prestosql.sql.tree.*;
+import io.prestosql.sql.tree.AstVisitor;
+import io.prestosql.sql.tree.Expression;
+import io.prestosql.sql.tree.LikePredicate;
+import io.prestosql.sql.tree.NodeLocation;
 
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;

@@ -113,7 +113,8 @@ public class MapSubscriptOperator
                 return null;
             } else {
                 throw missingKeyExceptionFactory.create(session, key);
-            }        }
+            }
+        }
         return readNativeValue(valueType, mapBlock, valuePosition);
     }
 

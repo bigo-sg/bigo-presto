@@ -62,6 +62,7 @@ import static io.prestosql.spi.type.TimestampWithTimeZoneType.TIMESTAMP_WITH_TIM
 import static io.prestosql.spi.type.TinyintType.TINYINT;
 import static io.prestosql.spi.type.VarbinaryType.VARBINARY;
 import static io.prestosql.sql.analyzer.TypeSignatureTranslator.toTypeSignature;
+import static io.prestosql.spi.type.VarcharType.VARCHAR;
 import static io.prestosql.type.ArrayParametricType.ARRAY;
 import static io.prestosql.type.CodePointsType.CODE_POINTS;
 import static io.prestosql.type.ColorType.COLOR;
@@ -92,7 +93,14 @@ final class TypeRegistry
 
     public TypeRegistry(FeaturesConfig featuresConfig)
     {
-        // Manually register UNKNOWN type without a verifyTypeClass call since it is a special type that cannot be used by functions
+        requireNonNull(types, "types is null");
+
+        // this is hack here, we are trying to give varchar type a different name called string
+        this.types.putIfAbsent(new TypeSignature("string"), VARCHAR);
+
+        this.types.putIfAbsent(new TypeSignature("float"), DOUBLE);
+
+        // Manually register UNKNOWN type without a verifyTypeClass call since it is a special type that can not be used by functions
         this.types.put(UNKNOWN.getTypeSignature(), UNKNOWN);
 
         // always add the built-in types; Presto will not function without these

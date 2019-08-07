@@ -2055,6 +2055,14 @@ class AstBuilder
                 return ArithmeticBinaryExpression.Operator.DIVIDE;
             case SqlBaseLexer.PERCENT:
                 return ArithmeticBinaryExpression.Operator.MODULUS;
+            case SqlBaseLexer.DIV:
+                return ArithmeticBinaryExpression.Operator.DIV;
+            case SqlBaseLexer.PIPE:
+                return ArithmeticBinaryExpression.Operator.PIPE;
+            case SqlBaseLexer.HAT:
+                return ArithmeticBinaryExpression.Operator.HAT;
+            case SqlBaseLexer.AMPERSAND:
+                return ArithmeticBinaryExpression.Operator.AMPERSAND;
         }
 
         throw new UnsupportedOperationException("Unsupported operator: " + operator.getText());

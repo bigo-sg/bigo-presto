@@ -1231,7 +1231,7 @@ public class ExpressionInterpreter
                 return null;
             }
             if ((index instanceof Long) && isArray(type(node.getBase()))) {
-                ArraySubscriptOperator.checkArrayIndex((Long) index);
+                ArraySubscriptOperator.checkArrayIndex(session, (Long) index);
             }
 
             if (hasUnresolvedValue(base, index)) {

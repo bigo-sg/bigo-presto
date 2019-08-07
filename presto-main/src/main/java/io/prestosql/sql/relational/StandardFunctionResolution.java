@@ -42,6 +42,7 @@ import static io.prestosql.spi.type.VarcharType.VARCHAR;
 import static io.prestosql.sql.analyzer.TypeSignatureProvider.fromTypes;
 import static io.prestosql.sql.tree.ArrayConstructor.ARRAY_CONSTRUCTOR;
 import static io.prestosql.type.LikePatternType.LIKE_PATTERN;
+import static io.prestosql.type.RLikePatternType.RLIKE_PATTERN;
 import static java.util.Objects.requireNonNull;
 
 public final class StandardFunctionResolution
@@ -67,6 +68,22 @@ public final class StandardFunctionResolution
     public ResolvedFunction likePatternFunction()
     {
         return metadata.resolveFunction(QualifiedName.of("LIKE_PATTERN"), fromTypes(VARCHAR, VARCHAR));
+    }
+
+    public ResolvedFunction rLikeVarcharSignature()
+    {
+        return metadata.resolveFunction(QualifiedName.of("RLIKE"), fromTypes(VARCHAR, RLIKE_PATTERN));
+    }
+
+    public ResolvedFunction rLikeCharFunction(Type valueType)
+    {
+        checkArgument(valueType instanceof CharType, "Expected CHAR value type");
+        return metadata.resolveFunction(QualifiedName.of("RLIKE"), fromTypes(valueType, RLIKE_PATTERN));
+    }
+
+    public ResolvedFunction rLikePatternFunction()
+    {
+        return metadata.resolveFunction(QualifiedName.of("RLIKE_PATTERN"), fromTypes(VARCHAR, VARCHAR));
     }
 
     public ResolvedFunction arithmeticFunction(ArithmeticBinaryExpression.Operator operator, Type leftType, Type rightType)

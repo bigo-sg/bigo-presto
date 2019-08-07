@@ -124,6 +124,8 @@ public final class SystemSessionProperties
     public static final String DYNAMIC_FILTERING_MAX_PER_DRIVER_ROW_COUNT = "dynamic_filtering_max_per_driver_row_count";
     public static final String DYNAMIC_FILTERING_MAX_PER_DRIVER_SIZE = "dynamic_filtering_max_per_driver_size";
 
+    public static final String ENABLE_HIVE_SQL_SYNTAX = "enable_hive_syntax";
+
     private final List<PropertyMetadata<?>> sessionProperties;
 
     public SystemSessionProperties()
@@ -540,6 +542,11 @@ public final class SystemSessionProperties
                         DYNAMIC_FILTERING_MAX_PER_DRIVER_SIZE,
                         "Experimental: maximum number of bytes to be collected for dynamic filtering per-driver",
                         featuresConfig.getDynamicFilteringMaxPerDriverSize(),
+                        false),
+                booleanProperty(
+                        ENABLE_HIVE_SQL_SYNTAX,
+                        "Experimental: Use hive sql syntax",
+                        false,
                         false));
     }
 
@@ -974,8 +981,7 @@ public final class SystemSessionProperties
                 DataSize::toString);
     }
 
-    private static PropertyMetadata<Duration> durationProperty(String name, String description, Duration defaultValue, boolean hidden)
-    {
+    private static PropertyMetadata<Duration> durationProperty(String name, String description, Duration defaultValue, boolean hidden) {
         return new PropertyMetadata<>(
                 name,
                 description,
@@ -985,5 +991,9 @@ public final class SystemSessionProperties
                 hidden,
                 value -> Duration.valueOf((String) value),
                 Duration::toString);
+    }
+    public static boolean isEnableHiveSqlSynTax(Session session)
+    {
+        return session.getSystemProperty(ENABLE_HIVE_SQL_SYNTAX, Boolean.class);
     }
 }

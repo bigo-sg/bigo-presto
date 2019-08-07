@@ -29,6 +29,7 @@ import io.prestosql.spi.type.RowType.Field;
 import io.prestosql.spi.type.TimeZoneKey;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.VarcharType;
+import io.prestosql.sql.parser.hive.RLikePredicate;
 import io.prestosql.sql.planner.Symbol;
 import io.prestosql.sql.relational.SpecialForm.Form;
 import io.prestosql.sql.relational.optimizer.ExpressionOptimizer;
@@ -728,6 +729,30 @@ public final class SqlToRowExpressionTranslator
 
             checkState(value.getType() instanceof CharType, "LIKE value type is neither VARCHAR or CHAR");
             return call(standardFunctionResolution.likeCharFunction(value.getType()), BOOLEAN, value, pattern);
+        }
+
+        @Override
+        public RowExpression visitRLikePredicate(RLikePredicate node, Void context)
+        {
+            RowExpression value = process(node.getValue(), context);
+            RowExpression pattern = process(node.getPattern(), context);
+
+            if (node.getEscape().isPresent()) {
+                RowExpression escape = process(node.getEscape().get(), context);
+                return rLikeFunctionCall(value, pattern);
+            }
+
+            return rLikeFunctionCall(value, pattern);
+        }
+
+        private RowExpression rLikeFunctionCall(RowExpression value, RowExpression pattern)
+        {
+            if (value.getType() instanceof VarcharType) {
+                return call(standardFunctionResolution.rLikeVarcharSignature(), BOOLEAN, value, pattern);
+            }
+
+            checkState(value.getType() instanceof CharType, "RLIKE value type is neither VARCHAR or CHAR");
+            return call(standardFunctionResolution.rLikeCharFunction(value.getType()), BOOLEAN, value, pattern);
         }
 
         @Override

@@ -211,4 +211,21 @@ public class BasicSQLs extends SQLTester {
 
         checkASTNode(sql);
     }
+
+
+    @Test
+    public void testSelectCountStar()
+    {
+        String sql = "SELECT count(*) from tb1";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSelectCountOne()
+    {
+        String sql = "SELECT count(1) from tb1";
+
+        checkASTNode(sql);
+    }
 }

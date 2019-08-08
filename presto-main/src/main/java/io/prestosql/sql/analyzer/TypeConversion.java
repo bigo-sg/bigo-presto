@@ -71,7 +71,7 @@ public class TypeConversion {
 
     protected boolean needConvert(Type leftType, Type rightType){
         //todo
-        if(leftType.getDisplayName().equals(rightType.getDisplayName())){
+        if (leftType.getDisplayName().equals(rightType.getDisplayName())) {
             return false;
         }
         return true;
@@ -85,10 +85,17 @@ public class TypeConversion {
         int leftOrder = typeConvertOrderMap.get(leftType.getTypeSignature().getBase());
         int rightOrder = typeConvertOrderMap.get(rightType.getTypeSignature().getBase());
 
-        if(leftOrder == rightOrder){
+        if (leftOrder > rightOrder && canConvertType(rightType, leftType)) {
+            return leftType;
+        } else if (leftOrder > rightOrder && canConvertType(leftType, rightType)) {
+            return rightType;
+        } else if (rightOrder > leftOrder && canConvertType(leftType, rightType)) {
+            return rightType;
+        } else if (rightOrder > leftOrder && canConvertType(rightType, leftType)) {
+            return leftType;
+        } else {
             return null;
         }
-        return leftOrder >= rightOrder ? leftType : rightType;
     }
 
     protected Type compare3TypesOrder(Type leftType, Type middleType, Type rightType){

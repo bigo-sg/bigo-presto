@@ -77,9 +77,45 @@ public class TypeConversion {
         return true;
     }
 
-    protected Type compare2TypesOrder(Type leftType, Type rightType){
-        if(typeConvertOrderMap.get(leftType.getTypeSignature().getBase()) == null
-                || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null){
+    protected boolean isValueType(Type type) {
+        if (type == null) {
+            return false;
+        }
+        List<String> valueTypes = Arrays.asList(StandardTypes.TINYINT, StandardTypes.SMALLINT, StandardTypes.INTEGER,
+                StandardTypes.BIGINT, StandardTypes.DOUBLE, StandardTypes.DECIMAL);
+        return valueTypes.contains(type.getTypeSignature().getBase());
+    }
+
+    protected Type stringAndValueType(Type leftType, Type rightType) {
+        if (leftType == null || rightType == null) {
+            return null;
+        }
+        if (typeConvertOrderMap.get(leftType.getTypeSignature().getBase()) == null
+                || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null) {
+            return null;
+        }
+        List<String> valueTypes = Arrays.asList(StandardTypes.DOUBLE, StandardTypes.TINYINT, StandardTypes.SMALLINT,
+                StandardTypes.INTEGER, StandardTypes.BIGINT, StandardTypes.DECIMAL);
+        String leftTypeName = leftType.getTypeSignature().getBase();
+        String rightTypeName = rightType.getTypeSignature().getBase();
+
+        if (leftTypeName.equals(StandardTypes.VARCHAR) && valueTypes.contains(rightTypeName)) {
+            return leftType;
+        } else if (rightTypeName.equals(StandardTypes.VARCHAR) && valueTypes.contains(leftTypeName)) {
+            return rightType;
+        }
+        return null;
+    }
+
+    protected Type compare2TypesOrder(Type leftType, Type rightType) {
+        if (leftType == null || rightType == null) {
+            return null;
+        }
+        if (typeConvertOrderMap.get(leftType.getTypeSignature().getBase()) == null
+                || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null) {
+            return null;
+        }
+        if (isValueType(leftType) && isValueType(rightType)) {
             return null;
         }
         int leftOrder = typeConvertOrderMap.get(leftType.getTypeSignature().getBase());
@@ -91,8 +127,11 @@ public class TypeConversion {
         return leftOrder >= rightOrder ? leftType : rightType;
     }
 
-    protected Type compare3TypesOrder(Type leftType, Type middleType, Type rightType){
-        if(typeConvertOrderMap.get(leftType.getTypeSignature().getBase()) == null
+    protected Type compare3TypesOrder(Type leftType, Type middleType, Type rightType) {
+        if (leftType == null || middleType == null || rightType == null) {
+            return null;
+        }
+        if (typeConvertOrderMap.get(leftType.getTypeSignature().getBase()) == null
                 || typeConvertOrderMap.get(middleType.getTypeSignature().getBase()) == null
                 || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null){
             return null;

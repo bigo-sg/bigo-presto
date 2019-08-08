@@ -312,7 +312,21 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitCtes(SqlBaseParser.CtesContext ctx) {
-        return super.visitCtes(ctx);
+
+        With with = null;
+        List<SqlBaseParser.NamedQueryContext> namedQueryContexts = ctx.namedQuery();
+        List<WithQuery> queries = new ArrayList<>();
+        for (SqlBaseParser.NamedQueryContext namedQueryContext: namedQueryContexts) {
+
+            WithQuery withQuery = new WithQuery(
+                    new Identifier(getLocation(namedQueryContext), namedQueryContext.name.getText(), false),
+                    (Query) visitQuery(namedQueryContext.query()),
+                    Optional.empty()
+            );
+            queries.add(withQuery);
+        }
+        with = new With(getLocation(ctx), false, queries);
+        return with;
     }
 
     @Override
@@ -599,6 +613,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         QueryBody term = (QueryBody) visit(ctx.queryTerm());
 
         Query query = (Query)withQueryOrganization(term, ctx.queryOrganization());
+        if (ctx.insertInto() == null) {
+            return query;
+        }
         QualifiedName target = null;
         if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
             target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
@@ -716,7 +733,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override public Node visitShowCreateTable(SqlBaseParser.ShowCreateTableContext ctx)
     {
-        throw parseError("show create table not support yet!", ctx);
+        return new ShowCreate(
+                getLocation(ctx),
+                ctx.TABLE() != null?ShowCreate.Type.TABLE: ShowCreate.Type.VIEW,
+                getQualifiedName(ctx.tableIdentifier())
+                );
     }
 
     @Override
@@ -746,6 +767,21 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         return new GroupBy(getLocation(ctx), false, groupingElements);
+    }
+
+    @Override public Node visitQuery(SqlBaseParser.QueryContext ctx)
+    {
+        if (ctx.ctes() != null) {
+            Query query = (Query) visit(ctx.queryNoWith());
+            return new Query(
+                    Optional.of((With)visitCtes(ctx.ctes())),
+                    query.getQueryBody(),
+                    query.getOrderBy(),
+                    query.getOffset(),
+                    query.getLimit()
+            );
+        }
+        return visitChildren(ctx);
     }
 
     @Override
@@ -1014,6 +1050,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return new CoalesceExpression(getLocation(ctx), visit(ctx.expression(), Expression.class));
         }
 
+        List<Expression> expressions = visit(ctx.expression(), Expression.class);
+        if (expressions.size() == 1 && expressions.get(0) instanceof StarExpression) {
+            return new FunctionCall(
+                    Optional.of(getLocation(ctx)),
+                    name,
+                    window,
+                    Optional.empty(),//filter,
+                    Optional.empty(),//orderBy,
+                    distinct,
+                    new ArrayList<>()
+            );
+        }
+
         return new FunctionCall(
                 Optional.of(getLocation(ctx)),
                 name,
@@ -1021,7 +1070,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 Optional.empty(),//filter,
                 Optional.empty(),//orderBy,
                 distinct,
-                visit(ctx.expression(), Expression.class));
+                expressions
+                );
     }
 
     @Override

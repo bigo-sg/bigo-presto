@@ -1206,6 +1206,11 @@
                 <artifactId>rubix-presto-shaded</artifactId>
                 <version>${rubix.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>joda-to-java-time-bridge</artifactId>
+                <version>3</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

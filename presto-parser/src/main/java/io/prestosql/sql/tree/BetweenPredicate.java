@@ -24,9 +24,9 @@ import static java.util.Objects.requireNonNull;
 public class BetweenPredicate
         extends Expression
 {
-    private final Expression value;
-    private final Expression min;
-    private final Expression max;
+    private Expression value;
+    private Expression min;
+    private Expression max;
 
     public BetweenPredicate(Expression value, Expression min, Expression max)
     {
@@ -63,6 +63,18 @@ public class BetweenPredicate
     public Expression getMax()
     {
         return max;
+    }
+
+    public void setValue(Expression value) {
+        this.value = value;
+    }
+
+    public void setMin(Expression min) {
+        this.min = min;
+    }
+
+    public void setMax(Expression max) {
+        this.max = max;
     }
 
     @Override

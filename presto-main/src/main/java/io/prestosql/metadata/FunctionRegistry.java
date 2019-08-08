@@ -115,6 +115,7 @@ import io.prestosql.operator.scalar.JoniRegexpCasts;
 import io.prestosql.operator.scalar.JoniRegexpFunctions;
 import io.prestosql.operator.scalar.JoniRegexpReplaceLambdaFunction;
 import io.prestosql.operator.scalar.JsonFunctions;
+import io.prestosql.operator.scalar.BigoJsonFunctions;
 import io.prestosql.operator.scalar.JsonOperators;
 import io.prestosql.operator.scalar.MapCardinalityFunction;
 import io.prestosql.operator.scalar.MapDistinctFromOperator;
@@ -460,6 +461,7 @@ public class FunctionRegistry
                 .scalars(BitwiseFunctions.class)
                 .scalars(DateTimeFunctions.class)
                 .scalars(JsonFunctions.class)
+                .scalars(BigoJsonFunctions.class)
                 .scalars(ColorFunctions.class)
                 .scalars(ColorOperators.class)
                 .scalar(ColorOperators.ColorDistinctFromOperator.class)

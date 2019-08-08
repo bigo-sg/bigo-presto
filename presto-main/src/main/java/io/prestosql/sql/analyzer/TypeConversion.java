@@ -86,7 +86,6 @@ public class TypeConversion {
         return valueTypes.contains(type.getTypeSignature().getBase());
     }
 
-
     protected Type stringAndValueType(Type leftType, Type rightType) {
         if (leftType == null || rightType == null) {
             return null;
@@ -108,7 +107,7 @@ public class TypeConversion {
         return null;
     }
 
-    protected Type compare2TypesOrder(Type leftType, Type rightType){
+    protected Type compare2TypesOrder(Type leftType, Type rightType) {
         if (leftType == null || rightType == null) {
             return null;
         }
@@ -136,7 +135,7 @@ public class TypeConversion {
         }
     }
 
-    protected Type compare3TypesOrder (Type leftType, Type middleType, Type rightType) {
+    protected Type compare3TypesOrder(Type leftType, Type middleType, Type rightType) {
         if (leftType == null || middleType == null || rightType == null) {
             return null;
         }

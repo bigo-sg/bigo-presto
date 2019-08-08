@@ -33,8 +33,6 @@ import static java.util.Objects.requireNonNull;
 
 public class SqlParser
 {
-    private static final Logger LOG = Logger.get(SqlParser.class);
-
     private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {
         @Override
@@ -96,13 +94,11 @@ public class SqlParser
     @Deprecated
     public Expression createExpression(String expression)
     {
-        LOG.info("from Expression createExpression(String expression)");
         return createExpression(expression, new ParsingOptions());
     }
 
     public Expression createExpression(String expression, ParsingOptions parsingOptions)
     {
-        LOG.info("from Expression createExpression(String expression, ParsingOptions parsingOptions)");
         Expression ex = (Expression) invokeParser("expression", expression,
                 SqlBaseParser::standaloneExpression, parsingOptions, "standaloneExpression");
         return ex;
@@ -110,7 +106,6 @@ public class SqlParser
 
     public PathSpecification createPathSpecification(String expression)
     {
-        LOG.info("from PathSpecification createPathSpecification(String expression)");
         PathSpecification plan = (PathSpecification) invokeParser("path specification",
                 expression, SqlBaseParser::standalonePathSpecification, new ParsingOptions(), "standalonePathSpecification");
         return plan;
@@ -119,12 +114,9 @@ public class SqlParser
     private Node invokeParser(String name, String sql, Function<SqlBaseParser,
             ParserRuleContext> parseFunction, ParsingOptions parsingOptions, String type)
     {
-        LOG.info("sql:" + sql);
         if (!parsingOptions.useHiveParser()) {
-            LOG.info("use presto sql");
             return invokePrestoParser(name, sql, parsingOptions, type);
         } else {
-            LOG.info("use hive sql");
             return invokeSparkBasedHiveParser(name, sql, parsingOptions, type);
         }
     }

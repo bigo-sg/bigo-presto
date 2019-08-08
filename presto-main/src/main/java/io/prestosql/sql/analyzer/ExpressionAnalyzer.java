@@ -32,17 +32,8 @@ import io.prestosql.security.DenyAllAccessControl;
 import io.prestosql.spi.ErrorCodeSupplier;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.function.OperatorType;
-import io.prestosql.spi.type.CharType;
-import io.prestosql.spi.type.DecimalParseResult;
-import io.prestosql.spi.type.Decimals;
-import io.prestosql.spi.type.RowType;
-import io.prestosql.spi.type.Type;
-import io.prestosql.spi.type.StandardTypes;
-import io.prestosql.spi.type.TypeNotFoundException;
-import io.prestosql.spi.type.TypeSignatureParameter;
-import io.prestosql.spi.type.VarcharType;
+import io.prestosql.spi.type.*;
 import io.prestosql.sql.parser.SqlParser;
-import io.prestosql.sql.parser.hive.RLikePredicate;
 import io.prestosql.sql.planner.Symbol;
 import io.prestosql.sql.planner.TypeProvider;
 import io.prestosql.sql.tree.ArithmeticBinaryExpression;
@@ -164,7 +155,6 @@ import static io.prestosql.type.UnknownType.UNKNOWN;
 import static io.prestosql.util.DateTimeUtils.parseTimestampLiteral;
 import static io.prestosql.util.DateTimeUtils.timeHasTimeZone;
 import static io.prestosql.util.DateTimeUtils.timestampHasTimeZone;
-import static java.lang.Math.max;
 import static java.lang.Math.toIntExact;
 import static java.lang.String.format;
 import static java.util.Collections.unmodifiableMap;
@@ -496,21 +486,48 @@ public class ExpressionAnalyzer
                 Type leftType = process(node.getLeft(), context);
                 Type rightType = process(node.getRight(), context);
 
+                if (leftType == null || rightType == null) {
+                    return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
+                }
+                if (tc.stringAndValueType(leftType, rightType) == leftType) {
+                    if (rightType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(BigintType.BIGINT)));
+                    } else {
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                        if (!rightType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                            node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                            rightType = process(node.getRight(), context);
+                        }
+                    }
+                    leftType = process(node.getLeft(), context);
+                }
+                else if (tc.stringAndValueType(leftType, rightType) == rightType) {
+                    if (leftType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(BigintType.BIGINT)));
+                    } else {
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                        if (!leftType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                            node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                            leftType = process(node.getLeft(), context);
+                        }
+                    }
+                    rightType = process(node.getRight(), context);
+                }
+
                 if (tc.compare2TypesOrder(leftType, rightType) == rightType) {
                     if (tc.canConvertType(leftType, rightType)) {
-                        Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
-                        node.setLeft(cast);
-                    } else if (tc.canConvertType(rightType, leftType)) {
-                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
-                        node.setRight(cast);
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(rightType)));
                     }
-                } else if (tc.compare2TypesOrder(leftType, rightType) == leftType) {
+                    else if (tc.canConvertType(rightType, leftType)) {
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(leftType)));
+                    }
+                }
+                else if (tc.compare2TypesOrder(leftType, rightType) == leftType) {
                     if (tc.canConvertType(rightType, leftType)) {
-                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
-                        node.setRight(cast);
-                    } else if (tc.canConvertType(leftType, rightType)) {
-                        Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
-                        node.setLeft(cast);
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(leftType)));
+                    }
+                    else if (tc.canConvertType(leftType, rightType)) {
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(rightType)));
                     }
                 }
             }
@@ -677,22 +694,60 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitArithmeticBinary(ArithmeticBinaryExpression node, StackableAstVisitorContext<Context> context)
         {
+            OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
+
             if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                TypeConversion tc = new TypeConversion();
                 Type leftType = process(node.getLeft(), context);
                 Type rightType = process(node.getRight(), context);
 
-                if(leftType.getTypeSignature().getBase().equals(StandardTypes.VARCHAR)){
-                    Cast castLeft = new Cast(node.getLeft(), StandardTypes.DOUBLE);
-                    node.setLeft(castLeft);
+                if (leftType == null || rightType == null) {
+                    return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
+                }
+                if (tc.stringAndValueType(leftType, rightType) == leftType) {
+                    if (rightType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(BigintType.BIGINT)));
+                    } else {
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                        if (!rightType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                            node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                            rightType = process(node.getRight(), context);
+                        }
+                    }
+                    leftType = process(node.getLeft(), context);
+                }
+                else if (tc.stringAndValueType(leftType, rightType) == rightType) {
+                    if (leftType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(BigintType.BIGINT)));
+                    } else {
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                        if (!leftType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                            node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                            leftType = process(node.getLeft(), context);
+                        }
+                    }
+                    rightType = process(node.getRight(), context);
                 }
 
-                if(rightType.getTypeSignature().getBase().equals(StandardTypes.VARCHAR)){
-                    Cast castRight = new Cast(node.getRight(), StandardTypes.DOUBLE);
-                    node.setRight(castRight);
+                if (tc.compare2TypesOrder(leftType, rightType) == rightType) {
+                    if (tc.canConvertType(leftType, rightType)) {
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(rightType)));
+                    }
+                    else if (tc.canConvertType(rightType, leftType)) {
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(leftType)));
+                    }
+                }
+                else if (tc.compare2TypesOrder(leftType, rightType) == leftType) {
+                    if (tc.canConvertType(rightType, leftType)) {
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(leftType)));
+                    }
+                    else if (tc.canConvertType(leftType, rightType)) {
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(rightType)));
+                    }
                 }
             }
 
-            return getOperator(context, node, OperatorType.valueOf(node.getOperator().name()), node.getLeft(), node.getRight());
+            return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
         }
 
         @Override
@@ -709,25 +764,6 @@ public class ExpressionAnalyzer
                 Expression escape = node.getEscape().get();
                 Type escapeType = getVarcharType(escape, context);
                 coerceType(context, escape, escapeType, "Escape for LIKE expression");
-            }
-
-            return setExpressionType(node, BOOLEAN);
-        }
-
-        @Override
-        public Type visitRLikePredicate(RLikePredicate node, StackableAstVisitorContext<Context> context)
-        {
-            Type valueType = process(node.getValue(), context);
-            if (!(valueType instanceof CharType) && !(valueType instanceof VarcharType)) {
-                coerceType(context, node.getValue(), VARCHAR, "Left side of RLIKE expression");
-            }
-
-            Type patternType = getVarcharType(node.getPattern(), context);
-            coerceType(context, node.getPattern(), patternType, "Pattern for RLIKE expression");
-            if (node.getEscape().isPresent()) {
-                Expression escape = node.getEscape().get();
-                Type escapeType = getVarcharType(escape, context);
-                coerceType(context, escape, escapeType, "Escape for RLIKE expression");
             }
 
             return setExpressionType(node, BOOLEAN);
@@ -1150,7 +1186,7 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitBetweenPredicate(BetweenPredicate node, StackableAstVisitorContext<Context> context)
         {
-            if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
                 TypeConversion tc = new TypeConversion();
                 Expression minExpression = node.getMin();
                 Expression valueExpression = node.getValue();
@@ -1160,25 +1196,42 @@ public class ExpressionAnalyzer
                 Type valueType = process(valueExpression, context);
                 Type maxType = process(maxExpression, context);
 
-                if(minType == null || valueType == null || maxType == null) {
+                if (minType == null || valueType == null || maxType == null) {
+                    return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
+                }
+                if (tc.compare3TypesOrder(minType, valueType, maxType) == null) {
                     return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
                 }
 
-                if(tc.compare3TypesOrder(minType, valueType, maxType) == minType){
-                    Cast cast1 = new Cast(valueExpression, minType.getDisplayName());
-                    Cast cast2 = new Cast(maxExpression, minType.getDisplayName());
-                    node.setValue(cast1);
-                    node.setMax(cast2);
-                }else if(tc.compare3TypesOrder(minType, valueType, maxType) == valueType){
-                    Cast cast1 = new Cast(minExpression, valueType.getDisplayName());
-                    Cast cast2 = new Cast(maxExpression, valueType.getDisplayName());
-                    node.setMin(cast1);
-                    node.setMax(cast2);
-                }else if(tc.compare3TypesOrder(minType, valueType, maxType) == maxType){
-                    Cast cast1 = new Cast(minExpression, maxType.getDisplayName());
-                    Cast cast2 = new Cast(valueExpression, maxType.getDisplayName());
-                    node.setMin(cast1);
-                    node.setValue(cast2);
+                if (tc.compare3TypesOrder(minType, valueType, maxType) == minType) {
+                    if (valueType != minType) {
+                        Cast cast = new Cast(valueExpression, TypeSignatureTranslator.toSqlType(minType));
+                        node.setValue(cast);
+                    }
+                    if (maxType != minType) {
+                        Cast cast = new Cast(maxExpression, TypeSignatureTranslator.toSqlType(minType));
+                        node.setMax(cast);
+                    }
+                }
+                else if (tc.compare3TypesOrder(minType, valueType, maxType) == valueType) {
+                    if (minType != valueType) {
+                        Cast cast = new Cast(minExpression, TypeSignatureTranslator.toSqlType(valueType));
+                        node.setMin(cast);
+                    }
+                    if (maxType != valueType) {
+                        Cast cast = new Cast(maxExpression, TypeSignatureTranslator.toSqlType(valueType));
+                        node.setMax(cast);
+                    }
+                }
+                else if (tc.compare3TypesOrder(minType, valueType, maxType) == maxType) {
+                    if (minType != maxType) {
+                        Cast cast = new Cast(minExpression, TypeSignatureTranslator.toSqlType(maxType));
+                        node.setMin(cast);
+                    }
+                    if (valueType != maxType) {
+                        Cast cast = new Cast(valueExpression, TypeSignatureTranslator.toSqlType(maxType));
+                        node.setValue(cast);
+                    }
                 }
             }
 

@@ -23,7 +23,7 @@ public class TypeConversion {
             .put(StandardTypes.DATE, 10)
             .build();
 
-    public boolean canConvertType(Type leftType, Type rightType){
+    protected boolean canConvertType (Type leftType, Type rightType) {
         String leftTypeName = leftType.getTypeSignature().getBase();
         String rightTypeName = rightType.getTypeSignature().getBase();
 
@@ -69,26 +69,99 @@ public class TypeConversion {
         }
     }
 
-    public boolean needConvert(Type leftType, Type rightType){
+    protected boolean needConvert(Type leftType, Type rightType){
         //todo
-        if(leftType.getDisplayName().equals(rightType.getDisplayName())){
+        if (leftType.getDisplayName().equals(rightType.getDisplayName())) {
             return false;
         }
         return true;
     }
 
-    public Type compareTypeOrder(Type leftType, Type rightType){
-        if(typeConvertOrderMap.get(leftType.getTypeSignature().getBase()) == null
-                || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null){
+    protected Type compare2TypesOrder(Type leftType, Type rightType){
+        if (typeConvertOrderMap.get(leftType.getTypeSignature().getBase()) == null
+                || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null) {
             return null;
         }
         int leftOrder = typeConvertOrderMap.get(leftType.getTypeSignature().getBase());
         int rightOrder = typeConvertOrderMap.get(rightType.getTypeSignature().getBase());
 
-        if(leftOrder == rightOrder){
+        if (leftOrder > rightOrder && canConvertType(rightType, leftType)) {
+            return leftType;
+        } else if (leftOrder > rightOrder && canConvertType(leftType, rightType)) {
+            return rightType;
+        } else if (rightOrder > leftOrder && canConvertType(leftType, rightType)) {
+            return rightType;
+        } else if (rightOrder > leftOrder && canConvertType(rightType, leftType)) {
+            return leftType;
+        } else {
             return null;
         }
-        return leftOrder > rightOrder ? rightType : leftType;
     }
 
+    protected Type compare3TypesOrder (Type leftType, Type middleType, Type rightType) {
+        if (typeConvertOrderMap.get(leftType.getTypeSignature().getBase()) == null
+                || typeConvertOrderMap.get(middleType.getTypeSignature().getBase()) == null
+                || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null) {
+            return null;
+        }
+        int leftOrder = typeConvertOrderMap.get(leftType.getTypeSignature().getBase());
+        int middleOrder = typeConvertOrderMap.get(middleType.getTypeSignature().getBase());
+        int rightOrder = typeConvertOrderMap.get(rightType.getTypeSignature().getBase());
+
+        if (leftOrder == middleOrder && middleOrder == rightOrder) {
+            return null;
+        }
+        int maxOrder = Math.max(Math.max(leftOrder, middleOrder), rightOrder);
+
+        if (maxOrder == leftOrder) {
+            if (canConvertType(middleType, leftType) && canConvertType(rightType, leftType)) {
+                return leftType;
+            } else {
+                if (middleOrder == rightOrder && canConvertType(leftType, middleType)) {
+                    return middleType;
+                }
+
+                Type tmpType = compare2TypesOrder(middleType, rightType);
+                if(tmpType == middleType && canConvertType(leftType, middleType)) {
+                    return middleType;
+                }
+                if (tmpType == rightType && canConvertType(leftType, rightType)) {
+                    return rightType;
+                }
+            }
+        } else if (maxOrder == middleOrder) {
+            if (canConvertType(leftType, middleType) && canConvertType(rightType, middleType)) {
+                return middleType;
+            } else {
+                if (leftOrder == rightOrder && canConvertType(middleType, rightType)) {
+                    return rightType;
+                }
+
+                Type tmpType = compare2TypesOrder(leftType, rightType);
+                if (tmpType == leftType && canConvertType(middleType, leftType)) {
+                    return leftType;
+                }
+                if (tmpType == rightType && canConvertType(middleType, rightType)) {
+                    return rightType;
+                }
+            }
+        } else {
+            if (canConvertType(middleType, rightType) && canConvertType(leftType, rightType)) {
+                return rightType;
+            } else {
+                if (leftOrder == middleOrder && canConvertType(rightType, leftType)) {
+                    return leftType;
+                }
+
+                Type tmpType = compare2TypesOrder(leftType, middleType);
+                if (tmpType == middleType && canConvertType(rightType, middleType)) {
+                    return middleType;
+                }
+                if (tmpType == leftType && canConvertType(rightType, leftType)) {
+                    return leftType;
+                }
+            }
+        }
+        return null;
+    }
 }

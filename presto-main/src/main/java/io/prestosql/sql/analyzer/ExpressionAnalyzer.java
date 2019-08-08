@@ -36,6 +36,7 @@ import io.prestosql.spi.type.DecimalParseResult;
 import io.prestosql.spi.type.Decimals;
 import io.prestosql.spi.type.RowType;
 import io.prestosql.spi.type.Type;
+import io.prestosql.spi.type.StandardTypes;
 import io.prestosql.spi.type.TypeNotFoundException;
 import io.prestosql.spi.type.TypeSignatureParameter;
 import io.prestosql.spi.type.VarcharType;
@@ -162,6 +163,7 @@ import static io.prestosql.type.UnknownType.UNKNOWN;
 import static io.prestosql.util.DateTimeUtils.parseTimestampLiteral;
 import static io.prestosql.util.DateTimeUtils.timeHasTimeZone;
 import static io.prestosql.util.DateTimeUtils.timestampHasTimeZone;
+import static java.lang.Math.max;
 import static java.lang.Math.toIntExact;
 import static java.lang.String.format;
 import static java.util.Collections.unmodifiableMap;
@@ -493,7 +495,7 @@ public class ExpressionAnalyzer
                 Type leftType = process(node.getLeft(), context);
                 Type rightType = process(node.getRight(), context);
 
-                if (tc.compareTypeOrder(leftType, rightType) == leftType) {
+                if (tc.compare2TypesOrder(leftType, rightType) == rightType) {
                     if (tc.canConvertType(leftType, rightType)) {
                         Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
                         node.setLeft(cast);
@@ -501,7 +503,7 @@ public class ExpressionAnalyzer
                         Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
                         node.setRight(cast);
                     }
-                } else if (tc.compareTypeOrder(leftType, rightType) == rightType) {
+                } else if (tc.compare2TypesOrder(leftType, rightType) == leftType) {
                     if (tc.canConvertType(rightType, leftType)) {
                         Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
                         node.setRight(cast);
@@ -641,6 +643,21 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitArithmeticBinary(ArithmeticBinaryExpression node, StackableAstVisitorContext<Context> context)
         {
+            if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                Type leftType = process(node.getLeft(), context);
+                Type rightType = process(node.getRight(), context);
+
+                if(leftType.getTypeSignature().getBase().equals(StandardTypes.VARCHAR)){
+                    Cast castLeft = new Cast(node.getLeft(), StandardTypes.DOUBLE);
+                    node.setLeft(castLeft);
+                }
+
+                if(rightType.getTypeSignature().getBase().equals(StandardTypes.VARCHAR)){
+                    Cast castRight = new Cast(node.getRight(), StandardTypes.DOUBLE);
+                    node.setRight(castRight);
+                }
+            }
+
             return getOperator(context, node, OperatorType.valueOf(node.getOperator().name()), node.getLeft(), node.getRight());
         }
 
@@ -1098,6 +1115,38 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitBetweenPredicate(BetweenPredicate node, StackableAstVisitorContext<Context> context)
         {
+            if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                TypeConversion tc = new TypeConversion();
+                Expression minExpression = node.getMin();
+                Expression valueExpression = node.getValue();
+                Expression maxExpression = node.getMax();
+
+                Type minType = process(minExpression, context);
+                Type valueType = process(valueExpression, context);
+                Type maxType = process(maxExpression, context);
+
+                if(minType == null || valueType == null || maxType == null) {
+                    return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
+                }
+
+                if(tc.compare3TypesOrder(minType, valueType, maxType) == minType){
+                    Cast cast1 = new Cast(valueExpression, minType.getDisplayName());
+                    Cast cast2 = new Cast(maxExpression, minType.getDisplayName());
+                    node.setValue(cast1);
+                    node.setMax(cast2);
+                }else if(tc.compare3TypesOrder(minType, valueType, maxType) == valueType){
+                    Cast cast1 = new Cast(minExpression, valueType.getDisplayName());
+                    Cast cast2 = new Cast(maxExpression, valueType.getDisplayName());
+                    node.setMin(cast1);
+                    node.setMax(cast2);
+                }else if(tc.compare3TypesOrder(minType, valueType, maxType) == maxType){
+                    Cast cast1 = new Cast(minExpression, maxType.getDisplayName());
+                    Cast cast2 = new Cast(valueExpression, maxType.getDisplayName());
+                    node.setMin(cast1);
+                    node.setValue(cast2);
+                }
+            }
+
             return getOperator(context, node, OperatorType.BETWEEN, node.getValue(), node.getMin(), node.getMax());
         }
 

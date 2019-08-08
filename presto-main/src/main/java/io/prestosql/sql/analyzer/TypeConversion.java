@@ -23,7 +23,7 @@ public class TypeConversion {
             .put(StandardTypes.DATE, 10)
             .build();
 
-    public boolean canConvertType(Type leftType, Type rightType){
+    protected boolean canConvertType(Type leftType, Type rightType){
         String leftTypeName = leftType.getTypeSignature().getBase();
         String rightTypeName = rightType.getTypeSignature().getBase();
 
@@ -69,7 +69,7 @@ public class TypeConversion {
         }
     }
 
-    public boolean needConvert(Type leftType, Type rightType){
+    protected boolean needConvert(Type leftType, Type rightType){
         //todo
         if(leftType.getDisplayName().equals(rightType.getDisplayName())){
             return false;
@@ -77,7 +77,7 @@ public class TypeConversion {
         return true;
     }
 
-    public Type compareTypeOrder(Type leftType, Type rightType){
+    protected Type compare2TypesOrder(Type leftType, Type rightType){
         if(typeConvertOrderMap.get(leftType.getTypeSignature().getBase()) == null
                 || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null){
             return null;
@@ -88,7 +88,69 @@ public class TypeConversion {
         if(leftOrder == rightOrder){
             return null;
         }
-        return leftOrder > rightOrder ? rightType : leftType;
+        return leftOrder >= rightOrder ? leftType : rightType;
     }
 
+    protected Type compare3TypesOrder(Type leftType, Type middleType, Type rightType){
+        if(typeConvertOrderMap.get(leftType.getTypeSignature().getBase()) == null
+                || typeConvertOrderMap.get(middleType.getTypeSignature().getBase()) == null
+                || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null){
+            return null;
+        }
+        int leftOrder = typeConvertOrderMap.get(leftType.getTypeSignature().getBase());
+        int middleOrder = typeConvertOrderMap.get(middleType.getTypeSignature().getBase());
+        int rightOrder = typeConvertOrderMap.get(rightType.getTypeSignature().getBase());
+        int maxOrder = Math.max(Math.max(leftOrder, middleOrder), rightOrder);
+
+        if(maxOrder == leftOrder){
+            if(canConvertType(middleType, leftType) && canConvertType(rightType, leftType)){
+                return leftType;
+            }else{
+                Type tmpType = compare2TypesOrder(middleType, rightType);
+                if(tmpType == middleType && canConvertType(leftType, middleType) && canConvertType(rightType, middleType)){
+                    return middleType;
+                }else if(tmpType == middleType && canConvertType(leftType, rightType) && canConvertType(middleType, rightType)){
+                    return rightType;
+                }
+                if(tmpType == rightType && canConvertType(leftType, rightType) && canConvertType(middleType, rightType)){
+                    return rightType;
+                }else if(tmpType == rightType && canConvertType(leftType, middleType) && canConvertType(rightType, middleType)){
+                    return middleType;
+                }
+            }
+        }else if (maxOrder == middleOrder){
+            if(canConvertType(leftType, middleType) && canConvertType(rightType, middleType)){
+                return middleType;
+            }else{
+                Type tmpType = compare2TypesOrder(leftType, rightType);
+                if(tmpType == leftType && canConvertType(middleType, leftType) && canConvertType(rightType, leftType)){
+                    return leftType;
+                }else if(tmpType == leftType && canConvertType(middleType, rightType) && canConvertType(leftType, rightType)){
+                    return rightType;
+                }
+                if(tmpType == rightType && canConvertType(leftType, rightType) && canConvertType(middleType, rightType)){
+                    return rightType;
+                }else if(tmpType == rightType && canConvertType(rightType, leftType) && canConvertType(middleType, leftType)){
+                    return leftType;
+                }
+            }
+        }else{
+            if(canConvertType(middleType, rightType) && canConvertType(leftType, rightType)){
+                return rightType;
+            }else{
+                Type tmpType = compare2TypesOrder(middleType, rightType);
+                if(tmpType == middleType && canConvertType(leftType, middleType) && canConvertType(rightType, middleType)){
+                    return middleType;
+                }else if(tmpType == middleType && canConvertType(middleType, leftType) && canConvertType(rightType, leftType)){
+                    return leftType;
+                }
+                if(tmpType == leftType && canConvertType(rightType, leftType) && canConvertType(middleType, leftType)){
+                    return leftType;
+                }else if(tmpType == leftType && canConvertType(rightType, middleType) && canConvertType(leftType, middleType)){
+                    return middleType;
+                }
+            }
+        }
+        return null;
+    }
 }

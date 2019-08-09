@@ -104,6 +104,24 @@ public class HiveFileIterator
                 return status;
             }
 
+            // Make sure the path exists, ignore non exists partitions.
+            // In some cases, the partition path dose not exist, presto will report error.
+            boolean pathExists = false;
+            while (!paths.isEmpty() && !pathExists) {
+                Path checkPath = paths.peek();
+
+                try {
+                    if (fileSystem.exists(checkPath)) {
+                        pathExists = true;
+                    } else {
+                        // dir not exists, remove it.
+                        paths.removeFirst();
+                    }
+                } catch (IOException e) {
+                    throw new PrestoException(HIVE_FILESYSTEM_ERROR, "Failed to check directory: " + checkPath, e);
+                }
+            }
+
             if (paths.isEmpty()) {
                 return endOfData();
             }

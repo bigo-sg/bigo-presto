@@ -46,7 +46,14 @@ public class CreateTableDatabases extends SQLTester {
     }
 
     @Test
-    public void createTableAsSelect2() {
+    public void createTableAsSelect1() {
+
+        checkASTNodeFromFile("hive/parser/cases/create-table-as-select-presto-1.sql",
+                "hive/parser/cases/create-table-as-select-hive-1.sql");
+    }
+
+    @Test
+    public void createTable2() {
 
         checkASTNodeFromFile("hive/parser/cases/create-table-presto-1.sql",
                 "hive/parser/cases/create-table-hive-1.sql");

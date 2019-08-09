@@ -225,7 +225,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         // if external table
         if (ctx.createTableHeader().EXTERNAL() != null) {
-            if (ctx.locationSpec() == null) {
+            if (ctx.locationSpec() == null || ctx.locationSpec().size() == 0) {
                 throw parseError("external table need a location", ctx);
             }
             String loc = tryUnquote(ctx.locationSpec(0).STRING().getText());
@@ -233,7 +233,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     new StringLiteral(getLocation(ctx.locationSpec(0)), loc));
             properties.add(location);
         } else {
-            if (ctx.locationSpec() != null) {
+            if (ctx.locationSpec() != null && ctx.locationSpec().size() > 0) {
                 String loc = tryUnquote(ctx.locationSpec(0).STRING().getText());
                 Property location = new Property(new Identifier("location", true),
                         new StringLiteral(getLocation(ctx.locationSpec(0)), loc));

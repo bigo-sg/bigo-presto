@@ -1,11 +1,11 @@
 create table tmp.rec_like_event_orc_1
 (
- uid integer,
- sex boolean,
- age varchar,
- video_id bigint,
- day varchar,
- hour varchar
+ uid INTEGER ,
+ sex BOOLEAN,
+ age VARCHAR ,
+ video_id BIGINT,
+ day VARCHAR,
+ hour VARCHAR
 )
 with
 (

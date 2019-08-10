@@ -1010,6 +1010,10 @@ class StatementAnalyzer
 
             // todo this check should be inside of TupleDescriptor.withAlias, but the exception needs the node object
             RelationType relationType = relationScope.getRelationType();
+            // modify to support hive syntax
+            if (!notLateralLogic(relation, relationType)) {
+                return visitAliasedRelation(relation, relationType, scope);
+            }
             if (relation.getColumnNames() != null) {
                 int totalColumns = relationType.getVisibleFieldCount();
                 if (totalColumns != relation.getColumnNames().size()) {
@@ -1025,6 +1029,40 @@ class StatementAnalyzer
             }
 
             RelationType descriptor = relationType.withAlias(relation.getAlias().getValue(), aliases);
+
+            return createAndAssignScope(relation, scope, descriptor);
+        }
+
+        private boolean notLateralLogic(AliasedRelation relation, RelationType relationType) {
+            if (relation.getRelation() == null || !(relation.getRelation() instanceof Unnest) ||
+                   relation.getColumnNames() == null || relation.getColumnNames().size() <= 0) {
+                return true;
+            }
+            Object[] fields = relationType.getAllFields().toArray();
+            if (fields.length <= 0) {
+                return true;
+            } else if (fields.length == relation.getColumnNames().size()) {
+                return true;
+            } else {
+                for (int i = 0; i < fields.length - 1; ++i) {
+                    if (!((Field) fields[i]).getName().isPresent()) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private Scope visitAliasedRelation(AliasedRelation relation, RelationType relationType, Optional<Scope> scope) {
+            List<String> aliases = null;
+            if (relation.getColumnNames() != null) {
+                aliases = relation.getColumnNames().stream()
+                        .map(Identifier::getValue)
+                        .collect(Collectors.toList());
+            }
+            RelationType descriptor = relationType.withNotEqualAlias(relation.getAlias().getValue(),
+                    relation.getColumnNames().get(0).getValue(),
+                    aliases, ((Unnest)relation.getRelation()).isWithOrdinality());
 
             return createAndAssignScope(relation, scope, descriptor);
         }

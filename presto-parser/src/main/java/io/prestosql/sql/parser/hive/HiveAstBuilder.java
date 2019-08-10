@@ -53,7 +53,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return currentResult;
         }
 
-        throw new RuntimeException("please check, how should we merge them?");
+        throw new ParsingException("please check, how should we merge them? " +
+                "most possible reason is executing a syntax that hive not support");
     }
 
     //////////////////
@@ -254,10 +255,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     if (colTypeContext.COMMENT() != null) {
                         colComment = Optional.of(colTypeContext.COMMENT().getText());
                     }
+                    String type = colTypeContext.dataType().getText();
+                    if (type.contains("<") && type.contains(">")) {
+                        type = colTypeTransformComplex(type);
+                    } else {
+                        type = colTypeTransformSimple(type);
+                    }
                     TableElement tableElement = new ColumnDefinition(
                             new Identifier(getLocation(colTypeContext),
                                     tryUnquote(colTypeContext.identifier().getText()), false),
-                            colTypeTransform(colTypeContext.dataType().getText()),
+                            type,
                             true,
                             new ArrayList<>(),
                             colComment);
@@ -541,7 +548,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         List<Identifier> columnNames = visit(ctx.colName, Identifier.class);
         if (columnNames.size() > 0) {
-            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
+            if (!withOrdinality) {
+                return new AliasedRelation(getLocation(ctx), unnest, columnNames.get(0), null);
+            } else {
+                return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
+            }
         } else {
             return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), null);
         }
@@ -1547,11 +1558,33 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 replace("`", "");
     }
 
-    public static String colTypeTransform(String hiveColType) {
-        return hiveColType.
-                replace("int", "integer").
-                replace("biginteger", "bigint").
-                replace("string", "varchar");
+    public static String colTypeTransformSimple(String hiveColType) {
+        return hiveColType
+                .toUpperCase()
+                .replace("INT", "INTEGER")
+                .replace("BIGINTEGER", "BIGINT")
+                .replace("FLOAT", "REAL")
+                .replace("STRING", "VARCHAR");
+    }
+
+    public static String colTypeTransformComplex(String hiveColType) {
+        return hiveColType
+                .toUpperCase()
+                .replaceAll("( )*STRUCT( )*<( )*", "ROW(")
+                .replaceAll("( )*MAP( )*<( )*", "MAP(")
+                .replaceAll("( )*ARRAY( )*<( )*", "ARRAY(")
+                .replaceAll("( )*>( )*", ")")
+                .replaceAll("( )*:( )*STRING( )*", " VARCHAR")
+                .replaceAll("( )*STRING( )*\\)", "VARCHAR)")
+                .replaceAll("\\(( )*STRING( )*", "(VARCHAR")
+                .replaceAll("( )*:( )*INT( )*", " INTEGER")
+                .replaceAll("\\(( )*INT( )*", "(INTEGER")
+                .replaceAll("INT( )*\\)", "INTEGER)")
+                .replaceAll("( )*:( )*FLOAT( )*", " REAL")
+                .replaceAll("\\(( )*FLOAT( )*", "(REAL")
+                .replaceAll("FLOAT( )*\\)", "REAL)")
+                .replaceAll("`", "\"")
+                .replaceAll(":",  " ");
     }
 
 }

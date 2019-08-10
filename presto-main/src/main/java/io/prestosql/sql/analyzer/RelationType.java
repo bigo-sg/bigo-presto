@@ -201,6 +201,68 @@ public class RelationType
     }
 
     /**
+     * Creates a new tuple descriptor with the relation, and, optionally, the columns aliased.
+     */
+    public RelationType withNotEqualAlias(String baseRelationAlias, String relationAlias,
+                                          List<String> columnAliases, boolean withOrder)
+    {
+        if (columnAliases == null) {
+            throw new RuntimeException("unnest(lateral view) relation have not any columns!");
+        }
+        ImmutableList.Builder<Field> fieldsBuilder = ImmutableList.builder();
+        if (columnAliases.size() == 1) {
+            for (int i = 0; i < allFields.size(); i++) {
+                Field field = allFields.get(i);
+                Optional<String> columnAlias = field.getName();
+                if (!field.isHidden()) {
+                    // hidden fields are not exposed when there are column aliases
+                    fieldsBuilder.add(Field.newQualified(
+                            QualifiedName.of(relationAlias),
+                            columnAlias,
+                            field.getType(),
+                            false,
+                            field.getOriginTable(),
+                            field.getOriginColumnName(),
+                            field.isAliased()));
+                }
+            }
+        } else if (columnAliases.size() == 2 && allFields.size() >= 2 && withOrder) {
+            for (int i = 0; i < allFields.size() - 1; i++) {
+                Field field = allFields.get(i);
+                Optional<String> columnAlias = field.getName();
+                if (!field.isHidden()) {
+                    // hidden fields are not exposed when there are column aliases
+                    fieldsBuilder.add(Field.newQualified(
+                            QualifiedName.of(relationAlias),
+                            columnAlias,
+                            field.getType(),
+                            false,
+                            field.getOriginTable(),
+                            field.getOriginColumnName(),
+                            field.isAliased()));
+                }
+            }
+            Field field = allFields.get(allFields.size() - 1);
+            Optional<String> columnAlias = Optional.of(columnAliases.get(1));
+            if (!field.isHidden()) {
+                // hidden fields are not exposed when there are column aliases
+                fieldsBuilder.add(Field.newQualified(
+                        QualifiedName.of(baseRelationAlias),
+                        columnAlias,
+                        field.getType(),
+                        false,
+                        field.getOriginTable(),
+                        field.getOriginColumnName(),
+                        field.isAliased()));
+            }
+        } else {
+            throw new RuntimeException("unproper number of columns!");
+        }
+
+        return new RelationType(fieldsBuilder.build());
+    }
+
+    /**
      * Creates a new tuple descriptor containing only the visible fields.
      */
     public RelationType withOnlyVisibleFields()

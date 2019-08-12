@@ -9,11 +9,11 @@ public class BigoJsonFunctions {
     private BigoJsonFunctions() {}
 
     @ScalarFunction("get_json_object")
-    @LiteralParameters("x")
     @SqlNullable
-    @SqlType(StandardTypes.JSON)
+    @LiteralParameters("x")
+    @SqlType("varchar(x)")
     public static Slice varcharGetJsonObject(@SqlType("varchar(x)") Slice json, @SqlType(JsonPathType.NAME) JsonPath jsonPath)
     {
-        return JsonExtract.extract(json, jsonPath.getObjectExtractor());
+        return JsonExtract.extract(json, jsonPath.getScalarExtractor());
     }
 }

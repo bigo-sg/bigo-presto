@@ -1115,7 +1115,7 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitBetweenPredicate(BetweenPredicate node, StackableAstVisitorContext<Context> context)
         {
-            if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
                 TypeConversion tc = new TypeConversion();
                 Expression minExpression = node.getMin();
                 Expression valueExpression = node.getValue();
@@ -1128,22 +1128,37 @@ public class ExpressionAnalyzer
                 if(minType == null || valueType == null || maxType == null) {
                     return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
                 }
+                if (tc.compare3TypesOrder(minType, valueType, maxType) == null) {
+                    return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
+                }
 
-                if(tc.compare3TypesOrder(minType, valueType, maxType) == minType){
-                    Cast cast1 = new Cast(valueExpression, minType.getDisplayName());
-                    Cast cast2 = new Cast(maxExpression, minType.getDisplayName());
-                    node.setValue(cast1);
-                    node.setMax(cast2);
-                }else if(tc.compare3TypesOrder(minType, valueType, maxType) == valueType){
-                    Cast cast1 = new Cast(minExpression, valueType.getDisplayName());
-                    Cast cast2 = new Cast(maxExpression, valueType.getDisplayName());
-                    node.setMin(cast1);
-                    node.setMax(cast2);
-                }else if(tc.compare3TypesOrder(minType, valueType, maxType) == maxType){
-                    Cast cast1 = new Cast(minExpression, maxType.getDisplayName());
-                    Cast cast2 = new Cast(valueExpression, maxType.getDisplayName());
-                    node.setMin(cast1);
-                    node.setValue(cast2);
+                if (tc.compare3TypesOrder(minType, valueType, maxType) == minType) {
+                    if (valueType != minType) {
+                        Cast cast = new Cast(valueExpression, minType.getDisplayName());
+                        node.setValue(cast);
+                    }
+                    if (maxType != minType) {
+                        Cast cast = new Cast(maxExpression, minType.getDisplayName());
+                        node.setMax(cast);
+                    }
+                } else if (tc.compare3TypesOrder(minType, valueType, maxType) == valueType) {
+                    if (minType != valueType) {
+                        Cast cast = new Cast(minExpression, valueType.getDisplayName());
+                        node.setMin(cast);
+                    }
+                    if (maxType != valueType) {
+                        Cast cast = new Cast(maxExpression, valueType.getDisplayName());
+                        node.setMax(cast);
+                    }
+                } else if(tc.compare3TypesOrder(minType, valueType, maxType) == maxType) {
+                    if (minType != maxType) {
+                        Cast cast = new Cast(minExpression, maxType.getDisplayName());
+                        node.setMin(cast);
+                    }
+                    if (valueType != maxType) {
+                        Cast cast = new Cast(valueExpression, maxType.getDisplayName());
+                        node.setValue(cast);
+                    }
                 }
             }
 

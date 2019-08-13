@@ -338,7 +338,12 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitExplain(SqlBaseParser.ExplainContext ctx) {
-        return super.visitExplain(ctx);
+        return new Explain(getLocation(ctx),
+                false,
+                false,
+                (Statement) visit(ctx.statement()),
+                new ArrayList<>()
+                );
     }
 
     @Override

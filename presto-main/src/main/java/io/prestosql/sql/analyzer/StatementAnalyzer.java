@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import io.prestosql.Session;
+import io.prestosql.SystemSessionProperties;
 import io.prestosql.connector.CatalogName;
 import io.prestosql.execution.warnings.WarningCollector;
 import io.prestosql.metadata.FunctionKind;
@@ -1151,6 +1152,13 @@ class StatementAnalyzer
 
             // todo this check should be inside of TupleDescriptor.withAlias, but the exception needs the node object
             RelationType relationType = relationScope.getRelationType();
+            // modify to support hive syntax
+            if (SystemSessionProperties.isEnableHiveSqlSynTax(session) &&
+                    relation.getRelation() != null &&
+                    relation.getRelation() instanceof Unnest &&
+                    relation.getColumnNames() != null) {
+                return visitAliasedRelation(relation, relationType, scope);
+            }
             if (relation.getColumnNames() != null) {
                 int totalColumns = relationType.getVisibleFieldCount();
                 if (totalColumns != relation.getColumnNames().size()) {
@@ -1166,6 +1174,19 @@ class StatementAnalyzer
             }
 
             RelationType descriptor = relationType.withAlias(relation.getAlias().getValue(), aliases);
+
+            return createAndAssignScope(relation, scope, descriptor);
+        }
+
+        private Scope visitAliasedRelation(AliasedRelation relation, RelationType relationType, Optional<Scope> scope) {
+            List<String> aliases = null;
+            if (relation.getColumnNames() != null) {
+                aliases = relation.getColumnNames().stream()
+                        .map(Identifier::getValue)
+                        .collect(Collectors.toList());
+            }
+            RelationType descriptor = relationType.withLateralViewAlias(relation.getAlias().getValue(),
+                    aliases, ((Unnest)relation.getRelation()).isWithOrdinality());
 
             return createAndAssignScope(relation, scope, descriptor);
         }

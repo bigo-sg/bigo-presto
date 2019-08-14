@@ -14,6 +14,8 @@
 package io.prestosql.operator.unnest;
 
 import com.google.common.collect.ImmutableList;
+import io.prestosql.Session;
+import io.prestosql.SystemSessionProperties;
 import io.prestosql.operator.DriverContext;
 import io.prestosql.operator.Operator;
 import io.prestosql.operator.OperatorContext;
@@ -247,8 +249,17 @@ public class UnnestOperator
         unnesters.forEach(unnester -> unnester.processCurrentAndAdvance(maxEntries));
 
         if (withOrdinality) {
-            for (long ordinalityCount = 1; ordinalityCount <= maxEntries; ordinalityCount++) {
-                BIGINT.writeLong(ordinalityBlockBuilder, ordinalityCount);
+            Session session = operatorContext.getDriverContext().getSession();
+
+            if (session.getSystemProperty(SystemSessionProperties.ENABLE_HIVE_SQL_SYNTAX, Boolean.class)) {
+                // if we are running hive mode, then index should start with 0 rather than 1.
+                for (long ordinalityCount = 0; ordinalityCount <= maxEntries - 1; ordinalityCount++) {
+                    BIGINT.writeLong(ordinalityBlockBuilder, ordinalityCount);
+                }
+            } else {
+                for (long ordinalityCount = 1; ordinalityCount <= maxEntries; ordinalityCount++) {
+                    BIGINT.writeLong(ordinalityBlockBuilder, ordinalityCount);
+                }
             }
         }
 

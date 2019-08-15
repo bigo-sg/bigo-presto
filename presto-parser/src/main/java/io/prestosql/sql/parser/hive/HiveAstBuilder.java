@@ -772,6 +772,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 );
     }
 
+    @Override public Node visitDescribeTable(SqlBaseParser.DescribeTableContext ctx)
+    {
+        if (ctx.tableIdentifier().db != null) {
+            return new ShowColumns(QualifiedName.of(ctx.tableIdentifier().db.getText(),
+                    ctx.tableIdentifier().table.getText()));
+        } else {
+            return new ShowColumns(QualifiedName.of(ctx.tableIdentifier().table.getText()));
+        }
+    }
+
     @Override
     public Node visitAggregation(SqlBaseParser.AggregationContext ctx) {
         List<GroupingElement> groupingElements = new ArrayList<>();

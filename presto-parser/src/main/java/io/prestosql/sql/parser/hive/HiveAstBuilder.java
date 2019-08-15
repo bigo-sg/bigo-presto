@@ -53,7 +53,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return currentResult;
         }
 
-        throw new ParsingException("please check, how should we merge them? " +
+        throw new RuntimeException("please check, how should we merge them? " +
                 "most possible reason is executing a syntax that hive not support");
     }
 
@@ -419,6 +419,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         return left;
+    }
+
+    @Override
+    public Node visitTableValuedFunction(SqlBaseParser.TableValuedFunctionContext ctx) {
+        Identifier identifier = (Identifier) visit(ctx.functionTable().identifier());
+
+        throw parseError("Don't support " + identifier.getValue(), ctx);
     }
 
     private Relation withJoinRelation(Relation left, SqlBaseParser.JoinRelationContext ctx) {

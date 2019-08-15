@@ -85,7 +85,7 @@ public class TestCreateTableDatabases extends SQLTester {
     @Test
     public void testTypeComplex() {
         String input = "array< struct <idx:bigint,extra:map<string,string>>, x:float, `table`:string>";
-        String expect = "ARRAY(ROW(IDX BIGINT,EXTRA MAP(VARCHAR,VARCHAR)), X REAL, \"TABLE\" STRING)";
+        String expect = "ARRAY(ROW(IDX BIGINT,EXTRA MAP(VARCHAR,VARCHAR)), X REAL, \"TABLE\" VARCHAR)";
         String result = HiveAstBuilder.colTypeTransformComplex(input);
         System.out.println(result);
         Assert.assertEquals(result, expect);

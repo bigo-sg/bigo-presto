@@ -17,14 +17,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import io.prestosql.spi.type.RowType;
+import io.prestosql.spi.type.Type;
 import io.prestosql.sql.tree.QualifiedName;
 
 import javax.annotation.concurrent.Immutable;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
@@ -195,6 +194,80 @@ public class RelationType
                         field.getOriginColumnName(),
                         field.isAliased()));
             }
+        }
+
+        return new RelationType(fieldsBuilder.build());
+    }
+
+    /**
+     * Creates a new tuple descriptor with the relation, and, optionally, the columns aliased.
+     */
+    public RelationType withLateralViewAlias(String baseRelationAlias,
+                                             List<String> columnAliases, boolean withOrder)
+    {
+        if (columnAliases == null) {
+            throw new RuntimeException("unnest(lateral view) relation have not any columns!");
+        }
+        ImmutableList.Builder<Field> fieldsBuilder = ImmutableList.builder();
+        boolean isStruct = false;
+
+        for (Field field: allFields) {
+            if (field.getName().isPresent()) {
+                isStruct = true;
+                break;
+            }
+        }
+        if (!isStruct) {
+            return withAlias(baseRelationAlias, columnAliases);
+        }
+        String relationAlias = columnAliases.get(0);
+        if (columnAliases.size() == 1) {
+            for (int i = 0; i < allFields.size(); i++) {
+                Field field = allFields.get(i);
+                Optional<String> columnAlias = field.getName();
+                if (!field.isHidden()) {
+                    // hidden fields are not exposed when there are column aliases
+                    fieldsBuilder.add(Field.newQualified(
+                            QualifiedName.of(relationAlias),
+                            columnAlias,
+                            field.getType(),
+                            false,
+                            field.getOriginTable(),
+                            field.getOriginColumnName(),
+                            field.isAliased()));
+                }
+            }
+        } else if (columnAliases.size() == 2 && allFields.size() >= 2 && withOrder) {
+            for (int i = 0; i < allFields.size() - 1; i++) {
+                Field field = allFields.get(i);
+                Optional<String> columnAlias = field.getName();
+                if (!field.isHidden()) {
+                    // hidden fields are not exposed when there are column aliases
+                    fieldsBuilder.add(Field.newQualified(
+                            QualifiedName.of(columnAliases.get(columnAliases.size() - 1)),
+                            columnAlias,
+                            field.getType(),
+                            false,
+                            field.getOriginTable(),
+                            field.getOriginColumnName(),
+                            field.isAliased()));
+                }
+            }
+            Field last = allFields.get(allFields.size() - 1);
+            Optional<String> columnAlias = Optional.of(columnAliases.get(0));
+            if (!last.isHidden()) {
+                // hidden fields are not exposed when there are column aliases
+                fieldsBuilder.add(Field.newQualified(
+                        QualifiedName.of(baseRelationAlias),
+                        columnAlias,
+                        last.getType(),
+                        false,
+                        last.getOriginTable(),
+                        last.getOriginColumnName(),
+                        last.isAliased()));
+            }
+        } else {
+            throw new RuntimeException("unproper number of columns!");
         }
 
         return new RelationType(fieldsBuilder.build());

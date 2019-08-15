@@ -28,4 +28,22 @@ public class LateralView extends SQLTester {
 
         checkASTNode(prestoSql, hiveSql);
     }
+
+    @Test
+    public void testCase01() {
+        checkASTNodeFromFile("hive/parser/cases/lateral-view-presto-3.sql",
+                "hive/parser/cases/lateral-view-hive-3.sql");
+    }
+
+    @Test
+    public void testCase02() {
+        checkASTNodeFromFile("hive/parser/cases/lateral-view-presto-4.sql",
+                "hive/parser/cases/lateral-view-hive-4.sql");
+    }
+
+    @Test
+    public void testCase03() {
+        checkASTNodeFromFile("hive/parser/cases/lateral-view-presto-5.sql",
+                "hive/parser/cases/lateral-view-hive-5.sql");
+    }
 }

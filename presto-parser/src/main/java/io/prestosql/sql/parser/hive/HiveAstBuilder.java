@@ -61,6 +61,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     //
     //////////////////
     @Override
+    public Node visitSetConfiguration(SqlBaseParser.SetConfigurationContext ctx) {
+        return new SetHiveConfiguration(getLocation(ctx), ctx.getText());
+    }
+
+    @Override
     public Node visitSetOperation(SqlBaseParser.SetOperationContext ctx) {
         QueryBody left = (QueryBody) visit(ctx.left);
         QueryBody right = (QueryBody) visit(ctx.right);

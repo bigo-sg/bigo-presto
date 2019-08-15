@@ -142,7 +142,12 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public Node visitAliasedQuery(SqlBaseParser.AliasedQueryContext ctx) {
         TableSubquery child = new TableSubquery(getLocation(ctx), (Query) visit(ctx.queryNoWith()));
 
-        return new AliasedRelation(getLocation(ctx), child, (Identifier) visit(ctx.tableAlias()), null);
+        Identifier tableAlias = (Identifier) visit(ctx.tableAlias());
+        if (tableAlias == null) {
+            throw parseError("Missing table alias", ctx);
+        }
+
+        return new AliasedRelation(getLocation(ctx), child, tableAlias, null);
     }
 
     @Override
@@ -435,6 +440,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             criteria = new NaturalJoin();
         }
         else {
+            if(ctx.joinCriteria() == null) {
+                throw parseError("Missing join criteria", ctx);
+            }
+
             if (ctx.joinCriteria().ON() != null) {
                 criteria = new JoinOn((Expression) visit(ctx.joinCriteria().booleanExpression()));
             }

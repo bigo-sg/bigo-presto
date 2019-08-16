@@ -32,6 +32,8 @@ public class NodeMemoryConfig
 
     private boolean isReservedPoolEnabled = true;
 
+    private DataSize reservedMemory = new DataSize(AVAILABLE_HEAP_MEMORY * 0.05, BYTE);;
+
     private DataSize maxQueryMemoryPerNode = new DataSize(AVAILABLE_HEAP_MEMORY * 0.1, BYTE);
 
     // This is a per-query limit for the user plus system allocations.
@@ -48,6 +50,20 @@ public class NodeMemoryConfig
     public NodeMemoryConfig setMaxQueryMemoryPerNode(DataSize maxQueryMemoryPerNode)
     {
         this.maxQueryMemoryPerNode = maxQueryMemoryPerNode;
+        return this;
+    }
+
+    @NotNull
+    public DataSize getReservedMemory()
+    {
+        return reservedMemory;
+    }
+
+    @Config("experimental.reserved-memory")
+    @ConfigDescription("The amount of heap memory should reserve to prevent presto worker OOM, this only works when experimental.reserved-pool-enabled is not enabled.")
+    public NodeMemoryConfig setReservedMemory(DataSize reservedMemory)
+    {
+        this.reservedMemory = reservedMemory;
         return this;
     }
 

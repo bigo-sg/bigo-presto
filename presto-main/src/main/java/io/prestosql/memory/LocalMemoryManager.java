@@ -72,7 +72,11 @@ public final class LocalMemoryManager
         if (config.isReservedPoolEnabled()) {
             builder.put(RESERVED_POOL, new MemoryPool(RESERVED_POOL, config.getMaxQueryTotalMemoryPerNode()));
             generalPoolSize -= config.getMaxQueryTotalMemoryPerNode().toBytes();
+        } else {
+            // reserve memory to prevent presto worker OOM
+            generalPoolSize -= config.getReservedMemory().toBytes();
         }
+
         verify(generalPoolSize > 0, "general memory pool size is 0");
         builder.put(GENERAL_POOL, new MemoryPool(GENERAL_POOL, new DataSize(generalPoolSize, BYTE)));
         this.pools = builder.build();

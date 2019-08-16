@@ -3,21 +3,19 @@ package io.hivesql.sql.parser;
 import org.testng.annotations.Test;
 
 public class BasicSQLs extends SQLTester {
-//    @Test
-//    public void testUse()
-//    {
-//        String sql = "USE hive.tmp";
-//        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-//        System.out.println(node);
-//    }
-//
-//    @Test
-//    public void testSetSession()
-//    {
-//        String sql = "SET SESSION foo=true";
-//        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-//        System.out.println(node);
-//    }
+    @Test
+    public void testUse()
+    {
+        String sql = "USE hive.tmp";
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSetSession()
+    {
+        String sql = "SET SESSION foo=true";
+        checkASTNode(sql);
+    }
 
     @Test
     public void testFuncCall()
@@ -228,4 +226,53 @@ public class BasicSQLs extends SQLTester {
 
         checkASTNode(sql);
     }
+
+    @Test
+    public void testNumColumns()
+    {
+        String hiveSql = "SELECT 123_column from tb1";
+
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testNumColumns1()
+    {
+        String hiveSql = "SELECT `123_column` from tb1";
+
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testNumColumns2()
+    {
+        String hiveSql = "SELECT `ccc123column` from tb1";
+
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testNumTable()
+    {
+        String hiveSql = "SELECT `123_column` from 123_tb1";
+
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testNumTable1()
+    {
+        String hiveSql = "SELECT `123_column` from `123_tb1`";
+
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testQuotedTable()
+    {
+        String hiveSql = "SELECT `column` from `m.tb1`";
+        String prestoSql = "SELECT column from m.tb1";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
 }

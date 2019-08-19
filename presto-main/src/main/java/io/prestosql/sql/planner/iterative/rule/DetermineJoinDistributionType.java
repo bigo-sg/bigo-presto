@@ -92,7 +92,8 @@ public class DetermineJoinDistributionType
         PlanNode buildSide = joinNode.getRight();
         PlanNodeStatsEstimate buildSideStatsEstimate = context.getStatsProvider().getStats(buildSide);
         double buildSideSizeInBytes = buildSideStatsEstimate.getOutputSizeInBytes(buildSide.getOutputSymbols(), context.getSymbolAllocator().getTypes());
-        return buildSideSizeInBytes <= joinMaxBroadcastTableSize.get().toBytes();
+        // buildSideSizeInBytes should be greater then 0 in case the statics data return zero byte table
+        return buildSideSizeInBytes > 0 && buildSideSizeInBytes <= joinMaxBroadcastTableSize.get().toBytes();
     }
 
     private PlanNode getCostBasedJoin(JoinNode joinNode, Context context)

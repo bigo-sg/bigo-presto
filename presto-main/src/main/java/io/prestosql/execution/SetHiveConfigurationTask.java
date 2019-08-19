@@ -30,7 +30,7 @@ public class SetHiveConfigurationTask
     @Override
     public String getName()
     {
-        return "SET SESSION";
+        return "SET HIVE CONFIGURATION";
     }
 
     @Override

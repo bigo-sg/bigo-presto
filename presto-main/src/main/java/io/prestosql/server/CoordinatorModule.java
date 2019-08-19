@@ -84,6 +84,7 @@ import io.prestosql.execution.SetPathTask;
 import io.prestosql.execution.SetRoleTask;
 import io.prestosql.execution.SetSchemaAuthorizationTask;
 import io.prestosql.execution.SetSessionTask;
+import io.prestosql.execution.SetHiveConfigurationTask;
 import io.prestosql.execution.SqlQueryManager;
 import io.prestosql.execution.StartTransactionTask;
 import io.prestosql.execution.TaskInfo;

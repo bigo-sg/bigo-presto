@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import io.prestosql.Session;
+import io.prestosql.SystemSessionProperties;
 import io.prestosql.connector.CatalogName;
 import io.prestosql.execution.warnings.WarningCollector;
 import io.prestosql.metadata.FunctionKind;
@@ -960,7 +961,10 @@ class StatementAnalyzer
             // todo this check should be inside of TupleDescriptor.withAlias, but the exception needs the node object
             RelationType relationType = relationScope.getRelationType();
             // modify to support hive syntax
-            if (!notLateralLogic(relation, relationType)) {
+            if (SystemSessionProperties.isEnableHiveSqlSynTax(session) &&
+                    relation.getRelation() != null &&
+                    relation.getRelation() instanceof Unnest &&
+                    relation.getColumnNames() != null) {
                 return visitAliasedRelation(relation, relationType, scope);
             }
             if (relation.getColumnNames() != null) {
@@ -982,26 +986,6 @@ class StatementAnalyzer
             return createAndAssignScope(relation, scope, descriptor);
         }
 
-        private boolean notLateralLogic(AliasedRelation relation, RelationType relationType) {
-            if (relation.getRelation() == null || !(relation.getRelation() instanceof Unnest) ||
-                   relation.getColumnNames() == null || relation.getColumnNames().size() <= 0) {
-                return true;
-            }
-            Object[] fields = relationType.getAllFields().toArray();
-            if (fields.length <= 0) {
-                return true;
-            } else if (fields.length == relation.getColumnNames().size()) {
-                return true;
-            } else {
-                for (int i = 0; i < fields.length - 1; ++i) {
-                    if (!((Field) fields[i]).getName().isPresent()) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
         private Scope visitAliasedRelation(AliasedRelation relation, RelationType relationType, Optional<Scope> scope) {
             List<String> aliases = null;
             if (relation.getColumnNames() != null) {
@@ -1009,8 +993,7 @@ class StatementAnalyzer
                         .map(Identifier::getValue)
                         .collect(Collectors.toList());
             }
-            RelationType descriptor = relationType.withNotEqualAlias(relation.getAlias().getValue(),
-                    relation.getColumnNames().get(0).getValue(),
+            RelationType descriptor = relationType.withLateralViewAlias(relation.getAlias().getValue(),
                     aliases, ((Unnest)relation.getRelation()).isWithOrdinality());
 
             return createAndAssignScope(relation, scope, descriptor);

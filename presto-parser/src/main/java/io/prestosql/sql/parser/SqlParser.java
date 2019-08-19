@@ -33,8 +33,6 @@ import static java.util.Objects.requireNonNull;
 
 public class SqlParser
 {
-    private static final Logger LOG = Logger.get(SqlParser.class);
-
     private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {
         @Override
@@ -116,12 +114,9 @@ public class SqlParser
     private Node invokeParser(String name, String sql, Function<SqlBaseParser,
             ParserRuleContext> parseFunction, ParsingOptions parsingOptions, String type)
     {
-        LOG.info("sql:" + sql);
         if (!parsingOptions.useHiveParser()) {
-            LOG.info("use presto sql");
             return invokePrestoParser(name, sql, parsingOptions, type);
         } else {
-            LOG.info("use hive sql");
             return invokeSparkBasedHiveParser(name, sql, parsingOptions, type);
         }
     }

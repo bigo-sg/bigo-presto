@@ -15,9 +15,7 @@ package io.prestosql.plugin.bigo;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import io.prestosql.plugin.bigo.udf.BigoConditionalFunctions;
-import io.prestosql.plugin.bigo.udf.BigoDateFunctions;
-import io.prestosql.plugin.bigo.udf.BigoStringFunctions;
+import io.prestosql.plugin.bigo.udf.*;
 import io.prestosql.spi.Plugin;
 import io.prestosql.spi.eventlistener.EventListenerFactory;
 
@@ -43,6 +41,15 @@ public class BigoEventListenerPlugin
                 .add(BigoDateFunctions.class)
                 .add(BigoStringFunctions.class)
                 .add(BigoConditionalFunctions.class)
+                .add(HexFunction.class)
+                .add(UnHexFunction.class)
+                .add(PosModFunction.class)
+                .add(ShiftRightFunction.class)
+                .add(ShiftRightUnsignedFunction.class)
+                .add(ShiftLeftFunction.class)
+                .add(AsciiFunction.class)
+                .add(ArrayContainsFunction.class)
+                .add(BigoTypeConversionFunctions.class)
                 .build();
     }
 }

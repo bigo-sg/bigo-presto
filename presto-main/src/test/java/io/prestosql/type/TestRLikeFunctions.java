@@ -16,17 +16,17 @@ public class TestRLikeFunctions {
     public void testLikeVarchar() {
 
         assertEquals(RLikeFunctions.likeVarchar(getSlice("000fooooooooooooooooo"),
-                getSlice("foo")), true);
+                RLikeFunctions.castVarCharToRLikePattern(getSlice("foo"))), true);
         assertEquals(RLikeFunctions.likeVarchar(getSlice("fooooooooooooooooo"),
-                getSlice("foo")), true);
+                RLikeFunctions.castVarCharToRLikePattern(getSlice("foo"))), true);
         assertEquals(RLikeFunctions.likeVarchar(getSlice("foo"),
-                getSlice("foo")), true);
+                RLikeFunctions.castVarCharToRLikePattern(getSlice("foo"))), true);
         assertEquals(RLikeFunctions.likeVarchar(getSlice("1234567asdadas"),
-                getSlice("[0-9]+[a-z]+")), true);
+                RLikeFunctions.castVarCharToRLikePattern(getSlice("[0-9]+[a-z]+"))), true);
         assertEquals(RLikeFunctions.likeVarchar(getSlice("as_121skdls@ss.com"),
-                getSlice("([0-9]|[a-z]|[a-z]|_)+@([a-z]|[0-9]|[A-Z])+.(com|cn|org)")), true);
+                RLikeFunctions.castVarCharToRLikePattern(getSlice("([0-9]|[a-z]|[a-z]|_)+@([a-z]|[0-9]|[A-Z])+.(com|cn|org)"))), true);
         assertEquals(RLikeFunctions.likeVarchar(getSlice("000000"),
-                getSlice("foo")), false);
+                RLikeFunctions.castVarCharToRLikePattern(getSlice("foo"))), false);
     }
 
     public static Slice getSlice(String s) {

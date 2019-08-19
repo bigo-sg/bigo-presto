@@ -1057,8 +1057,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return new Extract(getLocation(ctx), (Expression) visit(ctx.valueExpression()), field);
     }
 
+    private final List<String> udtfNames = ImmutableList.of("explode", "posexplode", "inline", "stack", "json_tuple", "parse_url_tuple");
+    private void checkUDTF(SqlBaseParser.FunctionCallContext ctx) {
+        String functionName = ctx.qualifiedName().getText().toLowerCase();
+
+        if (udtfNames.contains(functionName)) {
+            throw parseError("Don't Support call UDTF: " + functionName + " directly, please try lateral view syntax instead.", ctx);
+        }
+    }
+
     @Override
     public Node visitFunctionCall(SqlBaseParser.FunctionCallContext ctx) {
+        checkUDTF(ctx);
+
         QualifiedName name = getQualifiedName(ctx.qualifiedName());
         boolean distinct = isDistinct(ctx.setQuantifier());
 

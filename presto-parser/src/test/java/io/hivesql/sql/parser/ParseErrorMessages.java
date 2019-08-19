@@ -33,6 +33,23 @@ public class ParseErrorMessages extends SQLTester {
     }
 
     @Test
+    public void testUsingUDTFFuncCall()
+    {
+        String sql = "" +
+                "select explode(`tables`) as `tables` from bigolive.hive_job_audit\n" +
+                "where day >= '2019-06-01'";
+
+        try {
+            runHiveSQL(sql);
+            Assert.fail("sql: " + sql + " should throw exception");
+        }catch (ParsingException e) {
+            Assert.assertTrue(e.getMessage().contains("Don't Support call UDTF: explode directly, please try lateral view syntax instead."));
+        }
+    }
+
+
+
+    @Test
     public void testMissingJoinCriteria()
     {
         String sql = "" +

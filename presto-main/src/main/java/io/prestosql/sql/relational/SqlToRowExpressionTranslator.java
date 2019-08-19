@@ -130,6 +130,7 @@ import static io.prestosql.sql.relational.SpecialForm.Form.SWITCH;
 import static io.prestosql.sql.relational.SpecialForm.Form.WHEN;
 import static io.prestosql.type.JsonType.JSON;
 import static io.prestosql.type.LikePatternType.LIKE_PATTERN;
+import static io.prestosql.type.RLikePatternType.RLIKE_PATTERN;
 import static io.prestosql.util.DateTimeUtils.parseDayTimeInterval;
 import static io.prestosql.util.DateTimeUtils.parseTimeWithTimeZone;
 import static io.prestosql.util.DateTimeUtils.parseTimeWithoutTimeZone;
@@ -730,11 +731,10 @@ public final class SqlToRowExpressionTranslator
             RowExpression pattern = process(node.getPattern(), context);
 
             if (node.getEscape().isPresent()) {
-                RowExpression escape = process(node.getEscape().get(), context);
-                return rLikeFunctionCall(value, pattern);
+                return rLikeFunctionCall(value, call(castSignature(RLIKE_PATTERN, VARCHAR), RLIKE_PATTERN, pattern));
             }
 
-            return rLikeFunctionCall(value, pattern);
+            return rLikeFunctionCall(value, call(castSignature(RLIKE_PATTERN, VARCHAR), RLIKE_PATTERN, pattern));
         }
 
         private RowExpression rLikeFunctionCall(RowExpression value, RowExpression pattern)

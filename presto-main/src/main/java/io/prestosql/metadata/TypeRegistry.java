@@ -72,6 +72,7 @@ import static io.prestosql.type.JsonPathType.JSON_PATH;
 import static io.prestosql.type.JsonType.JSON;
 import static io.prestosql.type.LikePatternType.LIKE_PATTERN;
 import static io.prestosql.type.MapParametricType.MAP;
+import static io.prestosql.type.RLikePatternType.RLIKE_PATTERN;
 import static io.prestosql.type.Re2JRegexpType.RE2J_REGEXP;
 import static io.prestosql.type.RowParametricType.ROW;
 import static io.prestosql.type.UnknownType.UNKNOWN;
@@ -120,6 +121,7 @@ final class TypeRegistry
         addType(JONI_REGEXP);
         addType(RE2J_REGEXP);
         addType(LIKE_PATTERN);
+        addType(RLIKE_PATTERN);
         addType(JSON_PATH);
         addType(COLOR);
         addType(JSON);

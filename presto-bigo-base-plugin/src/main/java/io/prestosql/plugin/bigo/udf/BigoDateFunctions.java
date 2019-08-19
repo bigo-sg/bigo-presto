@@ -130,8 +130,8 @@ public class BigoDateFunctions {
 
     @Description("Returns the date that is num_days after start_date.")
     @ScalarFunction("datediff")
-    @SqlType(StandardTypes.VARCHAR)
-    public static Slice dateDiff(
+    @SqlType(StandardTypes.BIGINT)
+    public static long dateDiff(
             @SqlType(StandardTypes.VARCHAR) Slice endDate,
             @SqlType(StandardTypes.VARCHAR) Slice startDate)
     {
@@ -146,8 +146,7 @@ public class BigoDateFunctions {
             throw new PrestoException(INVALID_FUNCTION_ARGUMENT, e);
         }
 
-        long diff = TimeUnit.MILLISECONDS.toDays(cEnd.getTimeInMillis()-cStart.getTimeInMillis());
-        return utf8Slice(String.valueOf(diff));
+        return TimeUnit.MILLISECONDS.toDays(cEnd.getTimeInMillis()-cStart.getTimeInMillis());
     }
 
     @Description("hour of the given string")
@@ -317,9 +316,14 @@ public class BigoDateFunctions {
     @SqlType(StandardTypes.VARCHAR)
     public static Slice stringToDate(@SqlType(StandardTypes.VARCHAR) Slice inputTimestamp)
     {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd[ HH:mm:ss[.SSS]][ zzz]");
-        LocalDate date = LocalDate.parse(inputTimestamp.toStringUtf8(), formatter);
-        return utf8Slice(date.toString());
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            java.sql.Date date = new java.sql.Date(0);
+            Date parsedVal = formatter.parse(inputTimestamp.toStringUtf8());
+            date.setTime(parsedVal.getTime());
+            return utf8Slice(date.toString());
+        } catch (ParseException e) {
+            return null;
+        }
     }
-
 }

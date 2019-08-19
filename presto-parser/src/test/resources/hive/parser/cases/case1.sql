@@ -41,4 +41,4 @@ FROM
                item_type)A
    GROUP BY countrycode,
             business_type,
-            item_type WITH CUBE)B;;;;;
+            item_type WITH CUBE)B;;;;;;

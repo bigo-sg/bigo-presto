@@ -130,8 +130,8 @@ public class BigoDateFunctions {
 
     @Description("Returns the date that is num_days after start_date.")
     @ScalarFunction("datediff")
-    @SqlType(StandardTypes.VARCHAR)
-    public static Slice dateDiff(
+    @SqlType(StandardTypes.BIGINT)
+    public static long dateDiff(
             @SqlType(StandardTypes.VARCHAR) Slice endDate,
             @SqlType(StandardTypes.VARCHAR) Slice startDate)
     {
@@ -146,8 +146,7 @@ public class BigoDateFunctions {
             throw new PrestoException(INVALID_FUNCTION_ARGUMENT, e);
         }
 
-        long diff = TimeUnit.MILLISECONDS.toDays(cEnd.getTimeInMillis()-cStart.getTimeInMillis());
-        return utf8Slice(String.valueOf(diff));
+        return TimeUnit.MILLISECONDS.toDays(cEnd.getTimeInMillis()-cStart.getTimeInMillis());
     }
 
     @Description("hour of the given string")

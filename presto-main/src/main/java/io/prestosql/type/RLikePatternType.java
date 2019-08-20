@@ -24,27 +24,15 @@ import io.prestosql.spi.type.TypeSignature;
 
 import static io.prestosql.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 
-public class CodePointsType
+public class RLikePatternType
         extends AbstractType
 {
-    public static final CodePointsType CODE_POINTS = new CodePointsType();
-    public static final String NAME = "CodePoints";
+    public static final RLikePatternType RLIKE_PATTERN = new RLikePatternType();
+    public static final String NAME = "RLikePattern";
 
-    protected CodePointsType()
+    public RLikePatternType()
     {
-        super(new TypeSignature(NAME), int[].class);
-    }
-
-    @Override
-    public BlockBuilder createBlockBuilder(BlockBuilderStatus blockBuilderStatus, int expectedEntries, int expectedBytesPerEntry)
-    {
-        throw new PrestoException(GENERIC_INTERNAL_ERROR, "CodePoints type cannot be serialized");
-    }
-
-    @Override
-    public BlockBuilder createBlockBuilder(BlockBuilderStatus blockBuilderStatus, int expectedEntries)
-    {
-        throw new PrestoException(GENERIC_INTERNAL_ERROR, "CodePoints type cannot be serialized");
+        super(new TypeSignature(NAME), Regex.class);
     }
 
     @Override
@@ -57,5 +45,17 @@ public class CodePointsType
     public void appendTo(Block block, int position, BlockBuilder blockBuilder)
     {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public BlockBuilder createBlockBuilder(BlockBuilderStatus blockBuilderStatus, int expectedEntries, int expectedBytesPerEntry)
+    {
+        throw new PrestoException(GENERIC_INTERNAL_ERROR, "RLikePattern type cannot be serialized");
+    }
+
+    @Override
+    public BlockBuilder createBlockBuilder(BlockBuilderStatus blockBuilderStatus, int expectedEntries)
+    {
+        throw new PrestoException(GENERIC_INTERNAL_ERROR, "RLikePattern type cannot be serialized");
     }
 }

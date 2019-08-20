@@ -538,11 +538,23 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public Node visitFromClause(SqlBaseParser.FromClauseContext ctx) {
         List<Relation> relations = visit(ctx.relation(), Relation.class);
 
-        if (relations.size() > 1) {
-            throw parseError("todo", ctx);
+        if (relations.size() == 0) {
+            throw parseError("no relation for from", ctx);
+        } else if (relations.size() == 1) {
+            return relations.get(0);
+        } else {
+            Join result = new Join(getLocation(ctx), Join.Type.IMPLICIT,
+                    relations.get(0),
+                    relations.get(1),
+                    Optional.empty());
+            for (int i = 2; i < relations.size(); ++i) {
+                result = new Join(getLocation(ctx), Join.Type.IMPLICIT,
+                        result,
+                        relations.get(i),
+                        Optional.empty());
+            }
+            return result;
         }
-
-        return relations.get(0);
     }
 
     @Override

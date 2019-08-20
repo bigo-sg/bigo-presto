@@ -13,6 +13,7 @@
  */
 package io.prestosql.type;
 
+import io.airlift.joni.Regex;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.block.Block;
 import io.prestosql.spi.block.BlockBuilder;
@@ -20,8 +21,6 @@ import io.prestosql.spi.block.BlockBuilderStatus;
 import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.type.AbstractType;
 import io.prestosql.spi.type.TypeSignature;
-
-import java.util.regex.Pattern;
 
 import static io.prestosql.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 
@@ -33,7 +32,7 @@ public class RLikePatternType
 
     public RLikePatternType()
     {
-        super(new TypeSignature(NAME), Pattern.class);
+        super(new TypeSignature(NAME), Regex.class);
     }
 
     @Override

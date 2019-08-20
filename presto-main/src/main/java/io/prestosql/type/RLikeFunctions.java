@@ -13,12 +13,19 @@
  */
 package io.prestosql.type;
 
+import io.airlift.jcodings.specific.NonStrictUTF8Encoding;
+import io.airlift.joni.Option;
+import io.airlift.joni.Regex;
+import io.airlift.joni.Syntax;
 import io.airlift.slice.Slice;
+import io.prestosql.operator.scalar.JoniRegexpFunctions;
+import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.function.*;
 import io.prestosql.spi.type.StandardTypes;
 
 import java.util.regex.Pattern;
 
+import static io.prestosql.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 import static io.prestosql.spi.type.Chars.padSpaces;
 
 public final class RLikeFunctions
@@ -39,34 +46,47 @@ public final class RLikeFunctions
     @ScalarOperator(OperatorType.CAST)
     @LiteralParameters("x")
     @SqlType(RLikePatternType.NAME)
-    public static Pattern castVarCharToRLikePattern(@SqlType("varchar(x)") Slice pattern)
+    public static Regex castVarCharToRLikePattern(@SqlType("varchar(x)") Slice pattern)
     {
-        return Pattern.compile(new String(pattern.getBytes()));
+        return joniRegexp(pattern);
     }
 
 
     @ScalarOperator(OperatorType.CAST)
     @LiteralParameters("x")
     @SqlType(RLikePatternType.NAME)
-    public static Pattern castCharToLikePattern(@LiteralParameter("x") Long charLength, @SqlType("char(x)") Slice pattern)
+    public static Regex castCharToRLikePattern(@LiteralParameter("x") Long charLength, @SqlType("char(x)") Slice pattern)
     {
-        return Pattern.compile(new String(padSpaces(pattern, charLength.intValue()).getBytes()));
+        return joniRegexp(padSpaces(pattern, charLength.intValue()));
     }
 
     // TODO: this should not be callable from SQL
     @ScalarFunction(value = "rlike", hidden = true)
     @LiteralParameters("x")
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean likeVarchar(@SqlType("varchar(x)") Slice value, @SqlType(RLikePatternType.NAME) Pattern pattern)
+    public static boolean likeVarchar(@SqlType("varchar(x)") Slice value, @SqlType(RLikePatternType.NAME) Regex pattern)
     {
-        return pattern.matcher(new String(value.getBytes())).find();
+        return JoniRegexpFunctions.regexpLike(value, pattern);
     }
 
     @ScalarFunction(value = "rlike", hidden = true)
     @LiteralParameters("x")
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean rLikeChar(@LiteralParameter("x") Long x, @SqlType("char(x)") Slice value, @SqlType(LikePatternType.NAME) Pattern pattern)
+    public static boolean rLikeChar(@LiteralParameter("x") Long x, @SqlType("char(x)") Slice value, @SqlType(LikePatternType.NAME) Regex pattern)
     {
         return likeVarchar(padSpaces(value, x.intValue()), pattern);
+    }
+
+    public static Regex joniRegexp(Slice pattern)
+    {
+        Regex regex;
+        try {
+            // When normal UTF8 encoding instead of non-strict UTF8) is used, joni can infinite loop when invalid UTF8 slice is supplied to it.
+            regex = new Regex(pattern.getBytes(), 0, pattern.length(), Option.DEFAULT, NonStrictUTF8Encoding.INSTANCE, Syntax.Java);
+        }
+        catch (Exception e) {
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, e);
+        }
+        return regex;
     }
 }

@@ -25,6 +25,7 @@ import io.prestosql.sql.tree.ArithmeticBinaryExpression;
 import io.prestosql.sql.tree.ComparisonExpression;
 import io.prestosql.sql.tree.LogicalBinaryExpression;
 import io.prestosql.type.LikePatternType;
+import io.prestosql.type.RLikePatternType;
 
 import java.util.List;
 
@@ -81,13 +82,13 @@ public final class Signatures
 
     public static Signature rLikeVarcharSignature()
     {
-        return internalScalarFunction("RLIKE", parseTypeSignature(StandardTypes.BOOLEAN), parseTypeSignature(StandardTypes.VARCHAR), parseTypeSignature(StandardTypes.VARCHAR));
+        return internalScalarFunction("RLIKE", parseTypeSignature(StandardTypes.BOOLEAN), parseTypeSignature(StandardTypes.VARCHAR), parseTypeSignature(RLikePatternType.NAME));
     }
 
     public static Signature rLikeCharSignature(Type valueType)
     {
         checkArgument(valueType instanceof CharType, "Expected CHAR value type");
-        return internalScalarFunction("RLIKE", parseTypeSignature(StandardTypes.BOOLEAN), valueType.getTypeSignature(), parseTypeSignature(StandardTypes.VARCHAR));
+        return internalScalarFunction("RLIKE", parseTypeSignature(StandardTypes.BOOLEAN), valueType.getTypeSignature(), parseTypeSignature(RLikePatternType.NAME));
     }
     
     public static Signature castSignature(Type returnType, Type valueType)

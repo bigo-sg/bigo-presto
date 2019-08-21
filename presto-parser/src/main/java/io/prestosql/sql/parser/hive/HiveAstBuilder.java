@@ -502,17 +502,20 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitNumericLiteral(SqlBaseParser.NumericLiteralContext ctx) {
         try {
+            if (ctx.getText().contains("E") || ctx.getText().contains("e")) {
+                return new DoubleLiteral(getLocation(ctx), ctx.getText());
+            }
             Number num = NumberFormat.getInstance().parse(ctx.getText());
             // need to make sure it keeps it's original value, e.g. 1.0 is double not integer.
             if (num instanceof Double || !num.toString().equals(ctx.getText())) {
-//                switch (parsingOptions.getDecimalLiteralTreatment()) {
-//                    case AS_DOUBLE:
+                switch (parsingOptions.getDecimalLiteralTreatment()) {
+                    case AS_DOUBLE:
                         return new DoubleLiteral(getLocation(ctx), ctx.getText());
-//                    case AS_DECIMAL:
-//                        return new DecimalLiteral(getLocation(ctx), ctx.getText());
-//                    case REJECT:
-//                        throw parseError("Unexpected decimal literal: " + ctx.getText(), ctx);
-//                }
+                    case AS_DECIMAL:
+                        return new DecimalLiteral(getLocation(ctx), ctx.getText());
+                    case REJECT:
+                        throw parseError("Unexpected decimal literal: " + ctx.getText(), ctx);
+                }
             } else if (num instanceof Integer || num instanceof Long) {
                 return new LongLiteral(getLocation(ctx), ctx.getText());
             }
@@ -523,7 +526,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             throw parseError("Can't parser number: " + ctx.getText(), ctx);
         }
 
-//        throw parseError("Can't parser number: " + ctx.getText(), ctx);
+        throw parseError("Can't parser number: " + ctx.getText(), ctx);
     }
 
     @Override
@@ -545,11 +548,23 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public Node visitFromClause(SqlBaseParser.FromClauseContext ctx) {
         List<Relation> relations = visit(ctx.relation(), Relation.class);
 
-        if (relations.size() > 1) {
-            throw parseError("todo", ctx);
+        if (relations.size() == 0) {
+            throw parseError("no relation for from", ctx);
+        } else if (relations.size() == 1) {
+            return relations.get(0);
+        } else {
+            Join result = new Join(getLocation(ctx), Join.Type.IMPLICIT,
+                    relations.get(0),
+                    relations.get(1),
+                    Optional.empty());
+            for (int i = 2; i < relations.size(); ++i) {
+                result = new Join(getLocation(ctx), Join.Type.IMPLICIT,
+                        result,
+                        relations.get(i),
+                        Optional.empty());
+            }
+            return result;
         }
-
-        return relations.get(0);
     }
 
     @Override
@@ -574,7 +589,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         List<Identifier> columnNames = visit(ctx.colName, Identifier.class);
         if (columnNames.size() > 0) {
-            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
+            if (!withOrdinality) {
+                return new AliasedRelation(getLocation(ctx), unnest, columnNames.get(0), null);
+            } else {
+                return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
+            }
         } else {
             return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), null);
         }
@@ -1268,7 +1287,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitUnquotedIdentifier(SqlBaseParser.UnquotedIdentifierContext ctx) {
-        return new Identifier(getLocation(ctx), ctx.getText(), false);
+        return new Identifier(getLocation(ctx), ctx.getText(), true);
     }
 
     @Override
@@ -1402,7 +1421,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                         builder.append(",");
                     }
 
-                    builder.append(visit(complexColTypeContext.identifier()))
+                    Node node = visit(complexColTypeContext.identifier());
+                    builder.append(tryUnquote(node.toString()))
                             .append(" ")
                             .append(getType(complexColTypeContext.dataType()));
                 }
@@ -1497,7 +1517,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             for (String id: tmp) {
                 Identifier identifier =
                         new Identifier(getLocation(identifierContext),
-                                id, false);
+                                id, true);
                 identifiers.add(identifier);
             }
         }

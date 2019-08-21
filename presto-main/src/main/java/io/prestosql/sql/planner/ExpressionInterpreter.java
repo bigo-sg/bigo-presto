@@ -108,6 +108,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -158,6 +159,8 @@ public class ExpressionInterpreter
 
     // identity-based cache for LIKE expressions with constant pattern and escape char
     private final IdentityHashMap<LikePredicate, Regex> likePatternCache = new IdentityHashMap<>();
+    // identity-based cache for RLIKE expressions with constant pattern and escape char
+    private final IdentityHashMap<RLikePredicate, Pattern> rLikePatternCache = new IdentityHashMap<>();
     private final IdentityHashMap<InListExpression, Set<?>> inListCache = new IdentityHashMap<>();
 
     public static ExpressionInterpreter expressionInterpreter(Expression expression, Metadata metadata, Session session, Map<NodeRef<Expression>, Type> expressionTypes)

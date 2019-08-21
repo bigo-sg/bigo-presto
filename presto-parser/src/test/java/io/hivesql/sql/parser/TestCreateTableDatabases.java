@@ -97,4 +97,10 @@ public class TestCreateTableDatabases extends SQLTester {
         checkASTNodeFromFile("hive/parser/cases/create-table-presto-3.sql",
                 "hive/parser/cases/create-table-hive-3.sql");
     }
+
+    @Test
+    public void createTable4() {
+
+        runHiveSQLFromFile("hive/parser/cases/create-table-hive-4.sql");
+    }
 }

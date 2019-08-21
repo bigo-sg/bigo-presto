@@ -263,7 +263,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     }
                     TableElement tableElement = new ColumnDefinition(
                             new Identifier(getLocation(colTypeContext),
-                                    tryUnquote(colTypeContext.identifier().getText()), false),
+                                    tryUnquote(colTypeContext.identifier().getText()), true),
                             type,
                             true,
                             new ArrayList<>(),

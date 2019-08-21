@@ -73,7 +73,7 @@ public final class IntegerOperators
             return left / right;
         }
         catch (ArithmeticException e) {
-            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer subtraction overflow: %s - %s", left, right), e);
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer overflow: %s DIV %s", left, right), e);
         }
     }
     @ScalarOperator(AMPERSAND)
@@ -84,7 +84,7 @@ public final class IntegerOperators
             return left & right;
         }
         catch (ArithmeticException e) {
-            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer subtraction overflow: %s - %s", left, right), e);
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer overflow: %s & %s", left, right), e);
         }
     }
     @ScalarOperator(PIPE)
@@ -95,7 +95,7 @@ public final class IntegerOperators
             return left | right;
         }
         catch (ArithmeticException e) {
-            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer subtraction overflow: %s - %s", left, right), e);
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer overflow: %s | %s", left, right), e);
         }
     }
 
@@ -107,7 +107,7 @@ public final class IntegerOperators
             return left ^  right;
         }
         catch (ArithmeticException e) {
-            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer subtraction overflow: %s - %s", left, right), e);
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer overflow: %s ^ %s", left, right), e);
         }
     }
 

@@ -52,6 +52,10 @@ import static io.prestosql.spi.function.OperatorType.NOT_EQUAL;
 import static io.prestosql.spi.function.OperatorType.SATURATED_FLOOR_CAST;
 import static io.prestosql.spi.function.OperatorType.SUBTRACT;
 import static io.prestosql.spi.function.OperatorType.XX_HASH_64;
+import static io.prestosql.spi.function.OperatorType.DIV;
+import static io.prestosql.spi.function.OperatorType.PIPE;
+import static io.prestosql.spi.function.OperatorType.HAT;
+import static io.prestosql.spi.function.OperatorType.AMPERSAND;
 import static io.prestosql.spi.type.BigintType.BIGINT;
 import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Math.toIntExact;
@@ -61,6 +65,144 @@ public final class BigintOperators
 {
     private BigintOperators()
     {
+    }
+
+    @ScalarOperator(DIV)
+    @SqlType(StandardTypes.BIGINT)
+    public static long divIB(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.BIGINT) long right)
+    {
+        try {
+            return left / right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer and bigint operator overflow: %s DIV %s", left, right), e);
+        }
+    }
+    @ScalarOperator(AMPERSAND)
+    @SqlType(StandardTypes.BIGINT)
+    public static long ampersandIB(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.BIGINT) long right)
+    {
+        try {
+            return left & right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer and bigint operator overflow: %s & %s", left, right), e);
+        }
+    }
+    @ScalarOperator(PIPE)
+    @SqlType(StandardTypes.BIGINT)
+    public static long pipeIB(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.BIGINT) long right)
+    {
+        try {
+            return left | right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer and bigint operator overflow: %s | %s", left, right), e);
+        }
+    }
+
+    @ScalarOperator(HAT)
+    @SqlType(StandardTypes.BIGINT)
+    public static long hatIB(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.BIGINT) long right)
+    {
+        try {
+            return left ^  right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer and bigint operator overflow: %s ^ %s", left, right), e);
+        }
+    }
+
+    @ScalarOperator(DIV)
+    @SqlType(StandardTypes.BIGINT)
+    public static long divBI(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.INTEGER) long right)
+    {
+        try {
+            return left / right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("bigint and integer subtraction overflow: %s DIV %s", left, right), e);
+        }
+    }
+    @ScalarOperator(AMPERSAND)
+    @SqlType(StandardTypes.BIGINT)
+    public static long ampersandBI(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.INTEGER) long right)
+    {
+        try {
+            return left & right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("bigint and integer subtraction overflow: %s & %s", left, right), e);
+        }
+    }
+    @ScalarOperator(PIPE)
+    @SqlType(StandardTypes.BIGINT)
+    public static long pipeBI(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.INTEGER) long right)
+    {
+        try {
+            return left | right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("bigint and integer subtraction overflow: %s | %s", left, right), e);
+        }
+    }
+
+    @ScalarOperator(HAT)
+    @SqlType(StandardTypes.BIGINT)
+    public static long hatBI(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.INTEGER) long right)
+    {
+        try {
+            return left ^ right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("bigint and integer subtraction overflow: %s ^ %s", left, right), e);
+        }
+    }
+
+    @ScalarOperator(DIV)
+    @SqlType(StandardTypes.BIGINT)
+    public static long div(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.BIGINT) long right)
+    {
+        try {
+            return left / right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("bigint overflow: %s DIV %s", left, right), e);
+        }
+    }
+    @ScalarOperator(AMPERSAND)
+    @SqlType(StandardTypes.BIGINT)
+    public static long ampersand(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.BIGINT) long right)
+    {
+        try {
+            return left & right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("bigint overflow: %s & %s", left, right), e);
+        }
+    }
+    @ScalarOperator(PIPE)
+    @SqlType(StandardTypes.BIGINT)
+    public static long pipe(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.BIGINT) long right)
+    {
+        try {
+            return left | right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("bigint overflow: %s | %s", left, right), e);
+        }
+    }
+
+    @ScalarOperator(HAT)
+    @SqlType(StandardTypes.BIGINT)
+    public static long hat(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.BIGINT) long right)
+    {
+        try {
+            return left ^  right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("bigint overflow: %s ^ %s", left, right), e);
+        }
     }
 
     @ScalarOperator(ADD)

@@ -42,6 +42,10 @@ import static io.prestosql.spi.function.OperatorType.MULTIPLY;
 import static io.prestosql.spi.function.OperatorType.NEGATION;
 import static io.prestosql.spi.function.OperatorType.SUBSCRIPT;
 import static io.prestosql.spi.function.OperatorType.SUBTRACT;
+import static io.prestosql.spi.function.OperatorType.DIV;
+import static io.prestosql.spi.function.OperatorType.PIPE;
+import static io.prestosql.spi.function.OperatorType.HAT;
+import static io.prestosql.spi.function.OperatorType.AMPERSAND;
 import static io.prestosql.spi.type.TypeSignature.parseTypeSignature;
 import static io.prestosql.sql.tree.ArrayConstructor.ARRAY_CONSTRUCTOR;
 
@@ -130,6 +134,18 @@ public final class Signatures
                 break;
             case MODULUS:
                 operatorType = MODULUS;
+                break;
+            case DIV:
+                operatorType = DIV;
+                break;
+            case AMPERSAND:
+                operatorType = AMPERSAND;
+                break;
+            case PIPE:
+                operatorType = PIPE;
+                break;
+            case HAT:
+                operatorType = HAT;
                 break;
             default:
                 throw new IllegalStateException("Unknown arithmetic operator: " + operator);

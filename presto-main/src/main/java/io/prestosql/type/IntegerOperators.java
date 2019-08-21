@@ -59,6 +59,52 @@ public final class IntegerOperators
 {
     private IntegerOperators() {}
 
+    @ScalarOperator(DIV)
+    @SqlType(StandardTypes.INTEGER)
+    public static long div(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.INTEGER) long right)
+    {
+        try {
+            return left / right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer overflow: %s DIV %s", left, right), e);
+        }
+    }
+    @ScalarOperator(AMPERSAND)
+    @SqlType(StandardTypes.INTEGER)
+    public static long ampersand(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.INTEGER) long right)
+    {
+        try {
+            return left & right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer overflow: %s & %s", left, right), e);
+        }
+    }
+    @ScalarOperator(PIPE)
+    @SqlType(StandardTypes.INTEGER)
+    public static long pipe(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.INTEGER) long right)
+    {
+        try {
+            return left | right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer overflow: %s | %s", left, right), e);
+        }
+    }
+
+    @ScalarOperator(HAT)
+    @SqlType(StandardTypes.INTEGER)
+    public static long hat(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.INTEGER) long right)
+    {
+        try {
+            return left ^  right;
+        }
+        catch (ArithmeticException e) {
+            throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("integer overflow: %s ^ %s", left, right), e);
+        }
+    }
+
     @ScalarOperator(ADD)
     @SqlType(StandardTypes.INTEGER)
     public static long add(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.INTEGER) long right)

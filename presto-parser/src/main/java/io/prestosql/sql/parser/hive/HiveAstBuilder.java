@@ -66,6 +66,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
+    public Node visitShowPartitions(SqlBaseParser.ShowPartitionsContext ctx) {
+        throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
+    }
+
+    @Override
     public Node visitSetOperation(SqlBaseParser.SetOperationContext ctx) {
         QueryBody left = (QueryBody) visit(ctx.left);
         QueryBody right = (QueryBody) visit(ctx.right);
@@ -652,17 +657,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitSingleInsertQuery(SqlBaseParser.SingleInsertQueryContext ctx) {
-        QueryBody term = (QueryBody) visit(ctx.queryTerm());
+        throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
 
-        Query query = (Query)withQueryOrganization(term, ctx.queryOrganization());
-        if (ctx.insertInto() == null) {
-            return query;
-        }
-        QualifiedName target = null;
-        if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
-            target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
-        }
-        return new Insert(target, Optional.empty(), query);
+//        QueryBody term = (QueryBody) visit(ctx.queryTerm());
+//
+//        Query query = (Query)withQueryOrganization(term, ctx.queryOrganization());
+//        if (ctx.insertInto() == null) {
+//            return query;
+//        }
+//        QualifiedName target = null;
+//        if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
+//            target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
+//        }
+//        return new Insert(target, Optional.empty(), query);
     }
 
     @Override

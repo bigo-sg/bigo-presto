@@ -40,7 +40,6 @@ public class BigoEventListenerPlugin
         implements Plugin
 {
     @Override
-
     public Iterable<EventListenerFactory> getEventListenerFactories()
     {
         return ImmutableList.of(new BigoEventListenerFactory());

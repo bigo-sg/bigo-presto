@@ -589,11 +589,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         List<Identifier> columnNames = visit(ctx.colName, Identifier.class);
         if (columnNames.size() > 0) {
-            if (!withOrdinality) {
-                return new AliasedRelation(getLocation(ctx), unnest, columnNames.get(0), null);
-            } else {
-                return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
-            }
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
         } else {
             return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), null);
         }

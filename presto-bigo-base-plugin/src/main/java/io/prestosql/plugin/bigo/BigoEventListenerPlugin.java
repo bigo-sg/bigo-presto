@@ -16,12 +16,14 @@ package io.prestosql.plugin.bigo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.prestosql.plugin.bigo.udf.ArrayContainsFunction;
+import io.prestosql.plugin.bigo.udf.ArraySizeFunction;
 import io.prestosql.plugin.bigo.udf.AsciiFunction;
 import io.prestosql.plugin.bigo.udf.BigoConditionalFunctions;
 import io.prestosql.plugin.bigo.udf.BigoDateFunctions;
 import io.prestosql.plugin.bigo.udf.BigoStringFunctions;
 import io.prestosql.plugin.bigo.udf.BigoTypeConversionFunctions;
 import io.prestosql.plugin.bigo.udf.HexFunction;
+import io.prestosql.plugin.bigo.udf.MapSizeFunction;
 import io.prestosql.plugin.bigo.udf.PosModFunction;
 import io.prestosql.plugin.bigo.udf.ShiftLeftFunction;
 import io.prestosql.plugin.bigo.udf.ShiftRightFunction;
@@ -61,6 +63,8 @@ public class BigoEventListenerPlugin
                 .add(AsciiFunction.class)
                 .add(ArrayContainsFunction.class)
                 .add(BigoTypeConversionFunctions.class)
+                .add(ArraySizeFunction.class)
+                .add(MapSizeFunction.class)
                 .build();
     }
 }

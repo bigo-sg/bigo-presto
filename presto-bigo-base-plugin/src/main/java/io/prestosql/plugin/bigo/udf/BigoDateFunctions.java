@@ -316,9 +316,14 @@ public class BigoDateFunctions {
     @SqlType(StandardTypes.VARCHAR)
     public static Slice stringToDate(@SqlType(StandardTypes.VARCHAR) Slice inputTimestamp)
     {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd[ HH:mm:ss[.SSS]][ zzz]");
-        LocalDate date = LocalDate.parse(inputTimestamp.toStringUtf8(), formatter);
-        return utf8Slice(date.toString());
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            java.sql.Date date = new java.sql.Date(0);
+            Date parsedVal = formatter.parse(inputTimestamp.toStringUtf8());
+            date.setTime(parsedVal.getTime());
+            return utf8Slice(date.toString());
+        } catch (ParseException e) {
+            return null;
+        }
     }
-
 }

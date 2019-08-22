@@ -663,14 +663,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitSingleInsertQuery(SqlBaseParser.SingleInsertQueryContext ctx) {
-        throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
+        QueryBody term = (QueryBody) visit(ctx.queryTerm());
 
-//        QueryBody term = (QueryBody) visit(ctx.queryTerm());
-//
-//        Query query = (Query)withQueryOrganization(term, ctx.queryOrganization());
-//        if (ctx.insertInto() == null) {
-//            return query;
-//        }
+        Query query = (Query)withQueryOrganization(term, ctx.queryOrganization());
+        if (ctx.insertInto() == null) {
+            return query;
+        }
+
+        throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
 //        QualifiedName target = null;
 //        if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
 //            target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());

@@ -41,6 +41,7 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -114,6 +115,13 @@ public class SqlQueryManager
             }
             catch (Throwable e) {
                 log.error(e, "Error enforcing query CPU time limits");
+            }
+
+            try {
+                enforceSkewTaskLimits();
+            }
+            catch (Throwable e) {
+                log.error(e, "Error enforcing skew task limits");
             }
         }, 1, 1, TimeUnit.SECONDS);
     }
@@ -312,6 +320,27 @@ public class SqlQueryManager
             Duration limit = Ordering.natural().min(maxQueryCpuTime, sessionLimit);
             if (cpuTime.compareTo(limit) > 0) {
                 query.fail(new ExceededCpuLimitException(limit));
+            }
+        }
+    }
+
+    /**
+     * Enforce query skew task limits
+     */
+    private void enforceSkewTaskLimits()
+    {
+        List<SqlQueryExecution> queries = queryTracker.getAllQueries().stream()
+                .filter(query -> query.getState() == RUNNING)
+                .filter(query -> query instanceof SqlQueryExecution)
+                .filter(query -> SkewTaskDetector.shouldCheck(query.getSession()))
+                .map(query -> (SqlQueryExecution) query)
+                .collect(toImmutableList());
+
+        for (SqlQueryExecution query : queries) {
+            Optional<PrestoException> exceptionOptional = SkewTaskDetector.check(query);
+
+            if (exceptionOptional.isPresent()) {
+                query.fail(exceptionOptional.get());
             }
         }
     }

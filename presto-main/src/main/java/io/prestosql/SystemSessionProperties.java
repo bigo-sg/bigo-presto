@@ -120,6 +120,7 @@ public final class SystemSessionProperties
     public static final String ENABLE_DYNAMIC_FILTERING = "enable_dynamic_filtering";
 
     public static final String ENABLE_HIVE_SQL_SYNTAX = "enable_hive_syntax";
+    public static final String ENFORCE_SKEW_TASK_LIMIT = "enforce_skew_task_limit";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -515,6 +516,11 @@ public final class SystemSessionProperties
                 booleanProperty(
                         ENABLE_HIVE_SQL_SYNTAX,
                         "Experimental: Use hive sql syntax",
+                        false,
+                        false),
+                booleanProperty(
+                        ENFORCE_SKEW_TASK_LIMIT,
+                        "Experimental: Enforce skew task limit",
                         false,
                         false));
     }
@@ -913,8 +919,14 @@ public final class SystemSessionProperties
     {
         return session.getSystemProperty(ENABLE_DYNAMIC_FILTERING, Boolean.class);
     }
+
     public static boolean isEnableHiveSqlSynTax(Session session)
     {
         return session.getSystemProperty(ENABLE_HIVE_SQL_SYNTAX, Boolean.class);
+    }
+
+    public static boolean isEnforceSkewTaskLimit(Session session)
+    {
+        return session.getSystemProperty(ENFORCE_SKEW_TASK_LIMIT, Boolean.class);
     }
 }

@@ -578,6 +578,17 @@ public class SqlQueryExecution
         return queryPlan.get();
     }
 
+    public Optional<StageInfo> getStageInfo() {
+        Optional<StageInfo> stageInfo = Optional.empty();
+
+        SqlQueryScheduler scheduler = queryScheduler.get();
+        if (scheduler != null) {
+            stageInfo = Optional.ofNullable(scheduler.getStageInfo());
+        }
+
+        return stageInfo;
+    }
+
     private QueryInfo buildQueryInfo(SqlQueryScheduler scheduler)
     {
         Optional<StageInfo> stageInfo = Optional.empty();

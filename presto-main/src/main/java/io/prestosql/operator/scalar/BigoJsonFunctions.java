@@ -14,6 +14,10 @@ public class BigoJsonFunctions {
     @SqlType("varchar(x)")
     public static Slice varcharGetJsonObject(@SqlType("varchar(x)") Slice json, @SqlType(JsonPathType.NAME) JsonPath jsonPath)
     {
-        return JsonExtract.extract(json, jsonPath.getScalarExtractor());
+        if (JsonExtract.extract(json, jsonPath.getScalarExtractor()) == null){
+            return JsonExtract.extract(json, jsonPath.getObjectExtractor());
+        } else {
+            return JsonExtract.extract(json, jsonPath.getScalarExtractor());
+        }
     }
 }

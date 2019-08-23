@@ -275,4 +275,21 @@ public class BasicSQLs extends SQLTester {
         checkASTNode(prestoSql, hiveSql);
     }
 
+
+    @Test
+    public void testCountMultiColumns()
+    {
+        String hiveSql = "SELECT count(x, y, z) from t";
+        String prestoSql = "SELECT count(row(x, y, z)) from t";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testCountDistinctMultiColumns()
+    {
+        String hiveSql = "SELECT count(distinct x, y, z) from t";
+        String prestoSql = "SELECT count(distinct row(x, y, z)) from t";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
 }

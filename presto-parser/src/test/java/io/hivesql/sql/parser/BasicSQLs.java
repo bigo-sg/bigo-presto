@@ -3,21 +3,19 @@ package io.hivesql.sql.parser;
 import org.testng.annotations.Test;
 
 public class BasicSQLs extends SQLTester {
-//    @Test
-//    public void testUse()
-//    {
-//        String sql = "USE hive.tmp";
-//        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-//        System.out.println(node);
-//    }
-//
-//    @Test
-//    public void testSetSession()
-//    {
-//        String sql = "SET SESSION foo=true";
-//        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
-//        System.out.println(node);
-//    }
+    @Test
+    public void testUse()
+    {
+        String sql = "USE hive.tmp";
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSetSession()
+    {
+        String sql = "SET SESSION foo=true";
+        checkASTNode(sql);
+    }
 
     @Test
     public void testFuncCall()
@@ -222,10 +220,129 @@ public class BasicSQLs extends SQLTester {
     }
 
     @Test
+    public void testSelectCountNULL()
+    {
+        String sql = "SELECT count(NULL) from tb1";
+
+        checkASTNode(sql);
+    }
+
+    @Test
     public void testSelectCountOne()
     {
         String sql = "SELECT count(1) from tb1";
 
         checkASTNode(sql);
     }
+
+    @Test
+    public void testNumColumns()
+    {
+        String hiveSql = "SELECT 123_column from tb1";
+
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testNumColumns1()
+    {
+        String hiveSql = "SELECT `123_column` from tb1";
+
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testNumColumns2()
+    {
+        String hiveSql = "SELECT `ccc123column` from tb1";
+
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testNumTable()
+    {
+        String hiveSql = "SELECT `123_column` from 123_tb1";
+
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testNumTable1()
+    {
+        String hiveSql = "SELECT `123_column` from `123_tb1`";
+
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testQuotedTable()
+    {
+        String hiveSql = "SELECT `column` from `m.tb1`";
+        String prestoSql = "SELECT column from m.tb1";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+
+    @Test
+    public void testCountMultiColumns()
+    {
+        String hiveSql = "SELECT count(x, y, z) from t";
+        String prestoSql = "SELECT count(row(x, y, z)) from t";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testCountDistinctMultiColumns()
+    {
+        String hiveSql = "SELECT count(distinct x, y, z) from t";
+        String prestoSql = "SELECT count(distinct row(x, y, z)) from t";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testConcatPipe()
+    {
+        String hiveSql = "SELECT a||b from t";
+        checkASTNode(hiveSql);
+    }
+
+    @Test
+    public void testCreateTempFunction()
+    {
+        String hiveSql = "CREATE TEMPORARY FUNCTION ntohl AS 'Ntohl'";
+        runHiveSQL(hiveSql);
+    }
+
+    @Test
+    public void testDelete()
+    {
+        String sql = "delete from tbl where day='2019-10-10'";
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testTruncate()
+    {
+        String prestoSql = "delete from tbl where day='2019-10-10' and hour='00' and event_id='010101'";
+        String hiveSql = "truncate table tbl partition (day='2019-10-10',hour='00',event_id='010101')";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testTruncate1()
+    {
+        String prestoSql = "delete from tbl where day='2019-10-10'";
+        String hiveSql = "truncate table tbl partition (day='2019-10-10')";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testTruncate2()
+    {
+        String prestoSql = "delete from tbl";
+        String hiveSql = "truncate table tbl";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
 }

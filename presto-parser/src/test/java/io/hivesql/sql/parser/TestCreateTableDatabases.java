@@ -103,4 +103,17 @@ public class TestCreateTableDatabases extends SQLTester {
 
         runHiveSQLFromFile("hive/parser/cases/create-table-hive-4.sql");
     }
+
+    @Test
+    public void testDropTable() {
+        String hiveSql = "drop table if exists test";
+        checkASTNode(hiveSql);
+    }
+
+    @Test
+    public void testDropView() {
+        String hiveSql = "drop view if exists a.test";
+        checkASTNode(hiveSql);
+    }
+
 }

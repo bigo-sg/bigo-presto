@@ -361,6 +361,32 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 );
     }
 
+    @Override public Node visitDropTable(SqlBaseParser.DropTableContext ctx) {
+
+        QualifiedName qualifiedName;
+        if (ctx.tableIdentifier().db != null) {
+            qualifiedName = QualifiedName.of(ctx.tableIdentifier().db.getText(),
+                    ctx.tableIdentifier().table.getText());
+        } else {
+            qualifiedName = QualifiedName.of(ctx.tableIdentifier().table.getText());
+        }
+        if (ctx.VIEW() != null) {
+            return new DropView(
+                    getLocation(ctx),
+                    qualifiedName,
+                    ctx.EXISTS() != null
+            );
+        } else if (ctx.TABLE() != null) {
+            return new DropTable(
+                    getLocation(ctx),
+                    qualifiedName,
+                    ctx.EXISTS() != null
+            );
+        } else {
+            throw parseError("not a proper drop command", ctx);
+        }
+    }
+
     @Override
     public Node visitFunctionIdentifier(SqlBaseParser.FunctionIdentifierContext ctx) {
         return super.visitFunctionIdentifier(ctx);

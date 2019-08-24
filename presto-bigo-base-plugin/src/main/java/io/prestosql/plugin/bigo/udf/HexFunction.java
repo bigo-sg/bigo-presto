@@ -4,6 +4,7 @@ import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import io.prestosql.spi.function.Description;
 import io.prestosql.spi.function.ScalarFunction;
+import io.prestosql.spi.function.SqlNullable;
 import io.prestosql.spi.function.SqlType;
 import io.prestosql.spi.type.StandardTypes;
 import java.util.Base64;
@@ -15,6 +16,7 @@ public class HexFunction {
     @Description("Returns hex value from integer number.")
     @ScalarFunction("hex")
     @SqlType(StandardTypes.VARCHAR)
+    @SqlNullable
     public static Slice intToHex(@SqlType(StandardTypes.BIGINT) long num)
     {
         return utf8Slice(evaluate(num));
@@ -23,6 +25,7 @@ public class HexFunction {
     @Description("Returns hex value from string number.")
     @ScalarFunction("hex")
     @SqlType(StandardTypes.VARCHAR)
+    @SqlNullable
     public static Slice stringToHex(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         return utf8Slice(evaluate(slice.toStringUtf8()));
@@ -31,6 +34,7 @@ public class HexFunction {
     @Description("Returns hex value from binary.")
     @ScalarFunction("hex")
     @SqlType(StandardTypes.VARCHAR)
+    @SqlNullable
     public static Slice binaryToHex(@SqlType(StandardTypes.VARBINARY) Slice slice)
     {
         return Slices.wrappedBuffer(Base64.getUrlEncoder().encode(slice.getBytes()));

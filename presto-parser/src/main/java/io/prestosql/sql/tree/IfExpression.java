@@ -28,8 +28,8 @@ public class IfExpression
         extends Expression
 {
     private final Expression condition;
-    private final Expression trueValue;
-    private final Optional<Expression> falseValue;
+    private Expression trueValue;
+    private Optional<Expression> falseValue;
 
     public IfExpression(Expression condition, Expression trueValue, Expression falseValue)
     {
@@ -62,6 +62,14 @@ public class IfExpression
     public Optional<Expression> getFalseValue()
     {
         return falseValue;
+    }
+
+    public void setTrueValue(Expression trueValue) {
+        this.trueValue = trueValue;
+    }
+
+    public void setFalseValue(Optional<Expression> falseValue) {
+        this.falseValue = falseValue;
     }
 
     @Override

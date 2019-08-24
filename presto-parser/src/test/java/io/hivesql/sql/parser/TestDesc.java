@@ -27,4 +27,15 @@ public class TestDesc extends SQLTester {
         checkASTNode(prestoSql, hiveSql);
     }
 
+    @Test
+    public void test06() {
+        String hiveSql = "show columns from a.tablename";
+        checkASTNode(hiveSql);
+    }
+
+    @Test
+    public void test07() {
+        String hiveSql = "show columns in tablename";
+        checkASTNode(hiveSql);
+    }
 }

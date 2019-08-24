@@ -41,14 +41,14 @@ class Worker(Script):
     def stop(self, env):
         from params import daemon_control_script
         try:
-            Execute('source /etc/profile && {0} stop'.format(daemon_control_script))
+            Execute('source /etc/profile_presto && {0} stop'.format(daemon_control_script))
         except Exception as e:
             _LOGGER.error("stop error " + str(e.exception_message) + ' ' + str(e.code) + ' ' + str(e.out) + ' ' + str(e.err))
 
     def start(self, env):
         from params import daemon_control_script
         self.configure(self)
-        Execute('source /etc/profile && {0} start'.format(daemon_control_script))
+        Execute('source /etc/profile_presto && {0} start'.format(daemon_control_script))
 
     def status(self, env):
 

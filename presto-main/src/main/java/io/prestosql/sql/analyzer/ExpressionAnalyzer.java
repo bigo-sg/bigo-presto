@@ -505,7 +505,7 @@ public class ExpressionAnalyzer
         {
             OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
 
-            if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
                 TypeConversion tc = new TypeConversion();
                 Type leftType = process(node.getLeft(), context);
                 Type rightType = process(node.getRight(), context);
@@ -565,8 +565,32 @@ public class ExpressionAnalyzer
         protected Type visitIfExpression(IfExpression node, StackableAstVisitorContext<Context> context)
         {
             coerceType(context, node.getCondition(), BOOLEAN, "IF condition");
-
             Type type;
+
+            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                TypeConversion tc = new TypeConversion();
+                Type trueType = process(node.getTrueValue(), context);
+                Type falseType = process(node.getFalseValue().get(), context);
+
+                if (tc.compare2TypesOrder(trueType, falseType) == falseType) {
+                    if (tc.canConvertType(trueType, falseType)) {
+                        Cast cast = new Cast(node.getTrueValue(), TypeSignatureTranslator.toSqlType(falseType));
+                        node.setTrueValue(cast);
+                    } else if (tc.canConvertType(falseType, trueType)) {
+                        Cast cast = new Cast(node.getFalseValue().get(), TypeSignatureTranslator.toSqlType(trueType));
+                        node.setFalseValue(Optional.of(cast));
+                    }
+                } else if (tc.compare2TypesOrder(trueType, falseType) == trueType) {
+                    if (tc.canConvertType(falseType, trueType)) {
+                        Cast cast = new Cast(node.getFalseValue().get(), TypeSignatureTranslator.toSqlType(trueType));
+                        node.setFalseValue(Optional.of(cast));
+                    } else if (tc.canConvertType(trueType, falseType)) {
+                        Cast cast = new Cast(node.getTrueValue(), TypeSignatureTranslator.toSqlType(falseType));
+                        node.setTrueValue(cast);
+                    }
+                }
+            }
+
             if (node.getFalseValue().isPresent()) {
                 type = coerceToSingleType(context, node, "Result types for IF must be the same: %s vs %s", node.getTrueValue(), node.getFalseValue().get());
             }
@@ -1247,6 +1271,41 @@ public class ExpressionAnalyzer
 
             if (valueList instanceof InListExpression) {
                 InListExpression inListExpression = (InListExpression) valueList;
+
+                if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                    TypeConversion tc = new TypeConversion();
+                    List<Expression> inValueList = inListExpression.getValues();
+                    List<Expression> inValueListCast = new ArrayList<>();
+
+                    Type valueType = process(value, context);
+                    Type inValueType = process(inValueList.get(0), context);
+
+                    if (tc.compare2TypesOrder(valueType, inValueType) == inValueType) {
+                        if (tc.canConvertType(valueType, inValueType)) {
+                            node.setValue(new Cast(node.getValue(), TypeSignatureTranslator.toSqlType(inValueType)));
+                        }
+                        else if (tc.canConvertType(inValueType, valueType)) {
+                            for (Expression expression : inValueList) {
+                                inValueListCast.add(new Cast(expression, TypeSignatureTranslator.toSqlType(valueType)));
+                            }
+                        }
+                    }
+                    else if (tc.compare2TypesOrder(valueType, inValueType) == valueType) {
+                        if (tc.canConvertType(inValueType, valueType)) {
+                            for (Expression expression : inValueList) {
+                                inValueListCast.add(new Cast(expression, TypeSignatureTranslator.toSqlType(valueType)));
+                            }
+                        }
+                        else if (tc.canConvertType(valueType, inValueType)) {
+                            node.setValue(new Cast(node.getValue(), TypeSignatureTranslator.toSqlType(inValueType)));
+                        }
+                    }
+
+                    if (inValueListCast.size() > 0) {
+                        inListExpression.setValues(inValueListCast);
+                    }
+                    value = node.getValue();
+                }
 
                 coerceToSingleType(context,
                         "IN value and list items must be the same type: %s",

@@ -4,8 +4,8 @@ import io.airlift.slice.Slice;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.function.Description;
-import io.prestosql.spi.function.LiteralParameters;
 import io.prestosql.spi.function.ScalarFunction;
+import io.prestosql.spi.function.SqlNullable;
 import io.prestosql.spi.function.SqlType;
 import io.prestosql.spi.type.StandardTypes;
 
@@ -15,16 +15,11 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import io.airlift.log.Logger;
-import org.joda.time.chrono.ISOChronology;
-import org.joda.time.format.DateTimeFormat;
 
 import static io.airlift.slice.Slices.utf8Slice;
-import static io.prestosql.plugin.bigo.util.DateTimeZoneIndexUtil.unpackChronology;
 import static io.prestosql.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
-import static io.prestosql.spi.type.DateTimeEncoding.unpackMillisUtc;
 
 public class BigoDateFunctions {
     private static final Logger LOG = Logger.get(BigoDateFunctions.class);
@@ -110,22 +105,31 @@ public class BigoDateFunctions {
     @Description("Converts unixtime to a string representing the timestamp according to the given format.")
     @ScalarFunction("from_unixtime")
     @SqlType(StandardTypes.VARCHAR)
-    public static Slice fromUnixtime(@SqlType(StandardTypes.BIGINT) long time, @SqlType(StandardTypes.VARCHAR) Slice format)
-    {
-        ZonedDateTime timestamp = ZonedDateTime.of(LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.ofHours(8)), ZoneId.of("UTC"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format.toStringUtf8());
-        return utf8Slice(timestamp.format(formatter));
+    public static Slice fromUnixtime(@SqlType(StandardTypes.BIGINT) long time, @SqlType(StandardTypes.VARCHAR) Slice format) throws ParseException {
+        String message = "";
+        try {
+            ZonedDateTime timestamp = ZonedDateTime.of(LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.ofHours(8)), ZoneId.of("UTC"));
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format.toStringUtf8());
+            return utf8Slice(timestamp.format(formatter));
+        } catch (Exception e) {
+            message = e.getMessage();
+        }
+        throw new PrestoException(INVALID_FUNCTION_ARGUMENT, message);
     }
-
 
     @Description("Converts unixtime to a string representing the timestamp according to the given format.")
     @ScalarFunction("from_utc_timestamp")
     @SqlType(StandardTypes.VARCHAR)
-    public static Slice fromUtcTimestamp(@SqlType(StandardTypes.BIGINT) long time, @SqlType(StandardTypes.VARCHAR) Slice format)
-    {
-        ZonedDateTime timestamp = ZonedDateTime.of(LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.UTC), ZoneId.of("UTC"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format.toStringUtf8());
-        return utf8Slice(timestamp.format(formatter));
+    public static Slice fromUtcTimestamp(@SqlType(StandardTypes.BIGINT) long time, @SqlType(StandardTypes.VARCHAR) Slice format) throws ParseException {
+        String message = "";
+        try {
+            ZonedDateTime timestamp = ZonedDateTime.of(LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.UTC), ZoneId.of("UTC"));
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format.toStringUtf8());
+            return utf8Slice(timestamp.format(formatter));
+        } catch (Exception e) {
+            message = e.getMessage();
+        }
+        throw new PrestoException(INVALID_FUNCTION_ARGUMENT, message);
     }
 
     @Description("Returns the date that is num_days after start_date.")
@@ -314,6 +318,7 @@ public class BigoDateFunctions {
     @Description("Returns the date part of the timestamp string")
     @ScalarFunction("to_date")
     @SqlType(StandardTypes.VARCHAR)
+    @SqlNullable
     public static Slice stringToDate(@SqlType(StandardTypes.VARCHAR) Slice inputTimestamp)
     {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");

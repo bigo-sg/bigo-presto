@@ -31,6 +31,12 @@ import io.prestosql.operator.aggregation.ApproximateLongPercentileAggregations;
 import io.prestosql.operator.aggregation.ApproximateLongPercentileArrayAggregations;
 import io.prestosql.operator.aggregation.ApproximateRealPercentileAggregations;
 import io.prestosql.operator.aggregation.ApproximateRealPercentileArrayAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateDoublePercentileAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateDoublePercentileArrayAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateLongPercentileAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateLongPercentileArrayAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateRealPercentileAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateRealPercentileArrayAggregations;
 import io.prestosql.operator.aggregation.ApproximateSetAggregation;
 import io.prestosql.operator.aggregation.AverageAggregations;
 import io.prestosql.operator.aggregation.BitwiseAndAggregation;
@@ -427,6 +433,12 @@ public class FunctionRegistry
                 .aggregates(ApproximateDoublePercentileArrayAggregations.class)
                 .aggregates(ApproximateRealPercentileAggregations.class)
                 .aggregates(ApproximateRealPercentileArrayAggregations.class)
+                .aggregates(BigoApproximateLongPercentileAggregations.class)
+                .aggregates(BigoApproximateLongPercentileArrayAggregations.class)
+                .aggregates(BigoApproximateDoublePercentileAggregations.class)
+                .aggregates(BigoApproximateDoublePercentileArrayAggregations.class)
+                .aggregates(BigoApproximateRealPercentileAggregations.class)
+                .aggregates(BigoApproximateRealPercentileArrayAggregations.class)
                 .aggregates(CountIfAggregation.class)
                 .aggregates(BooleanAndAggregation.class)
                 .aggregates(BooleanOrAggregation.class)

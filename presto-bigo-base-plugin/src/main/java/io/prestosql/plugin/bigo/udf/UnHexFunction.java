@@ -3,6 +3,7 @@ package io.prestosql.plugin.bigo.udf;
 import io.airlift.slice.Slice;
 import io.prestosql.spi.function.Description;
 import io.prestosql.spi.function.ScalarFunction;
+import io.prestosql.spi.function.SqlNullable;
 import io.prestosql.spi.function.SqlType;
 import io.prestosql.spi.type.StandardTypes;
 import static io.airlift.slice.Slices.utf8Slice;
@@ -12,6 +13,7 @@ public class UnHexFunction {
     @Description("Hex number to binary.")
     @ScalarFunction("unhex")
     @SqlType(StandardTypes.VARCHAR)
+    @SqlNullable
     public static Slice hexToBinary(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         return utf8Slice(evaluateUnhex(slice.toStringUtf8()));

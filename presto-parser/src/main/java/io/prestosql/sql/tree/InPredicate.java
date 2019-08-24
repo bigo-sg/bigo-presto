@@ -22,8 +22,8 @@ import java.util.Optional;
 public class InPredicate
         extends Expression
 {
-    private final Expression value;
-    private final Expression valueList;
+    private Expression value;
+    private Expression valueList;
 
     public InPredicate(Expression value, Expression valueList)
     {
@@ -50,6 +50,14 @@ public class InPredicate
     public Expression getValueList()
     {
         return valueList;
+    }
+
+    public void setValue(Expression value) {
+        this.value = value;
+    }
+
+    public void setValueList(Expression valueList) {
+        this.valueList = valueList;
     }
 
     @Override

@@ -63,8 +63,8 @@ public class BigoDateFunctionsTest {
     @Test
     public void testDateDiff()
     {
-        String diff = BigoDateFunctions.dateDiff(utf8Slice("2019-01-03"), utf8Slice("2018-12-31")).toStringUtf8();
-        assertEquals(diff, "3");
+        long diff = BigoDateFunctions.dateDiff(utf8Slice("2019-01-03"), utf8Slice("2018-12-31"));
+        assertEquals(diff, 3);
     }
 
     @Test

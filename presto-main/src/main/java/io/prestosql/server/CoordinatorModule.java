@@ -79,6 +79,7 @@ import io.prestosql.execution.RollbackTask;
 import io.prestosql.execution.SetPathTask;
 import io.prestosql.execution.SetRoleTask;
 import io.prestosql.execution.SetSessionTask;
+import io.prestosql.execution.SetHiveConfigurationTask;
 import io.prestosql.execution.SqlQueryManager;
 import io.prestosql.execution.StartTransactionTask;
 import io.prestosql.execution.TaskInfo;
@@ -107,6 +108,7 @@ import io.prestosql.spi.memory.ClusterMemoryPoolManager;
 import io.prestosql.spi.resourcegroups.QueryType;
 import io.prestosql.spi.security.SelectedRole;
 import io.prestosql.sql.analyzer.QueryExplainer;
+import io.prestosql.sql.parser.hive.SetHiveConfiguration;
 import io.prestosql.sql.planner.PlanFragmenter;
 import io.prestosql.sql.planner.PlanOptimizers;
 import io.prestosql.sql.tree.AddColumn;
@@ -341,6 +343,9 @@ public class CoordinatorModule
         bindDataDefinitionTask(binder, executionBinder, Prepare.class, PrepareTask.class);
         bindDataDefinitionTask(binder, executionBinder, Deallocate.class, DeallocateTask.class);
         bindDataDefinitionTask(binder, executionBinder, SetPath.class, SetPathTask.class);
+
+        // add SetHiveConfiguration task
+        bindDataDefinitionTask(binder, executionBinder, SetHiveConfiguration.class, SetHiveConfigurationTask.class);
 
         MapBinder<String, ExecutionPolicy> executionPolicyBinder = newMapBinder(binder, String.class, ExecutionPolicy.class);
         executionPolicyBinder.addBinding("all-at-once").to(AllAtOnceExecutionPolicy.class);

@@ -39,12 +39,12 @@ public abstract class SQLTester {
         checkASTNode(sql, sql);
     }
 
-    public void runHiveSQL(String hiveSql) {
-        useHiveParser(hiveSql);
+    public Node runHiveSQL(String hiveSql) {
+        return useHiveParser(hiveSql);
     }
 
-    public void runPrestoSQL(String prestoSql) {
-        usePrestoParser(prestoSql);
+    public Node runPrestoSQL(String prestoSql) {
+        return usePrestoParser(prestoSql);
     }
 
     public void checkASTNodeFromFile(String prestoPath, String hivePath) {

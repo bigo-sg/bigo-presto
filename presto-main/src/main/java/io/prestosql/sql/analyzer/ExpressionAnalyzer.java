@@ -17,6 +17,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
+import io.airlift.log.Logger;
 import io.airlift.slice.SliceUtf8;
 import io.prestosql.Session;
 import io.prestosql.SystemSessionProperties;
@@ -26,6 +27,7 @@ import io.prestosql.metadata.OperatorNotFoundException;
 import io.prestosql.metadata.QualifiedObjectName;
 import io.prestosql.metadata.Signature;
 import io.prestosql.operator.scalar.FormatFunction;
+import io.prestosql.operator.scalar.TryCastFunction;
 import io.prestosql.security.AccessControl;
 import io.prestosql.security.DenyAllAccessControl;
 import io.prestosql.spi.ErrorCodeSupplier;
@@ -198,6 +200,7 @@ public class ExpressionAnalyzer
     private final List<Expression> parameters;
     private final WarningCollector warningCollector;
     private final TypeCoercion typeCoercion;
+    private static final Logger LOG = Logger.get(ExpressionAnalyzer.class);
 
     public ExpressionAnalyzer(
             Metadata metadata,
@@ -646,7 +649,6 @@ public class ExpressionAnalyzer
             if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
                 Type leftType = process(node.getLeft(), context);
                 Type rightType = process(node.getRight(), context);
-
                 if(leftType.getTypeSignature().getBase().equals(StandardTypes.VARCHAR)){
                     Cast castLeft = new Cast(node.getLeft(), StandardTypes.DOUBLE);
                     node.setLeft(castLeft);
@@ -655,6 +657,17 @@ public class ExpressionAnalyzer
                 if(rightType.getTypeSignature().getBase().equals(StandardTypes.VARCHAR)){
                     Cast castRight = new Cast(node.getRight(), StandardTypes.DOUBLE);
                     node.setRight(castRight);
+                }
+
+                if(node.getOperator().getValue().equals("/")) {
+                    if(!leftType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                        Cast castLeft = new Cast(node.getLeft(), StandardTypes.DOUBLE);
+                        node.setLeft(castLeft);
+                    }
+                    if(!rightType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                        Cast castRight = new Cast(node.getRight(), StandardTypes.DOUBLE);
+                        node.setRight(castRight);
+                    }
                 }
             }
 

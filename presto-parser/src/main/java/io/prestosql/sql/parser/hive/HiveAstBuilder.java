@@ -53,13 +53,23 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return currentResult;
         }
 
-        throw new ParsingException("please check, how should we merge them? " +
+        throw new RuntimeException("please check, how should we merge them? " +
                 "most possible reason is executing a syntax that hive not support");
     }
 
     //////////////////
     //
     //////////////////
+    @Override
+    public Node visitSetConfiguration(SqlBaseParser.SetConfigurationContext ctx) {
+        return new SetHiveConfiguration(getLocation(ctx), ctx.getText());
+    }
+
+    @Override
+    public Node visitShowPartitions(SqlBaseParser.ShowPartitionsContext ctx) {
+        throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
+    }
+
     @Override
     public Node visitSetOperation(SqlBaseParser.SetOperationContext ctx) {
         QueryBody left = (QueryBody) visit(ctx.left);
@@ -142,7 +152,12 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public Node visitAliasedQuery(SqlBaseParser.AliasedQueryContext ctx) {
         TableSubquery child = new TableSubquery(getLocation(ctx), (Query) visit(ctx.queryNoWith()));
 
-        return new AliasedRelation(getLocation(ctx), child, (Identifier) visit(ctx.tableAlias()), null);
+        Identifier tableAlias = (Identifier) visit(ctx.tableAlias());
+        if (tableAlias == null) {
+            throw parseError("Missing table alias", ctx);
+        }
+
+        return new AliasedRelation(getLocation(ctx), child, tableAlias, null);
     }
 
     @Override
@@ -346,6 +361,32 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 );
     }
 
+    @Override public Node visitDropTable(SqlBaseParser.DropTableContext ctx) {
+
+        QualifiedName qualifiedName;
+        if (ctx.tableIdentifier().db != null) {
+            qualifiedName = QualifiedName.of(ctx.tableIdentifier().db.getText(),
+                    ctx.tableIdentifier().table.getText());
+        } else {
+            qualifiedName = QualifiedName.of(ctx.tableIdentifier().table.getText());
+        }
+        if (ctx.VIEW() != null) {
+            return new DropView(
+                    getLocation(ctx),
+                    qualifiedName,
+                    ctx.EXISTS() != null
+            );
+        } else if (ctx.TABLE() != null) {
+            return new DropTable(
+                    getLocation(ctx),
+                    qualifiedName,
+                    ctx.EXISTS() != null
+            );
+        } else {
+            throw parseError("not a proper drop command", ctx);
+        }
+    }
+
     @Override
     public Node visitFunctionIdentifier(SqlBaseParser.FunctionIdentifierContext ctx) {
         return super.visitFunctionIdentifier(ctx);
@@ -416,6 +457,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return left;
     }
 
+    @Override
+    public Node visitTableValuedFunction(SqlBaseParser.TableValuedFunctionContext ctx) {
+        Identifier identifier = (Identifier) visit(ctx.functionTable().identifier());
+
+        throw parseError("Don't support " + identifier.getValue(), ctx);
+    }
+
     private Relation withJoinRelation(Relation left, SqlBaseParser.JoinRelationContext ctx) {
         if (ctx.joinType().ANTI() != null) {
             throw parseError("Don't support joinType: " + ctx.joinType().getText(), ctx);
@@ -435,6 +483,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             criteria = new NaturalJoin();
         }
         else {
+            if(ctx.joinCriteria() == null) {
+                throw parseError("Missing join criteria", ctx);
+            }
+
             if (ctx.joinCriteria().ON() != null) {
                 criteria = new JoinOn((Expression) visit(ctx.joinCriteria().booleanExpression()));
             }
@@ -568,11 +620,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         List<Identifier> columnNames = visit(ctx.colName, Identifier.class);
         if (columnNames.size() > 0) {
-            if (!withOrdinality) {
-                return new AliasedRelation(getLocation(ctx), unnest, columnNames.get(0), null);
-            } else {
-                return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
-            }
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
         } else {
             return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), null);
         }
@@ -647,11 +695,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         if (ctx.insertInto() == null) {
             return query;
         }
-        QualifiedName target = null;
-        if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
-            target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
-        }
-        return new Insert(target, Optional.empty(), query);
+
+        throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
+//        QualifiedName target = null;
+//        if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
+//            target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
+//        }
+//        return new Insert(target, Optional.empty(), query);
     }
 
     @Override
@@ -1048,8 +1098,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return new Extract(getLocation(ctx), (Expression) visit(ctx.valueExpression()), field);
     }
 
+    private final List<String> udtfNames = ImmutableList.of("explode", "posexplode", "inline", "stack", "json_tuple", "parse_url_tuple");
+    private void checkUDTF(SqlBaseParser.FunctionCallContext ctx) {
+        String functionName = ctx.qualifiedName().getText().toLowerCase();
+
+        if (udtfNames.contains(functionName)) {
+            throw parseError("Don't Support call UDTF: " + functionName + " directly, please try lateral view syntax instead.", ctx);
+        }
+    }
+
     @Override
     public Node visitFunctionCall(SqlBaseParser.FunctionCallContext ctx) {
+        checkUDTF(ctx);
+
         QualifiedName name = getQualifiedName(ctx.qualifiedName());
         boolean distinct = isDistinct(ctx.setQuantifier());
 

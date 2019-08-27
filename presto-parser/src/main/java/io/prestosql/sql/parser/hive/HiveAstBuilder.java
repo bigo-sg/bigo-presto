@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -293,7 +294,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
             SqlBaseParser.SingleInsertQueryContext singleInsertQueryContext =
                     (SqlBaseParser.SingleInsertQueryContext)ctx.query().queryNoWith();
-            QueryBody term = (QueryBody) visit(singleInsertQueryContext.queryTerm());
+            Object queryObject = visit(singleInsertQueryContext.queryTerm());
+            QueryBody term = null;
+            if (queryObject instanceof QueryBody) {
+                term = (QueryBody) visit(singleInsertQueryContext.queryTerm());
+            } else if (queryObject instanceof Query) {
+                term = new TableSubquery(
+                        getLocation(ctx.query()),
+                        (Query) queryObject
+                );
+            }
 
             Query query = (Query)withQueryOrganization(term, singleInsertQueryContext.queryOrganization());
                     QualifiedName target = getQualifiedName(ctx.createTableHeader().tableIdentifier());
@@ -695,13 +705,18 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         if (ctx.insertInto() == null) {
             return query;
         }
-
-        throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
-//        QualifiedName target = null;
-//        if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
-//            target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
-//        }
-//        return new Insert(target, Optional.empty(), query);
+        if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
+            QualifiedName target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
+            return new Insert(target, Optional.empty(), query);
+        } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteTableContext) {
+            throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
+        } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteDirContext) {
+            throw parseError("Don't support insert overwrite dir at the moment, stay tuned ;)", ctx);
+        } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteHiveDirContext) {
+            throw parseError("Don't support insert overwrite hive dir at the moment, stay tuned ;)", ctx);
+        } else {
+            throw parseError("Don't support insert syntax", ctx);
+        }
     }
 
     @Override
@@ -812,6 +827,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
     }
 
+    @Override public Node visitShowFunctions(SqlBaseParser.ShowFunctionsContext ctx) {
+        return new ShowFunctions();
+    }
+
     @Override public Node visitShowCreateTable(SqlBaseParser.ShowCreateTableContext ctx)
     {
         return new ShowCreate(
@@ -831,6 +850,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
     }
 
+    @Override public Node visitShowColumns(SqlBaseParser.ShowColumnsContext ctx) {
+        if (ctx.tableIdentifier().db != null) {
+            return new ShowColumns(QualifiedName.of(ctx.tableIdentifier().db.getText(),
+                    ctx.tableIdentifier().table.getText()));
+        } else {
+            return new ShowColumns(QualifiedName.of(ctx.tableIdentifier().table.getText()));
+        }
+    }
+
     @Override
     public Node visitAggregation(SqlBaseParser.AggregationContext ctx) {
         List<GroupingElement> groupingElements = new ArrayList<>();
@@ -842,11 +870,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             groupingElements.add(new GroupingSets(getLocation(ctx), expresstionLists));
         } else {
             // GROUP BY .... (WITH CUBE | WITH ROLLUP)?
+            List<Expression> expressions = visit(ctx.groupingExpressions, Expression.class);
+            if (expressions.size() == 1 && expressions.get(0) instanceof Row) {
+                expressions = ((Row)expressions.get(0)).getItems();
+            }
             if (ctx.CUBE() != null) {
-                GroupingElement groupingElement = new Cube(getLocation(ctx), visit(ctx.groupingExpressions, Expression.class));
+                GroupingElement groupingElement = new Cube(getLocation(ctx), expressions);
                 groupingElements.add(groupingElement);
             } else if (ctx.ROLLUP() != null) {
-                GroupingElement groupingElement = new Rollup(getLocation(ctx), visit(ctx.groupingExpressions, Expression.class));
+                GroupingElement groupingElement = new Rollup(getLocation(ctx), expressions);
                 groupingElements.add(groupingElement);
             } else {
                 // this is a little bit awkward just trying to match whatever presto going to generate.
@@ -1165,6 +1197,18 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             );
         }
 
+        if (ctx.qualifiedName().getText().equalsIgnoreCase("count")) {
+            Row row = new Row(getLocation(ctx), expressions);
+            return new FunctionCall(
+                    Optional.of(getLocation(ctx)),
+                    name,
+                    window,
+                    Optional.empty(),//filter,
+                    Optional.empty(),//orderBy,
+                    distinct,
+                    Arrays.asList(row)
+            );
+        }
         return new FunctionCall(
                 Optional.of(getLocation(ctx)),
                 name,
@@ -1271,7 +1315,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitRowConstructor(SqlBaseParser.RowConstructorContext ctx) {
-        return new Row(getLocation(ctx), visit(ctx.namedExpression(), Expression.class));
+
+        List<SqlBaseParser.NamedExpressionContext> namedExpressionContexts = ctx.namedExpression();
+        List<Expression> expressions = new ArrayList<>();
+        namedExpressionContexts.stream().forEach(new Consumer<SqlBaseParser.NamedExpressionContext>() {
+            @Override
+            public void accept(SqlBaseParser.NamedExpressionContext namedExpressionContext) {
+                expressions.add((Expression) visit(namedExpressionContext.expression()));
+            }
+        });
+        return new Row(getLocation(ctx), expressions);
     }
 
     @Override

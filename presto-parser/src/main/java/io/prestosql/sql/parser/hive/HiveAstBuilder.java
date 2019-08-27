@@ -176,7 +176,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         // get table comment
         Optional<String> comment = Optional.empty();
         if (ctx.comment != null && ctx.comment.getText() != null) {
-            comment = Optional.of(ctx.comment.getText());
+            comment = Optional.of(unquote(ctx.comment.getText()));
         }
 
         List<Property> properties = new ArrayList<>();
@@ -233,6 +233,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 Property property = new Property(new Identifier("format", false),
                         new StringLiteral("TEXTFILE"));
                 properties.add(property);
+            } else if (format.equals("RCFile")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("RCBINARY"));
+                properties.add(property);
             } else {
                 throw parseError("create table format " + format + " not supported!",
                         createFileFormatContext);
@@ -268,7 +272,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 for (SqlBaseParser.ColTypeContext colTypeContext : colTypeListContexts) {
                     Optional colComment = Optional.empty();
                     if (colTypeContext.COMMENT() != null) {
-                        colComment = Optional.of(colTypeContext.COMMENT().getText());
+                        colComment = Optional.of(unquote(colTypeContext.COMMENT().getText()));
                     }
                     String type = colTypeContext.dataType().getText();
                     if (type.contains("<") && type.contains(">")) {

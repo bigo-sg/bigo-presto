@@ -5,6 +5,7 @@ import io.prestosql.SystemSessionProperties;
 import io.prestosql.metadata.SessionPropertyManager;
 import io.prestosql.spi.QueryId;
 import io.prestosql.spi.security.Identity;
+import io.prestosql.sql.parser.ParsingException;
 import io.prestosql.sql.parser.ParsingOptions;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.tree.Statement;
@@ -16,12 +17,26 @@ import java.util.Optional;
 public class DownloadRewriteTest {
     private static SqlParser sqlParser = new SqlParser();
     private static ParsingOptions prestoParsingOptions = new ParsingOptions(ParsingOptions.DecimalLiteralTreatment.AS_DECIMAL);
+    private static ParsingOptions hiveParsingOptions = new ParsingOptions(ParsingOptions.DecimalLiteralTreatment.AS_DECIMAL);
 
     static {
         prestoParsingOptions.setIfUseHiveParser(false);
+        hiveParsingOptions.setIfUseHiveParser(true);
     }
 
     protected Statement createStatement(String sql) {
+        try {
+            return usePrestoParser(sql);
+        } catch (ParsingException e) {
+            // if failed, try using hive syntax.
+            return useHiveParser(sql);
+        }
+    }
+
+    protected Statement useHiveParser(String sql) {
+        return sqlParser.createStatement(sql, hiveParsingOptions);
+    }
+    protected Statement usePrestoParser(String sql) {
         return sqlParser.createStatement(sql, prestoParsingOptions);
     }
 
@@ -52,13 +67,19 @@ public class DownloadRewriteTest {
 
         Assert.assertEquals(rewriteNode, createStatement(expectedSQL));
 
-        // make sure the session properties is set correctly.
-        Assert.assertEquals(SystemSessionProperties.isScaleWriters(session), false);
-        Assert.assertEquals(SystemSessionProperties.isRedistributeWrites(session), false);
+        if (!originalSQL.equals(expectedSQL)) {
+            // make sure the session properties is set correctly.
+            Assert.assertEquals(SystemSessionProperties.isScaleWriters(session), false);
+            Assert.assertEquals(SystemSessionProperties.isRedistributeWrites(session), false);
+        }
     }
 
     void testRewrite(String sql) {
         testRewrite(sql, CATS_PREFIX + sql + LIMIT_SUFFIX);
+    }
+
+    void testRewriteUsingHive(String sql) {
+        testRewrite(sql, HIVE_CATS_PREFIX + sql + LIMIT_SUFFIX);
     }
 
     void testRewrite(String originalSQL, String expectedSQL) {
@@ -97,11 +118,28 @@ public class DownloadRewriteTest {
         testRewrite(sql, sql);
     }
 
+    @Test
+    public void testSimpleSelectStatementWithLimit() {
+        String sql = "" +
+                "SELECT * \n" +
+                "from vlog.like_user_event_hour_orc \n" +
+                "where day = '2019-06-14'" +
+                "limit 100";
+
+        testRewrite(sql, CATS_PREFIX + sql);
+    }
+
     /////////////
     static String CATS_PREFIX = "" +
             "CREATE TABLE download_db." + DownloadRewrite.RESULT_TABLE_NAME_PREFIX + "query_123\n" +
             "COMMENT '" + DownloadRewrite.COMMENT.get() + "'\n" +
             "WITH (format = 'RCBINARY')\n" +
+            "AS \n";
+
+    static String HIVE_CATS_PREFIX = "" +
+            "CREATE TABLE download_db." + DownloadRewrite.RESULT_TABLE_NAME_PREFIX + "query_123\n" +
+            "COMMENT \"" + DownloadRewrite.COMMENT.get() + "\"\n" +
+            "STORED AS RCFile\n" +
             "AS \n";
 
     static String LIMIT_SUFFIX = "\n limit 988";
@@ -114,5 +152,48 @@ public class DownloadRewriteTest {
                 "where day = '2019-06-14'";
 
         testRewrite(sql);
+    }
+
+    @Test
+    public void testComplexSelectStatementUsingHive() {
+        String sql = "" +
+                "SELECT   COALESCE(new_flag,'all'), \n" +
+                "         count(DISTINCTIF(1st_withdraw_apply=1,uid,NULL)) 1st_withdraw_apply_cnt, \n" +
+                "         count(DISTINCT IF(1st_withdraw_sus=1,uid,NULL))   1st_withdraw_sus_cnt \n" +
+                "FROM     ( \n" +
+                "                   SELECT    a.sday                      sday, \n" +
+                "                             a.uid                       uid, \n" +
+                "                             COALESCE(new_flag,'unknow') new_flag, \n" +
+                "                             IF(a.withdraw_apply_cnt>0 \n" +
+                "                   AND       b.withdraw_apply_cnt=0,1,0) AS 1st_withdraw_apply, \n" +
+                "                             IF(a.withdraw_suc_cnt>0 \n" +
+                "                   AND       b.withdraw_suc_cnt=0,1,0) AS 1st_withdraw_sus \n" +
+                "                   FROM      ( \n" +
+                "                                    SELECT sday, \n" +
+                "                                           uid, \n" +
+                "                                           new_flag, \n" +
+                "                                           withdraw_apply_cnt, \n" +
+                "                                           withdraw_suc_cnt \n" +
+                "                                    FROM   mediate_tb.alite_gold_coin_uid_changelog_daily \n" +
+                "                                    WHERE  day BETWEEN date_sub('2019-08-26',29) AND    '2019-08-26' )a \n" +
+                "                   LEFT JOIN \n" +
+                "                             ( \n" +
+                "                                    SELECT sday, \n" +
+                "                                           uid, \n" +
+                "                                           withdraw_apply_cnt, \n" +
+                "                                           withdraw_suc_cnt \n" +
+                "                                    FROM   mediate_tb.alite_gold_coin_uid_changelog_acc \n" +
+                "                                    WHERE  day BETWEEN date_sub('2019-08-26',30) AND    date_sub('2019-08-26',1) )b \n" +
+                "                   ON        date_sub(a.sday,1)=b.sday \n" +
+                "                   GROUP BY  a.sday , \n" +
+                "                             a.uid , \n" +
+                "                             new_flag, \n" +
+                "                             IF(a.withdraw_apply_cnt>0 \n" +
+                "                   AND       b.withdraw_apply_cnt=0,1,0), \n" +
+                "                             IF(a.withdraw_suc_cnt>0 \n" +
+                "                   AND       b.withdraw_suc_cnt=0,1,0) )t \n" +
+                "GROUP BY new_flag WITH cube";
+
+        testRewriteUsingHive(sql);
     }
 }

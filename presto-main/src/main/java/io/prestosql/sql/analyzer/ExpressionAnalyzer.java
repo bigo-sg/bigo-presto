@@ -493,26 +493,47 @@ public class ExpressionAnalyzer
         {
             OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
 
-            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+            if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
                 TypeConversion tc = new TypeConversion();
                 Type leftType = process(node.getLeft(), context);
                 Type rightType = process(node.getRight(), context);
 
+                if (leftType == null || rightType == null) {
+                    return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
+                }
+
+                if (tc.stringAndValueType(leftType, rightType) == leftType) {
+                    node.setLeft(new Cast(node.getLeft(), StandardTypes.DOUBLE));
+
+                    if (!rightType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)){
+                        node.setRight(new Cast(node.getRight(), StandardTypes.DOUBLE));
+                        rightType = process(node.getRight(), context);
+                    }
+                    leftType = process(node.getLeft(), context);
+                }
+                else if (tc.stringAndValueType(leftType, rightType) == rightType) {
+                    node.setRight(new Cast(node.getRight(), StandardTypes.DOUBLE));
+                    if (!leftType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)){
+                        node.setLeft(new Cast(node.getLeft(), StandardTypes.DOUBLE));
+                        leftType = process(node.getLeft(), context);
+                    }
+                    rightType = process(node.getRight(), context);
+                }
+
                 if (tc.compare2TypesOrder(leftType, rightType) == rightType) {
                     if (tc.canConvertType(leftType, rightType)) {
-                        Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
-                        node.setLeft(cast);
-                    } else if (tc.canConvertType(rightType, leftType)) {
-                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
-                        node.setRight(cast);
+                        node.setLeft(new Cast(node.getLeft(), rightType.getTypeSignature().getBase()));
                     }
-                } else if (tc.compare2TypesOrder(leftType, rightType) == leftType) {
+                    else if (tc.canConvertType(rightType, leftType)) {
+                        node.setRight(new Cast(node.getRight(), leftType.getTypeSignature().getBase()));
+                    }
+                }
+                else if (tc.compare2TypesOrder(leftType, rightType) == leftType) {
                     if (tc.canConvertType(rightType, leftType)) {
-                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
-                        node.setRight(cast);
-                    } else if (tc.canConvertType(leftType, rightType)) {
-                        Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
-                        node.setLeft(cast);
+                        node.setRight(new Cast(node.getRight(), leftType.getTypeSignature().getBase()));
+                    }
+                    else if (tc.canConvertType(leftType, rightType)) {
+                        node.setLeft(new Cast(node.getLeft(), rightType.getTypeSignature().getBase()));
                     }
                 }
             }

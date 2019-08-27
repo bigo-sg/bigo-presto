@@ -150,13 +150,15 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.DOUBLE)
-    public static double castToDouble(@SqlType("varchar(x)") Slice slice)
+    @SqlNullable
+    public static Double castToDouble(@SqlType("varchar(x)") Slice slice)
     {
         try {
             return Double.parseDouble(slice.toStringUtf8());
         }
         catch (Exception e) {
-            throw new PrestoException(INVALID_CAST_ARGUMENT, format("Cannot cast '%s' to DOUBLE", slice.toStringUtf8()));
+//            throw new PrestoException(INVALID_CAST_ARGUMENT, format("Cannot cast '%s' to DOUBLE", slice.toStringUtf8()));
+            return null;
         }
     }
 

@@ -27,7 +27,7 @@ public class TestTypeConversion {
         assert (tc.compare2TypesOrder(intType, doubleType) == doubleType);
         assert (tc.compare2TypesOrder(bigIntType, doubleType) == doubleType);
         assert (tc.compare2TypesOrder(doubleType, intType) == doubleType);
-        assert (tc.compare2TypesOrder(decimalType, doubleType) == null);
+        assert (tc.compare2TypesOrder(decimalType, decimalType) == null);
         assert (tc.compare2TypesOrder(intType, varcharType) == varcharType);
         assert (tc.compare2TypesOrder(doubleType, varcharType) == varcharType);
         assert (tc.compare2TypesOrder(timestampType, varcharType) == varcharType);
@@ -35,7 +35,6 @@ public class TestTypeConversion {
         assert (tc.compare2TypesOrder(timestampType, timestampType) == null);
         assert (tc.compare2TypesOrder(dateType, dateType) == null);
         assert (tc.compare2TypesOrder(dateType, doubleType) == null);
-        assert (tc.compare2TypesOrder(varcharType, intType) == null);
     }
 
     @Test

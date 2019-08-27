@@ -96,6 +96,8 @@ final class TypeRegistry
         // this is hack here, we are trying to give varchar type a different name called string
         this.types.putIfAbsent(new TypeSignature("string"), VARCHAR);
 
+        this.types.putIfAbsent(new TypeSignature("float"), DOUBLE);
+
         // Manually register UNKNOWN type without a verifyTypeClass call since it is a special type that can not be used by functions
         this.types.put(UNKNOWN.getTypeSignature(), UNKNOWN);
 

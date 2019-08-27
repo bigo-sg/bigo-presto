@@ -133,4 +133,11 @@ public class BigoDateTimeFunctionsTest {
         assertEquals(quarter1, 3);
         assertEquals(quarter2, 2);
     }
+
+    @Test
+    public void testCalPt(){
+        assertEquals(BigoDateTimeFunctions.cal_pt(utf8Slice("PT10.2S")), 10.2);
+        assertEquals(BigoDateTimeFunctions.cal_pt(utf8Slice("PT1.0M10.2S")), 70.2);
+        assertEquals(BigoDateTimeFunctions.cal_pt(utf8Slice("PT1.0H1M10.2S")), 3670.2);
+    }
 }

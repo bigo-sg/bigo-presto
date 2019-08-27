@@ -6,33 +6,33 @@ import org.testng.annotations.Test;
 import java.math.BigDecimal;
 
 import static io.airlift.slice.Slices.utf8Slice;
-import static io.prestosql.plugin.bigo.udf.BigoDateFunctions.unixTimestamp;
+import static io.prestosql.plugin.bigo.udf.BigoDateTimeFunctions.unixTimestamp;
 import static org.testng.Assert.*;
 
-public class BigoDateFunctionsTest {
+public class BigoDateTimeFunctionsTest {
 
     @Test
     public void testDateAdd() {
-        String output = BigoDateFunctions.dateAdd(utf8Slice("2019-01-01"), 10).toStringUtf8();
+        String output = BigoDateTimeFunctions.dateAdd(utf8Slice("2019-01-01"), 10).toStringUtf8();
 
         assertEquals(output, "2019-01-11");
     }
 
     @Test(expectedExceptions = PrestoException.class)
     public void dateAddWithInvalidDateStringShouldThrowException() {
-        BigoDateFunctions.dateAdd(utf8Slice("2019-aaaa-01"), 10).toStringUtf8();
+        BigoDateTimeFunctions.dateAdd(utf8Slice("2019-aaaa-01"), 10).toStringUtf8();
     }
 
     @Test
     public void testDateSub() {
-        String output = BigoDateFunctions.dateSub(utf8Slice("2019-01-11"), 10).toStringUtf8();
+        String output = BigoDateTimeFunctions.dateSub(utf8Slice("2019-01-11"), 10).toStringUtf8();
 
         assertEquals(output, "2019-01-01");
     }
 
     @Test(expectedExceptions = PrestoException.class)
     public void dateSubWithInvalidDateStringShouldThrowException() {
-        BigoDateFunctions.dateSub(utf8Slice("2019-aaaa-01"), 10).toStringUtf8();
+        BigoDateTimeFunctions.dateSub(utf8Slice("2019-aaaa-01"), 10).toStringUtf8();
     }
 
 
@@ -63,17 +63,17 @@ public class BigoDateFunctionsTest {
     @Test
     public void testDateDiff()
     {
-        long diff = BigoDateFunctions.dateDiff(utf8Slice("2019-01-03"), utf8Slice("2018-12-31"));
+        long diff = BigoDateTimeFunctions.dateDiff(utf8Slice("2019-01-03"), utf8Slice("2018-12-31"));
         assertEquals(diff, 3);
     }
 
     @Test
     public void testHourFromString()
     {
-        long hour1 = BigoDateFunctions.hourFromString(utf8Slice("2019-08-01 12:13:14"));
-        long hour2 = BigoDateFunctions.hourFromString(utf8Slice("2019-08-01 24:13:14"));
-        long hour3 = BigoDateFunctions.hourFromString(utf8Slice("12:13:14"));
-        long hour4 = BigoDateFunctions.hourFromString(utf8Slice("24:13:14"));
+        long hour1 = BigoDateTimeFunctions.hourFromString(utf8Slice("2019-08-01 12:13:14"));
+        long hour2 = BigoDateTimeFunctions.hourFromString(utf8Slice("2019-08-01 24:13:14"));
+        long hour3 = BigoDateTimeFunctions.hourFromString(utf8Slice("12:13:14"));
+        long hour4 = BigoDateTimeFunctions.hourFromString(utf8Slice("24:13:14"));
         assertEquals(hour1, 12);
         assertEquals(hour2, 0);
         assertEquals(hour3, 12);
@@ -83,8 +83,8 @@ public class BigoDateFunctionsTest {
     @Test
     public void testMinuteFromString()
     {
-        long minute1 = BigoDateFunctions.minuteFromString(utf8Slice("2019-08-01 12:13:14"));
-        long minute2 = BigoDateFunctions.minuteFromString(utf8Slice("12:13:14"));
+        long minute1 = BigoDateTimeFunctions.minuteFromString(utf8Slice("2019-08-01 12:13:14"));
+        long minute2 = BigoDateTimeFunctions.minuteFromString(utf8Slice("12:13:14"));
         assertEquals(minute1, 13);
         assertEquals(minute2, 13);
     }
@@ -92,8 +92,8 @@ public class BigoDateFunctionsTest {
     @Test
     public void testSecondFromString()
     {
-        long second1 = BigoDateFunctions.secondFromString(utf8Slice("2019-08-01 12:13:14"));
-        long second2 = BigoDateFunctions.secondFromString(utf8Slice("12:13:14"));
+        long second1 = BigoDateTimeFunctions.secondFromString(utf8Slice("2019-08-01 12:13:14"));
+        long second2 = BigoDateTimeFunctions.secondFromString(utf8Slice("12:13:14"));
         assertEquals(second1, 14);
         assertEquals(second2, 14);
     }
@@ -101,8 +101,8 @@ public class BigoDateFunctionsTest {
     @Test
     public void testDayFromString()
     {
-        long day1 = BigoDateFunctions.dayFromString(utf8Slice("2019-08-01 12:13:14"));
-        long day2 = BigoDateFunctions.dayFromString(utf8Slice("2019-08-01"));
+        long day1 = BigoDateTimeFunctions.dayFromString(utf8Slice("2019-08-01 12:13:14"));
+        long day2 = BigoDateTimeFunctions.dayFromString(utf8Slice("2019-08-01"));
         assertEquals(day1, 1);
         assertEquals(day2, 1);
     }
@@ -110,8 +110,8 @@ public class BigoDateFunctionsTest {
     @Test
     public void testMonthFromString()
     {
-        long month1 = BigoDateFunctions.monthFromString(utf8Slice("2019-08-01 12:13:14"));
-        long month2 = BigoDateFunctions.monthFromString(utf8Slice("2019-08-01"));
+        long month1 = BigoDateTimeFunctions.monthFromString(utf8Slice("2019-08-01 12:13:14"));
+        long month2 = BigoDateTimeFunctions.monthFromString(utf8Slice("2019-08-01"));
         assertEquals(month1, 8);
         assertEquals(month2, 8);
     }
@@ -119,8 +119,8 @@ public class BigoDateFunctionsTest {
     @Test
     public void testYearFromString()
     {
-        long year1 = BigoDateFunctions.yearFromString(utf8Slice("2019-08-01 12:13:14"));
-        long year2 = BigoDateFunctions.yearFromString(utf8Slice("2019-08-01"));
+        long year1 = BigoDateTimeFunctions.yearFromString(utf8Slice("2019-08-01 12:13:14"));
+        long year2 = BigoDateTimeFunctions.yearFromString(utf8Slice("2019-08-01"));
         assertEquals(year1, 2019);
         assertEquals(year2, 2019);
     }
@@ -128,9 +128,16 @@ public class BigoDateFunctionsTest {
     @Test
     public void testQuarterFromString()
     {
-        long quarter1 = BigoDateFunctions.quarterFromString(utf8Slice("2019-08-01 12:13:14"));
-        long quarter2 = BigoDateFunctions.quarterFromString(utf8Slice("2019-06-01"));
+        long quarter1 = BigoDateTimeFunctions.quarterFromString(utf8Slice("2019-08-01 12:13:14"));
+        long quarter2 = BigoDateTimeFunctions.quarterFromString(utf8Slice("2019-06-01"));
         assertEquals(quarter1, 3);
         assertEquals(quarter2, 2);
+    }
+
+    @Test
+    public void testCalPt(){
+        assertEquals(BigoDateTimeFunctions.cal_pt(utf8Slice("PT10.2S")), 10.2);
+        assertEquals(BigoDateTimeFunctions.cal_pt(utf8Slice("PT1.0M10.2S")), 70.2);
+        assertEquals(BigoDateTimeFunctions.cal_pt(utf8Slice("PT1.0H1M10.2S")), 3670.2);
     }
 }

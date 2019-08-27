@@ -555,29 +555,29 @@ public class ExpressionAnalyzer
             coerceType(context, node.getCondition(), BOOLEAN, "IF condition");
             Type type;
 
-            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
-                TypeConversion tc = new TypeConversion();
-                Type trueType = process(node.getTrueValue(), context);
-                Type falseType = process(node.getFalseValue().get(), context);
-
-                if (tc.compare2TypesOrder(trueType, falseType) == falseType) {
-                    if (tc.canConvertType(trueType, falseType)) {
-                        Cast cast = new Cast(node.getTrueValue(), falseType.getTypeSignature().getBase());
-                        node.setTrueValue(cast);
-                    } else if (tc.canConvertType(falseType, trueType)) {
-                        Cast cast = new Cast(node.getFalseValue().get(), trueType.getTypeSignature().getBase());
-                        node.setFalseValue(Optional.of(cast));
-                    }
-                } else if (tc.compare2TypesOrder(trueType, falseType) == trueType) {
-                    if (tc.canConvertType(falseType, trueType)) {
-                        Cast cast = new Cast(node.getFalseValue().get(), trueType.getTypeSignature().getBase());
-                        node.setFalseValue(Optional.of(cast));
-                    } else if (tc.canConvertType(trueType, falseType)) {
-                        Cast cast = new Cast(node.getTrueValue(), falseType.getTypeSignature().getBase());
-                        node.setTrueValue(cast);
-                    }
-                }
-            }
+//            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+//                TypeConversion tc = new TypeConversion();
+//                Type trueType = process(node.getTrueValue(), context);
+//                Type falseType = process(node.getFalseValue().get(), context);
+//
+//                if (tc.compare2TypesOrder(trueType, falseType) == falseType) {
+//                    if (tc.canConvertType(trueType, falseType)) {
+//                        Cast cast = new Cast(node.getTrueValue(), falseType.getTypeSignature().getBase());
+//                        node.setTrueValue(cast);
+//                    } else if (tc.canConvertType(falseType, trueType)) {
+//                        Cast cast = new Cast(node.getFalseValue().get(), trueType.getTypeSignature().getBase());
+//                        node.setFalseValue(Optional.of(cast));
+//                    }
+//                } else if (tc.compare2TypesOrder(trueType, falseType) == trueType) {
+//                    if (tc.canConvertType(falseType, trueType)) {
+//                        Cast cast = new Cast(node.getFalseValue().get(), trueType.getTypeSignature().getBase());
+//                        node.setFalseValue(Optional.of(cast));
+//                    } else if (tc.canConvertType(trueType, falseType)) {
+//                        Cast cast = new Cast(node.getTrueValue(), falseType.getTypeSignature().getBase());
+//                        node.setTrueValue(cast);
+//                    }
+//                }
+//            }
 
             if (node.getFalseValue().isPresent()) {
                 type = coerceToSingleType(context, node, "Result types for IF must be the same: %s vs %s", node.getTrueValue(), node.getFalseValue().get());

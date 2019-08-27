@@ -21,8 +21,8 @@ import io.airlift.log.Logger;
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.prestosql.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 
-public class BigoDateFunctions {
-    private static final Logger LOG = Logger.get(BigoDateFunctions.class);
+public class BigoDateTimeFunctions {
+    private static final Logger LOG = Logger.get(BigoDateTimeFunctions.class);
     private static final String dateFormat1 = "yyyy-MM-dd HH:mm:ss";
     private static final String dateFormat2 = "yyyy-MM-dd";
     private static final String dateFormat3 = "HH:mm:ss";

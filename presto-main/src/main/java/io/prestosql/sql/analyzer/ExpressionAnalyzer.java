@@ -583,7 +583,7 @@ public class ExpressionAnalyzer
             coerceType(context, node.getCondition(), BOOLEAN, "IF condition");
             Type type;
 
-            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+            if (SystemSessionProperties.isEnableHiveSqlSynTax(session) && node.getFalseValue().isPresent()) {
                 TypeConversion tc = new TypeConversion();
                 Type trueType = process(node.getTrueValue(), context);
                 Type falseType = process(node.getFalseValue().get(), context);

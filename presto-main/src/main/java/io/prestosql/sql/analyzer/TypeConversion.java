@@ -23,27 +23,28 @@ public class TypeConversion {
             .put(StandardTypes.DATE, 10)
             .build();
 
-    protected boolean canConvertType(Type leftType, Type rightType){
+    protected boolean canConvertType(Type leftType, Type rightType) {
+
         String leftTypeName = leftType.getTypeSignature().getBase();
         String rightTypeName = rightType.getTypeSignature().getBase();
 
         List<String> booleanConvertList = Collections.singletonList(StandardTypes.BOOLEAN);
-        List<String> tinyintConvertList =Arrays.asList(StandardTypes.TINYINT, StandardTypes.SMALLINT,
+        List<String> tinyintConvertList = Arrays.asList(StandardTypes.TINYINT, StandardTypes.SMALLINT,
                 StandardTypes.INTEGER, StandardTypes.BIGINT, StandardTypes.DOUBLE, StandardTypes.DECIMAL,
                 StandardTypes.VARCHAR);
-        List<String> smallintConvertList =Arrays.asList(StandardTypes.SMALLINT, StandardTypes.INTEGER,
+        List<String> smallintConvertList = Arrays.asList(StandardTypes.SMALLINT, StandardTypes.INTEGER,
                 StandardTypes.BIGINT, StandardTypes.DOUBLE, StandardTypes.DECIMAL, StandardTypes.VARCHAR);
-        List<String> integerConvertList =Arrays.asList(StandardTypes.INTEGER,
+        List<String> integerConvertList = Arrays.asList(StandardTypes.INTEGER,
                 StandardTypes.BIGINT, StandardTypes.DOUBLE, StandardTypes.DECIMAL, StandardTypes.VARCHAR);
-        List<String> bigintConvertList =Arrays.asList(StandardTypes.BIGINT, StandardTypes.DOUBLE, StandardTypes.DECIMAL,
+        List<String> bigintConvertList = Arrays.asList(StandardTypes.BIGINT, StandardTypes.DOUBLE, StandardTypes.DECIMAL,
                 StandardTypes.VARCHAR);
-        List<String> doubleConvertList =Arrays.asList(StandardTypes.DOUBLE, StandardTypes.DECIMAL, StandardTypes.VARCHAR);
-        List<String> decimalConvertList =Arrays.asList(StandardTypes.DECIMAL, StandardTypes.VARCHAR);
-        List<String> varcharConvertList =Arrays.asList(StandardTypes.DOUBLE, StandardTypes.DECIMAL, StandardTypes.VARCHAR);
-        List<String> timestampConvertList =Arrays.asList(StandardTypes.VARCHAR, StandardTypes.TIMESTAMP);
-        List<String> dateConvertList =Arrays.asList(StandardTypes.VARCHAR, StandardTypes.DATE);
+        List<String> doubleConvertList = Arrays.asList(StandardTypes.DOUBLE, StandardTypes.DECIMAL, StandardTypes.VARCHAR);
+        List<String> decimalConvertList = Arrays.asList(StandardTypes.DECIMAL, StandardTypes.VARCHAR);
+        List<String> varcharConvertList = Arrays.asList(StandardTypes.DOUBLE, StandardTypes.DECIMAL, StandardTypes.VARCHAR);
+        List<String> timestampConvertList = Arrays.asList(StandardTypes.VARCHAR, StandardTypes.TIMESTAMP);
+        List<String> dateConvertList = Arrays.asList(StandardTypes.VARCHAR, StandardTypes.DATE);
 
-        switch(leftTypeName) {
+        switch (leftTypeName) {
             case StandardTypes.BOOLEAN:
                 return booleanConvertList.contains(rightTypeName);
             case StandardTypes.TINYINT:
@@ -69,7 +70,7 @@ public class TypeConversion {
         }
     }
 
-    protected boolean needConvert(Type leftType, Type rightType){
+    protected boolean needConvert(Type leftType, Type rightType) {
         //todo
         if(leftType.getDisplayName().equals(rightType.getDisplayName())){
             return false;

@@ -505,7 +505,7 @@ public class ExpressionAnalyzer
         {
             OperatorType operatorType = OperatorType.valueOf(node.getOperator().name());
 
-            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+            if(SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
                 TypeConversion tc = new TypeConversion();
                 Type leftType = process(node.getLeft(), context);
                 Type rightType = process(node.getRight(), context);

@@ -103,6 +103,7 @@ import io.prestosql.operator.scalar.ArraySortComparatorFunction;
 import io.prestosql.operator.scalar.ArraySortFunction;
 import io.prestosql.operator.scalar.ArrayUnionFunction;
 import io.prestosql.operator.scalar.ArraysOverlapFunction;
+import io.prestosql.operator.scalar.BigoDateFunctions;
 import io.prestosql.operator.scalar.BitwiseFunctions;
 import io.prestosql.operator.scalar.CharacterStringCasts;
 import io.prestosql.operator.scalar.ColorFunctions;
@@ -442,6 +443,7 @@ public class FunctionRegistry
                 .scalars(DateTimeFunctions.class)
                 .scalars(JsonFunctions.class)
                 .scalars(BigoJsonFunctions.class)
+                .scalars(BigoDateFunctions.class)
                 .scalars(ColorFunctions.class)
                 .scalars(ColorOperators.class)
                 .scalar(ColorOperators.ColorDistinctFromOperator.class)

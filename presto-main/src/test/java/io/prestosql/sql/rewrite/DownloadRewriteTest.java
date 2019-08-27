@@ -86,6 +86,10 @@ public class DownloadRewriteTest {
         testRewrite(originalSQL, expectedSQL, true);
     }
 
+    void testRewriteUsingHive(String originalSQL, String expectedSQL) {
+        testRewrite(originalSQL, expectedSQL, true);
+    }
+
     @Test
     public void testDownloadRewriteDisabled() {
         String sql = "" +
@@ -157,7 +161,7 @@ public class DownloadRewriteTest {
     @Test
     public void testComplexSelectStatementUsingHive() {
         String sql = "" +
-                "SELECT   COALESCE(new_flag,'all'), \n" +
+                "SELECT   COALESCE(new_flag,'all') flag, \n" +
                 "         count(DISTINCTIF(1st_withdraw_apply=1,uid,NULL)) 1st_withdraw_apply_cnt, \n" +
                 "         count(DISTINCT IF(1st_withdraw_sus=1,uid,NULL))   1st_withdraw_sus_cnt \n" +
                 "FROM     ( \n" +
@@ -195,5 +199,35 @@ public class DownloadRewriteTest {
                 "GROUP BY new_flag WITH cube";
 
         testRewriteUsingHive(sql);
+    }
+
+    @Test
+    public void testWithStatement() {
+        String sql = "" +
+                "WITH\n" +
+                "  x AS (SELECT a FROM t),\n" +
+                "  y AS (SELECT a AS b FROM x),\n" +
+                "  z AS (SELECT b AS c FROM y)\n" +
+                "SELECT c FROM z";
+
+        testRewrite(sql);
+    }
+
+    @Test
+    public void testColumnWithoutName() {
+        String originalSQL = "" +
+                "select *, uid, count(uid) as cnt, count(uid), count(distinct uid) " +
+                "from tmp.tmp_fengmengying_test " +
+                "where installtype = 'install'";
+
+        // we should give each column a name.
+        String expectedSQL = CATS_PREFIX +
+                "select *, uid, count(uid) as cnt, count(uid) as _col0, count(distinct uid) as _col1 " +
+                "from tmp.tmp_fengmengying_test " +
+                "where installtype = 'install'"
+                + LIMIT_SUFFIX;
+
+        testRewrite(originalSQL, expectedSQL);
+        testRewriteUsingHive(originalSQL, expectedSQL);
     }
 }

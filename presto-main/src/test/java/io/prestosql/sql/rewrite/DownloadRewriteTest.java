@@ -230,4 +230,22 @@ public class DownloadRewriteTest {
         testRewrite(originalSQL, expectedSQL);
         testRewriteUsingHive(originalSQL, expectedSQL);
     }
+
+    @Test
+    public void testColumnDefinedMoreThanOnce() {
+        String originalSQL = "" +
+                "select *, uid, uid, count(1) as cnt, count(distinct uid) as cnt " +
+                "from tmp.tmp_fengmengying_test " +
+                "group by uid";
+
+        // we should give each column a name.
+        String expectedSQL = CATS_PREFIX +
+                "select *, uid, uid as uid__1, count(1) as cnt, count(distinct uid) as cnt__2 " +
+                "from tmp.tmp_fengmengying_test " +
+                "group by uid"
+                + LIMIT_SUFFIX;
+
+        testRewrite(originalSQL, expectedSQL);
+        testRewriteUsingHive(originalSQL, expectedSQL);
+    }
 }

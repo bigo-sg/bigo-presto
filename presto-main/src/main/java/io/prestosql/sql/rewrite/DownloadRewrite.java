@@ -23,13 +23,16 @@ import io.prestosql.sql.tree.Statement;
 import io.prestosql.sql.tree.StringLiteral;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 final public class DownloadRewrite
         implements StatementRewrite.Rewrite {
     static final String RESULT_TABLE_NAME_PREFIX = "presto_";
     static final String DEFAULT_COLUMN_NAME_PREFIX = "_col";
+    static final String UNIQUE_COLUMN_NAME_PREFIX = "__";
 
     static final Optional<String> COMMENT = Optional.of("This table is generated automatically by Presto to store temporary result for download. It is safe to delete.");
 
@@ -79,8 +82,8 @@ final public class DownloadRewrite
                 COMMENT);
     }
 
-    // add default column name if needed.
     private Select updateSelectNode(Select select) {
+        // add default column name if needed.
         int defaultColumnNameIndex = 0;
         List<SelectItem> selectItemsWithDefaultName = new ArrayList<>();
         for (SelectItem selectItem : select.getSelectItems()) {
@@ -109,10 +112,46 @@ final public class DownloadRewrite
             }
         }
 
+        // make sure each column name is unique.
+        int uniqueColumnNameIndex = 1;
+        Set<Identifier> identifiers = new HashSet<>();
+        List<SelectItem> selectItemsWithUniqueName = new ArrayList<>();
+        for (SelectItem selectItem : selectItemsWithDefaultName) {
+            if (selectItem instanceof SingleColumn) {
+                SingleColumn singleColumn = (SingleColumn) selectItem;
+
+                Identifier identifier = null;
+                if (singleColumn.getExpression() instanceof Identifier) {
+                    identifier = (Identifier) singleColumn.getExpression();
+                } else {
+                    identifier = singleColumn.getAlias().get();
+                }
+
+                if (identifiers.contains(identifier)) {
+                    Optional<Identifier> alias = Optional.of(new Identifier(identifier.getValue() + UNIQUE_COLUMN_NAME_PREFIX + uniqueColumnNameIndex));
+                    uniqueColumnNameIndex++;
+
+                    SelectItem selectItemWithUniqueName = new SingleColumn(
+                            singleColumn.getLocation().get(),
+                            singleColumn.getExpression(),
+                            alias
+                    );
+
+                    selectItemsWithUniqueName.add(selectItemWithUniqueName);
+                } else {
+                    identifiers.add(identifier);
+
+                    selectItemsWithUniqueName.add(selectItem);
+                }
+            } else {
+                selectItemsWithUniqueName.add(selectItem);
+            }
+        }
+
         return new Select(
                 select.getLocation().get(),
                 select.isDistinct(),
-                selectItemsWithDefaultName
+                selectItemsWithUniqueName
         );
     }
 

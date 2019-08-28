@@ -1191,7 +1191,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             );
         }
 
-        if (ctx.qualifiedName().getText().equalsIgnoreCase("count")) {
+        if (expressions.size() != 1 && ctx.qualifiedName().getText().equalsIgnoreCase("count")) {
             Row row = new Row(getLocation(ctx), expressions);
             return new FunctionCall(
                     Optional.of(getLocation(ctx)),

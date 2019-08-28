@@ -228,6 +228,14 @@ public class BasicSQLs extends SQLTester {
     }
 
     @Test
+    public void testSelectCountNULL()
+    {
+        String sql = "SELECT count(NULL) from tb1";
+
+        checkASTNode(sql);
+    }
+
+    @Test
     public void testSelectCountOne()
     {
         String sql = "SELECT count(1) from tb1";

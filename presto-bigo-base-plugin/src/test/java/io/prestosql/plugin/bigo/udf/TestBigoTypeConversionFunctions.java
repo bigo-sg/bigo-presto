@@ -6,7 +6,7 @@ import org.testng.annotations.Test;
 import static io.airlift.slice.Slices.utf8Slice;
 import static org.testng.Assert.assertEquals;
 
-public class BigoTypeConversionFunctionsTest {
+public class TestBigoTypeConversionFunctions {
 
     @Test
     private void testInt()

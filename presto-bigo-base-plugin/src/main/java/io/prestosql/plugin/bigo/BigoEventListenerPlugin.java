@@ -20,7 +20,10 @@ import io.prestosql.plugin.bigo.udf.ArraySizeFunction;
 import io.prestosql.plugin.bigo.udf.AsciiFunction;
 import io.prestosql.plugin.bigo.udf.BigoConditionalFunctions;
 import io.prestosql.plugin.bigo.udf.BigoDateTimeFunctions;
+import io.prestosql.plugin.bigo.udf.BigoDecodeUrl;
 import io.prestosql.plugin.bigo.udf.BigoIndigoUidHash;
+import io.prestosql.plugin.bigo.udf.BigoIndigoUidHashMod;
+import io.prestosql.plugin.bigo.udf.BigoIsAVTest;
 import io.prestosql.plugin.bigo.udf.BigoStringFunctions;
 import io.prestosql.plugin.bigo.udf.BigoTypeConversionFunctions;
 import io.prestosql.plugin.bigo.udf.HexFunction;
@@ -67,6 +70,9 @@ public class BigoEventListenerPlugin
                 .add(ArraySizeFunction.class)
                 .add(MapSizeFunction.class)
                 .add(BigoIndigoUidHash.class)
+                .add(BigoIndigoUidHashMod.class)
+                .add(BigoIsAVTest.class)
+                .add(BigoDecodeUrl.class)
                 .build();
     }
 }

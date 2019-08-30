@@ -288,4 +288,110 @@ public class BigoTypeConversionFunctions {
     {
         return utf8Slice(Double.toString(n));
     }
+
+    // convert to bigint
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionSlice(@SqlType(StandardTypes.VARCHAR) Slice slice)
+    {
+        try {
+            return Long.parseLong(slice.toStringUtf8());
+        } catch (NumberFormatException e) {
+            return (long)Double.parseDouble(slice.toStringUtf8());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionTimeStamp(@SqlType(StandardTypes.TIMESTAMP) long value)
+    {
+        return value;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionTimeStampWithZone(@SqlType(StandardTypes.TIMESTAMP_WITH_TIME_ZONE) long value)
+    {
+        return value;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionTime(@SqlType(StandardTypes.TIME) long value)
+    {
+        return value;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionTimeWithZone(@SqlType(StandardTypes.TIME_WITH_TIME_ZONE) long value)
+    {
+        return value;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionInt(@SqlType(StandardTypes.INTEGER) long value)
+    {
+        return value;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionTinyint(@SqlType(StandardTypes.TINYINT) long value)
+    {
+        return value;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionSmallint(@SqlType(StandardTypes.SMALLINT) long value)
+    {
+        return value;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionDouble(@SqlType(StandardTypes.DOUBLE) double d)
+    {
+        return (long)d;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionDecimal(@SqlType(StandardTypes.DECIMAL) double d)
+    {
+        return (long)d;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    @SqlNullable
+    public static Long bigintFunctionBigint(@SqlType(StandardTypes.BIGINT) long value)
+    {
+        return value;
+    }
 }

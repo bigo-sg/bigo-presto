@@ -37,7 +37,7 @@ public class WebUiResource
         }
 
         return Response.status(TEMPORARY_REDIRECT)
-                .location(uriInfo.getRequestUriBuilder().scheme(proto).path("/ui/").build())
+                .location(uriInfo.getRequestUriBuilder().scheme(proto).path("/not_found/").build())
                 .build();
     }
 }

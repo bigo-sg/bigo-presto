@@ -181,7 +181,7 @@ public class CoordinatorModule
     @Override
     protected void setup(Binder binder)
     {
-        httpServerBinder(binder).bindResource("/ui", "webapp").withWelcomeFile("index.html");
+        httpServerBinder(binder).bindResource("/bigo_presto_monitor_ui", "webapp").withWelcomeFile("index.html");
         httpServerBinder(binder).bindResource("/tableau", "webapp/tableau");
 
         // discovery server

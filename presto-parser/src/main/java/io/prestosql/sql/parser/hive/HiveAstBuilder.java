@@ -494,7 +494,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
         else {
             if(ctx.joinCriteria() == null) {
-                throw parseError("Missing join criteria", ctx);
+                return new Join(getLocation(ctx), Join.Type.CROSS, left, right, Optional.empty());
             }
 
             if (ctx.joinCriteria().ON() != null) {

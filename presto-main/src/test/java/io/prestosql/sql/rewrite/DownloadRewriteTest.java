@@ -214,6 +214,100 @@ public class DownloadRewriteTest {
     }
 
     @Test
+    public void testValueStatement() {
+        String sql = "SELECT * FROM (VALUES 5, 2, 4, 1, 3)";
+
+        testRewrite(sql);
+    }
+
+    @Test
+    public void testExceptStatement() {
+        String sql = "" +
+                "SELECT * FROM (VALUES 13, 42)\n" +
+                "EXCEPT\n" +
+                "SELECT 13";
+
+        testRewrite(sql);
+    }
+
+    @Test
+    public void testIntersectStatement() {
+        String sql = "" +
+                "SELECT * FROM (VALUES 13, 42)\n" +
+                "INTERSECT\n" +
+                "SELECT 13";
+
+        testRewrite(sql);
+    }
+
+    @Test
+    public void testIntersectStatementWithLimit() {
+        String sql = "" +
+                "SELECT * FROM (VALUES 13, 42)\n" +
+                "INTERSECT\n" +
+                "SELECT 13\n" +
+                "limit 10";
+
+        testRewrite(sql);
+    }
+
+
+    @Test
+    public void testUnion() {
+        String sql = "" +
+                "SELECT origin_state, NULL, NULL, sum(package_weight)\n" +
+                "FROM shipping GROUP BY origin_state\n" +
+                "\n" +
+                "UNION ALL\n" +
+                "\n" +
+                "SELECT origin_state, origin_zip, NULL, sum(package_weight)\n" +
+                "FROM shipping GROUP BY origin_state, origin_zip";
+
+        testRewrite(sql);
+    }
+
+    @Test
+    public void testUnionStatement() {
+        String sql = "" +
+                "select distinct t3.uid from(\n" +
+                "select * from(\n" +
+                "select msg,count(*) as num,count(distinct bgid) as bg_num,count(distinct uid) as uid_num\n" +
+                "from indigo_us.bigoreview_big_group_chat where day='2019-08-21' and length(msg)>50 and strpos(msg,'http')=0\n" +
+                "group by msg\n" +
+                ")t1\n" +
+                "where t1.bg_num<=2 and uid_num<=2\n" +
+                "and num>100\n" +
+                ")t2\n" +
+                "join (select * from indigo_us.bigoreview_big_group_chat where day='2019-08-21')t3\n" +
+                "on t2.msg=t3.msg\n" +
+                "union all\n" +
+                "select distinct t3.uid from(\n" +
+                "select *,length(msg) from(\n" +
+                "select msg,count(*) as num,count(distinct bgid) as bg_num,count(distinct uid) as uid_num\n" +
+                "from indigo_us.bigoreview_big_group_chat where day='2019-08-25' and strpos(msg,'http')>0 and length(msg)>50 \n" +
+                "group by msg\n" +
+                ")t\n" +
+                "where num>100\n" +
+                ")t2\n" +
+                "join (select * from indigo_us.bigoreview_big_group_chat where day='2019-08-25')t3\n" +
+                "on t2.msg=t3.msg\n" +
+                "union all\n" +
+                "select  t1.uid from(\n" +
+                "select t.uid,all_num from(\n" +
+                "select uid,count(*) as all_num,count(distinct bgid) as bg_num,count(msg) as msg_num\n" +
+                "from indigo_us.bigoreview_big_group_chat where day='2019-08-25' and length(msg)>10\n" +
+                "group by uid\n" +
+                ")t\n" +
+                "where t.bg_num>5\n" +
+                "order by t.all_num\n" +
+                "desc\n" +
+                "limit 50\n" +
+                ")t1";
+
+        testRewrite(sql);
+    }
+
+    @Test
     public void testColumnWithoutName() {
         String originalSQL = "" +
                 "select *, uid, count(uid) as cnt, count(uid), count(distinct uid) " +

@@ -15,24 +15,18 @@ import io.prestosql.sql.tree.Node;
 import io.prestosql.sql.tree.Property;
 import io.prestosql.sql.tree.QualifiedName;
 import io.prestosql.sql.tree.Query;
+import io.prestosql.sql.tree.QueryBody;
 import io.prestosql.sql.tree.QuerySpecification;
-import io.prestosql.sql.tree.Select;
-import io.prestosql.sql.tree.SelectItem;
-import io.prestosql.sql.tree.SingleColumn;
 import io.prestosql.sql.tree.Statement;
 import io.prestosql.sql.tree.StringLiteral;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 final public class DownloadRewrite
         implements StatementRewrite.Rewrite {
     static final String RESULT_TABLE_NAME_PREFIX = "presto_";
-    static final String DEFAULT_COLUMN_NAME_PREFIX = "_col";
-    static final String UNIQUE_COLUMN_NAME_PREFIX = "__";
 
     static final Optional<String> COMMENT = Optional.of("This table is generated automatically by Presto to store temporary result for download. It is safe to delete.");
 
@@ -82,79 +76,6 @@ final public class DownloadRewrite
                 COMMENT);
     }
 
-    private Select updateSelectNode(Select select) {
-        // add default column name if needed.
-        int defaultColumnNameIndex = 0;
-        List<SelectItem> selectItemsWithDefaultName = new ArrayList<>();
-        for (SelectItem selectItem : select.getSelectItems()) {
-            if (selectItem instanceof SingleColumn) {
-                SingleColumn singleColumn = (SingleColumn) selectItem;
-
-                if (singleColumn.getExpression() instanceof Identifier) {
-                    selectItemsWithDefaultName.add(selectItem);
-                } else {
-                    if (!singleColumn.getAlias().isPresent()) {
-                        Optional<Identifier> alias = Optional.of(new Identifier(DEFAULT_COLUMN_NAME_PREFIX + defaultColumnNameIndex));
-                        defaultColumnNameIndex++;
-
-                        SelectItem selectItemWithDefaultName = new SingleColumn(
-                                singleColumn.getLocation().get(),
-                                singleColumn.getExpression(),
-                                alias
-                        );
-                        selectItemsWithDefaultName.add(selectItemWithDefaultName);
-                    } else {
-                        selectItemsWithDefaultName.add(selectItem);
-                    }
-                }
-            } else {
-                selectItemsWithDefaultName.add(selectItem);
-            }
-        }
-
-        // make sure each column name is unique.
-        int uniqueColumnNameIndex = 1;
-        Set<Identifier> identifiers = new HashSet<>();
-        List<SelectItem> selectItemsWithUniqueName = new ArrayList<>();
-        for (SelectItem selectItem : selectItemsWithDefaultName) {
-            if (selectItem instanceof SingleColumn) {
-                SingleColumn singleColumn = (SingleColumn) selectItem;
-
-                Identifier identifier = null;
-                if (singleColumn.getExpression() instanceof Identifier) {
-                    identifier = (Identifier) singleColumn.getExpression();
-                } else {
-                    identifier = singleColumn.getAlias().get();
-                }
-
-                if (identifiers.contains(identifier)) {
-                    Optional<Identifier> alias = Optional.of(new Identifier(identifier.getValue() + UNIQUE_COLUMN_NAME_PREFIX + uniqueColumnNameIndex));
-                    uniqueColumnNameIndex++;
-
-                    SelectItem selectItemWithUniqueName = new SingleColumn(
-                            singleColumn.getLocation().get(),
-                            singleColumn.getExpression(),
-                            alias
-                    );
-
-                    selectItemsWithUniqueName.add(selectItemWithUniqueName);
-                } else {
-                    identifiers.add(identifier);
-
-                    selectItemsWithUniqueName.add(selectItem);
-                }
-            } else {
-                selectItemsWithUniqueName.add(selectItem);
-            }
-        }
-
-        return new Select(
-                select.getLocation().get(),
-                select.isDistinct(),
-                selectItemsWithUniqueName
-        );
-    }
-
     // add limit if not exists
     private Optional<Node> updateLimitNode(Optional<Node> limit, Session session) {
         if (!limit.isPresent()) {
@@ -170,14 +91,11 @@ final public class DownloadRewrite
         return limit;
     }
 
-    private Query updateQuery(Query query, Session session) {
-        QuerySpecification querySpecification = (QuerySpecification) query.getQueryBody();
-
-        Select updateSelectNode = updateSelectNode(querySpecification.getSelect());
+    private QuerySpecification updateQuerySpecification(QuerySpecification querySpecification, Session session) {
         Optional<Node> updatedLimitNode = updateLimitNode(querySpecification.getLimit(), session);
 
-        QuerySpecification updatedQuerySpecification = new QuerySpecification(querySpecification.getLocation().get(),
-                updateSelectNode,
+        return new QuerySpecification(querySpecification.getLocation().get(),
+                querySpecification.getSelect(),
                 querySpecification.getFrom(),
                 querySpecification.getWhere(),
                 querySpecification.getGroupBy(),
@@ -185,12 +103,30 @@ final public class DownloadRewrite
                 querySpecification.getOrderBy(),
                 querySpecification.getOffset(),
                 updatedLimitNode);
+    }
+
+    private Query updateQuery(Query query, Session session) {
+        QueryBody queryBody = query.getQueryBody();
+
+        QueryBody updateQueryBody = queryBody;
+        Optional<Node> updatedLimitNode = query.getLimit();
+
+        if (queryBody instanceof QuerySpecification) {
+            updateQueryBody = updateQuerySpecification((QuerySpecification) queryBody, session);
+        } else {
+            updatedLimitNode = updateLimitNode(query.getLimit(), session);
+
+        }
+
+        if (updateQueryBody == null) {
+            updateQueryBody = queryBody;
+        }
 
         return new Query(
                 query.getWith(),
-                updatedQuerySpecification,
+                updateQueryBody,
                 query.getOrderBy(),
                 query.getOffset(),
-                query.getLimit());
+                updatedLimitNode);
     }
 }

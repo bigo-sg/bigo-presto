@@ -1067,6 +1067,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitArithmeticBinary(SqlBaseParser.ArithmeticBinaryContext ctx) {
+
+        if (ctx.operator.getText().equals("||")) {
+
+            List<Expression> expressions = new ArrayList<>();
+            expressions.add((Expression) visit(ctx.left));
+            expressions.add((Expression) visit(ctx.right));
+            return new FunctionCall(
+                    getLocation(ctx),
+                    QualifiedName.of("concat"),
+                    expressions
+            );
+        }
+
         return new ArithmeticBinaryExpression(
                 getLocation(ctx.operator),
                 getArithmeticBinaryOperator(ctx.operator),

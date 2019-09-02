@@ -15,8 +15,7 @@ public class TestOnlineBadCases extends SQLTester {
         try {
             runHiveSQLFromFile("hive/parser/cases/online-case-1.sql");
         } catch (Exception e) {
-            Assert.assertEquals(e.getMessage(), "line 1:1: please check, how should we merge them? " +
-                    "most possible reason is executing a syntax that hive not support");
+            Assert.assertEquals(e.getMessage(), "line 10:72: Don't support UNNEST");
         }
     }
 

@@ -86,36 +86,6 @@ public class ParseErrorMessages extends SQLTester {
     }
 
 
-
-    @Test
-    public void testMissingJoinCriteria()
-    {
-        String sql = "" +
-                "select count(distinct t2.hdid) as dau,sum(video_view_time_01)/count(distinct t2.hdid)\n" +
-                "from\n" +
-                "right join\n" +
-                "(select distinct day,hdid\n" +
-                "from\n" +
-                "like_dw_com.dwd_like_com_dim_snapshot_user_device\n" +
-                "where day='2019-08-13'\n" +
-                " ) t2\n" +
-                " left join\n" +
-                "(select day,hdid,sum(video_view_time_01) as video_view_time_01\n" +
-                "from\n" +
-                "like_dw_vvd.dwd_like_vvd_video_view_with_list\n" +
-                "where day='2019-08-13'\n" +
-                "group by day,hdid ) t1\n" +
-                " on t1.day=t2.day and t1.hdid=t2.hdid" +
-                "";
-
-        try {
-            runHiveSQL(sql);
-            Assert.fail("sql: " + sql + " should throw exception");
-        }catch (ParsingException e) {
-            Assert.assertTrue(e.getMessage().contains("Missing join criteria"));
-        }
-    }
-
     @Test
     public void testMissingTableAlias()
     {

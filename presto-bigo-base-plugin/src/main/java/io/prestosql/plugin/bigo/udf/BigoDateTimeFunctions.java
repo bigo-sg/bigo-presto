@@ -4,8 +4,8 @@ import io.airlift.slice.Slice;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.function.Description;
-import io.prestosql.spi.function.LiteralParameters;
 import io.prestosql.spi.function.ScalarFunction;
+import io.prestosql.spi.function.SqlNullable;
 import io.prestosql.spi.function.SqlType;
 import io.prestosql.spi.type.StandardTypes;
 
@@ -15,19 +15,16 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
 import io.airlift.log.Logger;
-import org.joda.time.chrono.ISOChronology;
-import org.joda.time.format.DateTimeFormat;
 
 import static io.airlift.slice.Slices.utf8Slice;
-import static io.prestosql.plugin.bigo.util.DateTimeZoneIndexUtil.unpackChronology;
 import static io.prestosql.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
-import static io.prestosql.spi.type.DateTimeEncoding.unpackMillisUtc;
 
-public class BigoDateFunctions {
-    private static final Logger LOG = Logger.get(BigoDateFunctions.class);
+public class BigoDateTimeFunctions {
+    private static final Logger LOG = Logger.get(BigoDateTimeFunctions.class);
     private static final String dateFormat1 = "yyyy-MM-dd HH:mm:ss";
     private static final String dateFormat2 = "yyyy-MM-dd";
     private static final String dateFormat3 = "HH:mm:ss";
@@ -37,8 +34,7 @@ public class BigoDateFunctions {
     @SqlType(StandardTypes.VARCHAR)
     public static Slice dateAdd(
             @SqlType(StandardTypes.VARCHAR) Slice startDate,
-            @SqlType(StandardTypes.INTEGER) long daysToAdd)
-    {
+            @SqlType(StandardTypes.INTEGER) long daysToAdd) {
         // create SimpleDateFormat in every call as it's not thread safe.
         SimpleDateFormat formatter = new SimpleDateFormat(dateFormat2);
 
@@ -49,7 +45,7 @@ public class BigoDateFunctions {
             throw new PrestoException(INVALID_FUNCTION_ARGUMENT, e);
         }
 
-        c.add(Calendar.DATE, (int)daysToAdd);
+        c.add(Calendar.DATE, (int) daysToAdd);
 
         return utf8Slice(formatter.format(c.getTime()));
     }
@@ -59,35 +55,31 @@ public class BigoDateFunctions {
     @SqlType(StandardTypes.VARCHAR)
     public static Slice dateSub(
             @SqlType(StandardTypes.VARCHAR) Slice startDate,
-            @SqlType(StandardTypes.INTEGER) long daysToAdd)
-    {
+            @SqlType(StandardTypes.INTEGER) long daysToAdd) {
         return dateAdd(startDate, -daysToAdd);
     }
 
     @ScalarFunction("toUnixTime")
     @SqlType(StandardTypes.BIGINT)
-    public static long toUnixTime(@SqlType(StandardTypes.TIMESTAMP) long timestamp)
-    {
+    public static long toUnixTime(@SqlType(StandardTypes.TIMESTAMP) long timestamp) {
         return timestamp / 1000;
     }
 
     @Description("Gets current UNIX timestamp in seconds")
     @ScalarFunction("unix_timestamp")
     @SqlType(StandardTypes.BIGINT)
-    public static long currentUnixTimestamp(ConnectorSession session)
-    {
+    public static long currentUnixTimestamp(ConnectorSession session) {
         return session.getStartTime() / 1000;
     }
 
     @ScalarFunction("unix_timestamp")
     @SqlType(StandardTypes.BIGINT)
-    public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice sliceTime)
-    {
+    public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice sliceTime) {
         SimpleDateFormat df = new SimpleDateFormat(dateFormat1);
-        try{
+        try {
             Date date = df.parse(sliceTime.toStringUtf8());
             return toUnixTime(date.getTime());
-        }catch(Exception e){
+        } catch (Exception e) {
             LOG.info(e.getMessage());
         }
         return 0;
@@ -95,13 +87,12 @@ public class BigoDateFunctions {
 
     @ScalarFunction("unix_timestamp")
     @SqlType(StandardTypes.BIGINT)
-    public static long unixTimestamp (@SqlType(StandardTypes.VARCHAR) Slice sliceTime, @SqlType(StandardTypes.VARCHAR) Slice sliceFormat)
-    {
+    public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice sliceTime, @SqlType(StandardTypes.VARCHAR) Slice sliceFormat) {
         SimpleDateFormat df = new SimpleDateFormat(sliceFormat.toStringUtf8());
-        try{
+        try {
             Date date = df.parse(sliceTime.toStringUtf8());
             return toUnixTime(date.getTime());
-        }catch(Exception e){
+        } catch (Exception e) {
             LOG.info(e.getMessage());
         }
         return 0;
@@ -110,22 +101,31 @@ public class BigoDateFunctions {
     @Description("Converts unixtime to a string representing the timestamp according to the given format.")
     @ScalarFunction("from_unixtime")
     @SqlType(StandardTypes.VARCHAR)
-    public static Slice fromUnixtime(@SqlType(StandardTypes.BIGINT) long time, @SqlType(StandardTypes.VARCHAR) Slice format)
-    {
-        ZonedDateTime timestamp = ZonedDateTime.of(LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.ofHours(8)), ZoneId.of("UTC"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format.toStringUtf8());
-        return utf8Slice(timestamp.format(formatter));
+    public static Slice fromUnixtime(@SqlType(StandardTypes.BIGINT) long time, @SqlType(StandardTypes.VARCHAR) Slice format) throws ParseException {
+        String message = "";
+        try {
+            ZonedDateTime timestamp = ZonedDateTime.of(LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.ofHours(8)), ZoneId.of("UTC"));
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format.toStringUtf8());
+            return utf8Slice(timestamp.format(formatter));
+        } catch (Exception e) {
+            message = e.getMessage();
+        }
+        throw new PrestoException(INVALID_FUNCTION_ARGUMENT, message);
     }
-
 
     @Description("Converts unixtime to a string representing the timestamp according to the given format.")
     @ScalarFunction("from_utc_timestamp")
     @SqlType(StandardTypes.VARCHAR)
-    public static Slice fromUtcTimestamp(@SqlType(StandardTypes.BIGINT) long time, @SqlType(StandardTypes.VARCHAR) Slice format)
-    {
-        ZonedDateTime timestamp = ZonedDateTime.of(LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.UTC), ZoneId.of("UTC"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format.toStringUtf8());
-        return utf8Slice(timestamp.format(formatter));
+    public static Slice fromUtcTimestamp(@SqlType(StandardTypes.BIGINT) long time, @SqlType(StandardTypes.VARCHAR) Slice format) throws ParseException {
+        String message = "";
+        try {
+            ZonedDateTime timestamp = ZonedDateTime.of(LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.UTC), ZoneId.of("UTC"));
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format.toStringUtf8());
+            return utf8Slice(timestamp.format(formatter));
+        } catch (Exception e) {
+            message = e.getMessage();
+        }
+        throw new PrestoException(INVALID_FUNCTION_ARGUMENT, message);
     }
 
     @Description("Returns the date that is num_days after start_date.")
@@ -133,8 +133,7 @@ public class BigoDateFunctions {
     @SqlType(StandardTypes.BIGINT)
     public static long dateDiff(
             @SqlType(StandardTypes.VARCHAR) Slice endDate,
-            @SqlType(StandardTypes.VARCHAR) Slice startDate)
-    {
+            @SqlType(StandardTypes.VARCHAR) Slice startDate) {
         SimpleDateFormat formatter = new SimpleDateFormat(dateFormat2);
 
         Calendar cEnd = Calendar.getInstance();
@@ -146,14 +145,13 @@ public class BigoDateFunctions {
             throw new PrestoException(INVALID_FUNCTION_ARGUMENT, e);
         }
 
-        return TimeUnit.MILLISECONDS.toDays(cEnd.getTimeInMillis()-cStart.getTimeInMillis());
+        return TimeUnit.MILLISECONDS.toDays(cEnd.getTimeInMillis() - cStart.getTimeInMillis());
     }
 
     @Description("hour of the given string")
     @ScalarFunction("hour")
     @SqlType(StandardTypes.BIGINT)
-    public static long hourFromString (@SqlType(StandardTypes.VARCHAR) Slice sliceDate)
-    {
+    public static long hourFromString(@SqlType(StandardTypes.VARCHAR) Slice sliceDate) {
         SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
         SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat3);
 
@@ -175,8 +173,7 @@ public class BigoDateFunctions {
     @Description("minute of the given string")
     @ScalarFunction("minute")
     @SqlType(StandardTypes.BIGINT)
-    public static long minuteFromString (@SqlType(StandardTypes.VARCHAR) Slice sliceDate)
-    {
+    public static long minuteFromString(@SqlType(StandardTypes.VARCHAR) Slice sliceDate) {
         SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
         SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat3);
 
@@ -198,8 +195,7 @@ public class BigoDateFunctions {
     @Description("second of the given string")
     @ScalarFunction("second")
     @SqlType(StandardTypes.BIGINT)
-    public static long secondFromString (@SqlType(StandardTypes.VARCHAR) Slice sliceDate)
-    {
+    public static long secondFromString(@SqlType(StandardTypes.VARCHAR) Slice sliceDate) {
         SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
         SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat3);
 
@@ -221,8 +217,7 @@ public class BigoDateFunctions {
     @Description("day of the given string")
     @ScalarFunction("day")
     @SqlType(StandardTypes.BIGINT)
-    public static long dayFromString (@SqlType(StandardTypes.VARCHAR) Slice sliceDate)
-    {
+    public static long dayFromString(@SqlType(StandardTypes.VARCHAR) Slice sliceDate) {
         SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
         SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat2);
 
@@ -244,8 +239,7 @@ public class BigoDateFunctions {
     @Description("month of the given string")
     @ScalarFunction("month")
     @SqlType(StandardTypes.BIGINT)
-    public static long monthFromString (@SqlType(StandardTypes.VARCHAR) Slice sliceDate)
-    {
+    public static long monthFromString(@SqlType(StandardTypes.VARCHAR) Slice sliceDate) {
         SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
         SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat2);
 
@@ -267,8 +261,7 @@ public class BigoDateFunctions {
     @Description("year of the given string")
     @ScalarFunction("year")
     @SqlType(StandardTypes.BIGINT)
-    public static long yearFromString (@SqlType(StandardTypes.VARCHAR) Slice sliceDate)
-    {
+    public static long yearFromString(@SqlType(StandardTypes.VARCHAR) Slice sliceDate) {
         SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
         SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat2);
 
@@ -290,8 +283,7 @@ public class BigoDateFunctions {
     @Description("quarter of the given string")
     @ScalarFunction("quarter")
     @SqlType(StandardTypes.BIGINT)
-    public static long quarterFromString (@SqlType(StandardTypes.VARCHAR) Slice sliceDate)
-    {
+    public static long quarterFromString(@SqlType(StandardTypes.VARCHAR) Slice sliceDate) {
         SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
         SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat2);
 
@@ -314,8 +306,8 @@ public class BigoDateFunctions {
     @Description("Returns the date part of the timestamp string")
     @ScalarFunction("to_date")
     @SqlType(StandardTypes.VARCHAR)
-    public static Slice stringToDate(@SqlType(StandardTypes.VARCHAR) Slice inputTimestamp)
-    {
+    @SqlNullable
+    public static Slice stringToDate(@SqlType(StandardTypes.VARCHAR) Slice inputTimestamp) {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         try {
             java.sql.Date date = new java.sql.Date(0);
@@ -326,4 +318,36 @@ public class BigoDateFunctions {
             return null;
         }
     }
+
+    @Description("cal period time.")
+    @ScalarFunction("cal_pt")
+    @SqlType(StandardTypes.DOUBLE)
+    public static double cal_pt(@SqlType(StandardTypes.VARCHAR) Slice slice) {
+        String str = slice.toStringUtf8().toUpperCase();
+        int pIndex = str.indexOf("PT");
+        int mIndex = str.indexOf("M");
+        int sIndex = str.indexOf("S");
+        int hIndex = str.indexOf("H");
+        double res = 0;
+
+        Pattern pattern1 = Pattern.compile("[PT].*[0-9.].*[H].*[0-9.].*[M].*[0-9.].*[S]");
+        Pattern pattern2 = Pattern.compile("[PT].*[0-9.].*[M].*[0-9.].*[S]");
+        Pattern pattern3 = Pattern.compile("[PT].*[0-9.].*[S]");
+
+        try {
+            if (pattern1.matcher(str).matches()) {
+                res = Double.parseDouble(str.substring(pIndex + 2, hIndex)) * 60 * 60
+                        + Double.parseDouble(str.substring(hIndex + 1, mIndex)) * 60
+                        + Double.parseDouble(str.substring(mIndex + 1, sIndex));
+            } else if (pattern2.matcher(str).matches()) {
+                res = Double.parseDouble(str.substring(pIndex + 2, mIndex)) * 60 + Double.parseDouble(str.substring(mIndex + 1, sIndex));
+            } else if (pattern3.matcher(str).matches()) {
+                res += Double.parseDouble(str.substring(pIndex + 2, sIndex));
+            }
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+        return res;
+    }
+
 }

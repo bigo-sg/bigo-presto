@@ -31,6 +31,12 @@ import io.prestosql.operator.aggregation.ApproximateLongPercentileAggregations;
 import io.prestosql.operator.aggregation.ApproximateLongPercentileArrayAggregations;
 import io.prestosql.operator.aggregation.ApproximateRealPercentileAggregations;
 import io.prestosql.operator.aggregation.ApproximateRealPercentileArrayAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateDoublePercentileAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateDoublePercentileArrayAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateLongPercentileAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateLongPercentileArrayAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateRealPercentileAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateRealPercentileArrayAggregations;
 import io.prestosql.operator.aggregation.ApproximateSetAggregation;
 import io.prestosql.operator.aggregation.AverageAggregations;
 import io.prestosql.operator.aggregation.BitwiseAndAggregation;
@@ -100,6 +106,7 @@ import io.prestosql.operator.scalar.ArraySortComparatorFunction;
 import io.prestosql.operator.scalar.ArraySortFunction;
 import io.prestosql.operator.scalar.ArrayUnionFunction;
 import io.prestosql.operator.scalar.ArraysOverlapFunction;
+import io.prestosql.operator.scalar.BigoDateFunctions;
 import io.prestosql.operator.scalar.BitwiseFunctions;
 import io.prestosql.operator.scalar.CharacterStringCasts;
 import io.prestosql.operator.scalar.ColorFunctions;
@@ -427,6 +434,12 @@ public class FunctionRegistry
                 .aggregates(ApproximateDoublePercentileArrayAggregations.class)
                 .aggregates(ApproximateRealPercentileAggregations.class)
                 .aggregates(ApproximateRealPercentileArrayAggregations.class)
+                .aggregates(BigoApproximateLongPercentileAggregations.class)
+                .aggregates(BigoApproximateLongPercentileArrayAggregations.class)
+                .aggregates(BigoApproximateDoublePercentileAggregations.class)
+                .aggregates(BigoApproximateDoublePercentileArrayAggregations.class)
+                .aggregates(BigoApproximateRealPercentileAggregations.class)
+                .aggregates(BigoApproximateRealPercentileArrayAggregations.class)
                 .aggregates(CountIfAggregation.class)
                 .aggregates(BooleanAndAggregation.class)
                 .aggregates(BooleanOrAggregation.class)
@@ -477,6 +490,7 @@ public class FunctionRegistry
                 .scalars(DateTimeFunctions.class)
                 .scalars(JsonFunctions.class)
                 .scalars(BigoJsonFunctions.class)
+                .scalars(BigoDateFunctions.class)
                 .scalars(ColorFunctions.class)
                 .scalars(ColorOperators.class)
                 .scalar(ColorOperators.ColorDistinctFromOperator.class)

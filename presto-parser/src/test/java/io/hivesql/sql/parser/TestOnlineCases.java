@@ -22,4 +22,9 @@ public class TestOnlineCases extends SQLTester {
     public void test03() {
         checkASTNodeFromFile("hive/parser/cases/online-case-04.sql");
     }
+
+    @Test
+    public void test04() {
+        runHiveSQLFromFile("hive/parser/cases/online-case-05.sql");
+    }
 }

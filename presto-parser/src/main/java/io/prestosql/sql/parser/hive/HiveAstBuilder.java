@@ -234,6 +234,38 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 Property property = new Property(new Identifier("format", false),
                         new StringLiteral("TEXTFILE"));
                 properties.add(property);
+            } else if (format.equalsIgnoreCase("orc")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("ORC"));
+                properties.add(property);
+            } else if (format.equalsIgnoreCase("orcfile")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("ORC"));
+                properties.add(property);
+            } else if (format.equalsIgnoreCase("textfile")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("TEXTFILE"));
+                properties.add(property);
+            } else if (format.equalsIgnoreCase("rcfile")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("RCBINARY"));
+                properties.add(property);
+            } else if (format.equalsIgnoreCase("SEQUENCEFILE")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("SEQUENCEFILE"));
+                properties.add(property);
+            } else if (format.equalsIgnoreCase("PARQUET")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("PARQUET"));
+                properties.add(property);
+            } else if (format.equalsIgnoreCase("AVRO")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("AVRO"));
+                properties.add(property);
+            } else if (format.equalsIgnoreCase("JSON")) {
+                Property property = new Property(new Identifier("format", false),
+                        new StringLiteral("JSON"));
+                properties.add(property);
             } else {
                 throw parseError("create table format " + format + " not supported!",
                         createFileFormatContext);
@@ -1210,7 +1242,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             );
         }
 
-        if (ctx.qualifiedName().getText().equalsIgnoreCase("count")) {
+        if (expressions.size() != 1 && ctx.qualifiedName().getText().equalsIgnoreCase("count")) {
             Row row = new Row(getLocation(ctx), expressions);
             return new FunctionCall(
                     Optional.of(getLocation(ctx)),

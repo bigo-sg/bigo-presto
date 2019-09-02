@@ -725,7 +725,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitSingleInsertQuery(SqlBaseParser.SingleInsertQueryContext ctx) {
-        QueryBody term = (QueryBody) visit(ctx.queryTerm());
+
+        QueryBody term = null;
+        Object o = visit(ctx.queryTerm());
+        if (o instanceof Query) {
+            throw parseError("too many `()`out of query?, which syntax not supported by hive", ctx);
+        } else {
+            term = (QueryBody) o;
+        }
 
         Query query = (Query)withQueryOrganization(term, ctx.queryOrganization());
         if (ctx.insertInto() == null) {
@@ -1438,7 +1445,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitTypeConstructor(SqlBaseParser.TypeConstructorContext ctx) {
 
-        String value = ((StringLiteral) visit(ctx.STRING())).getValue();
+        Object o = visit(ctx.STRING());
+        if (o == null) {
+            throw parseError("cannot recognize input near " +
+                    ctx.start.getText() + " or " + ctx.stop.getText() +
+                    "most reason may be missing column before like/rlike/between or missing =/!=/>/</>=/<=/<> between column and condition expression", ctx);
+        }
+        String value = ((StringLiteral) o).getValue();
 
         String type = ctx.identifier().getText();
         if (type.equalsIgnoreCase("time")) {

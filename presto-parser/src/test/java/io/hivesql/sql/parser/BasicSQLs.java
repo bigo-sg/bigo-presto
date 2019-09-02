@@ -292,4 +292,11 @@ public class BasicSQLs extends SQLTester {
         checkASTNode(prestoSql, hiveSql);
     }
 
+    @Test
+    public void testConcatPipe()
+    {
+        String hiveSql = "SELECT a||b from t";
+        checkASTNode(hiveSql);
+    }
+
 }

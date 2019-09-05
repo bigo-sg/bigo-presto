@@ -45,6 +45,7 @@ import io.prestosql.spi.type.TypeNotFoundException;
 import io.prestosql.spi.type.TypeSignatureParameter;
 import io.prestosql.spi.type.VarcharType;
 import io.prestosql.sql.parser.SqlParser;
+import io.prestosql.sql.parser.hive.RLikePredicate;
 import io.prestosql.sql.planner.Symbol;
 import io.prestosql.sql.planner.TypeProvider;
 import io.prestosql.sql.tree.ArithmeticBinaryExpression;
@@ -113,6 +114,7 @@ import io.prestosql.type.TypeCoercion;
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -201,6 +203,8 @@ public class ExpressionAnalyzer
     private final Map<NodeRef<Parameter>, Expression> parameters;
     private final WarningCollector warningCollector;
     private final TypeCoercion typeCoercion;
+    private final List<String> valueTypes = Arrays.asList(StandardTypes.DOUBLE, StandardTypes.TINYINT, StandardTypes.SMALLINT,
+            StandardTypes.INTEGER, StandardTypes.BIGINT, StandardTypes.DECIMAL);
     private static final Logger LOG = Logger.get(ExpressionAnalyzer.class);
 
     public ExpressionAnalyzer(
@@ -763,6 +767,16 @@ public class ExpressionAnalyzer
         protected Type visitLikePredicate(LikePredicate node, StackableAstVisitorContext<Context> context)
         {
             Type valueType = process(node.getValue(), context);
+
+            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                if (!(valueType instanceof CharType) && !(valueType instanceof VarcharType)
+                        && valueTypes.contains(valueType.getTypeSignature().getBase())) {
+                    Cast cast = new Cast(node.getValue(), TypeSignatureTranslator.toSqlType(VarcharType.VARCHAR));
+                    node.setValue(cast);
+                }
+                valueType = process(node.getValue(), context);
+            }
+
             if (!(valueType instanceof CharType) && !(valueType instanceof VarcharType)) {
                 coerceType(context, node.getValue(), VARCHAR, "Left side of LIKE expression");
             }
@@ -773,6 +787,35 @@ public class ExpressionAnalyzer
                 Expression escape = node.getEscape().get();
                 Type escapeType = getVarcharType(escape, context);
                 coerceType(context, escape, escapeType, "Escape for LIKE expression");
+            }
+
+            return setExpressionType(node, BOOLEAN);
+        }
+
+        @Override
+        public Type visitRLikePredicate(RLikePredicate node, StackableAstVisitorContext<Context> context)
+        {
+            Type valueType = process(node.getValue(), context);
+
+            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                if (!(valueType instanceof CharType) && !(valueType instanceof VarcharType)
+                        && valueTypes.contains(valueType.getTypeSignature().getBase())) {
+                    Cast cast = new Cast(node.getValue(), TypeSignatureTranslator.toSqlType(VarcharType.VARCHAR));
+                    node.setValue(cast);
+                }
+                valueType = process(node.getValue(), context);
+            }
+
+            if (!(valueType instanceof CharType) && !(valueType instanceof VarcharType)) {
+                coerceType(context, node.getValue(), VARCHAR, "Left side of RLIKE expression");
+            }
+
+            Type patternType = getVarcharType(node.getPattern(), context);
+            coerceType(context, node.getPattern(), patternType, "Pattern for RLIKE expression");
+            if (node.getEscape().isPresent()) {
+                Expression escape = node.getEscape().get();
+                Type escapeType = getVarcharType(escape, context);
+                coerceType(context, escape, escapeType, "Escape for RLIKE expression");
             }
 
             return setExpressionType(node, BOOLEAN);
@@ -1000,6 +1043,26 @@ public class ExpressionAnalyzer
             }
 
             List<TypeSignatureProvider> argumentTypes = getCallArgumentTypes(node.getArguments(), context);
+
+            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                String funcName = node.getName().toString();
+                // implicit type conversion for these function.
+                List<String> funcList = Arrays.asList("sum", "avg");
+                List<Expression> argList = new ArrayList<>();
+                if (funcList.contains(funcName) && node.getArguments().size() > 0) {
+                    Type argType = process(node.getArguments().get(0), context);
+                    if (argType.getTypeSignature().getBase().equals(StandardTypes.VARCHAR)) {
+                        for (Expression expression : node.getArguments()) {
+                            Cast cast = new Cast(expression, TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE));
+                            argList.add(cast);
+                        }
+                        if (argList.size() > 0) {
+                            node.setArguments(argList);
+                        }
+                        argumentTypes = getCallArgumentTypes(node.getArguments(), context);
+                    }
+                }
+            }
 
             ResolvedFunction function;
             try {
@@ -1334,6 +1397,25 @@ public class ExpressionAnalyzer
                         ImmutableList.<Expression>builder().add(value).addAll(inListExpression.getValues()).build());
             }
             else if (valueList instanceof SubqueryExpression) {
+                if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                    // cast value type to sub query type.
+                    TypeConversion tc = new TypeConversion();
+                    Type valueType = process(node.getValue(), context);
+                    Type inValueType = process(node.getValueList(), context);
+                    if (! valueType.getTypeSignature().getBase().equals(inValueType.getTypeSignature().getBase())) {
+                        if (tc.canConvertType(valueType, inValueType)) {
+                            Cast cast = new Cast(node.getValue(), TypeSignatureTranslator.toSqlType(inValueType));
+                            node.setValue(cast);
+                        }
+                        else if (tc.stringAndValueType(valueType, inValueType) == valueType) {
+                            Cast cast = new Cast(node.getValue(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE));
+                            node.setValue(cast);
+                        }
+                        value = node.getValue();
+                        valueList = node.getValueList();
+                    }
+                }
+
                 coerceToSingleType(context, node, "value and result of subquery must be of the same type for IN expression: %s vs %s", value, valueList);
             }
 

@@ -4,8 +4,8 @@ import io.airlift.log.Logger;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 
-public class UnHexFunctionTest {
-    private static final Logger log = Logger.get(UnHexFunctionTest.class);
+public class TestUnHexFunction {
+    private static final Logger log = Logger.get(TestUnHexFunction.class);
 
     @Test
     private void testUnHex()

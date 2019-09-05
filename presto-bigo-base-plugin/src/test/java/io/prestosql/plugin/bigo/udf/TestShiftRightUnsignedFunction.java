@@ -4,7 +4,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 
-public class ShiftRightUnsignedFunctionTest {
+public class TestShiftRightUnsignedFunction {
 
     @Test
     private void testShiftRightUnsignedFunction()

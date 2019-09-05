@@ -11,18 +11,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.prestosql.sql.tree;
+package io.prestosql.sql.parser.hive;
 
-import com.google.common.collect.ImmutableList;
-import java.util.List;
-import java.util.Objects;
+import io.prestosql.sql.tree.AstVisitor;
+import io.prestosql.sql.tree.Expression;
+import io.prestosql.sql.tree.LikePredicate;
+import io.prestosql.sql.tree.NodeLocation;
 
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-public class LikePredicate
-        extends Expression
+public class RLikePredicate
+        extends LikePredicate
 {
     private Expression value;
     private final Expression pattern;
@@ -32,24 +33,24 @@ public class LikePredicate
         this.value = value;
     }
 
-    public LikePredicate(Expression value, Expression pattern, Expression escape)
+    public RLikePredicate(Expression value, Expression pattern, Expression escape)
     {
         this(Optional.empty(), value, pattern, Optional.of(escape));
     }
 
-    public LikePredicate(NodeLocation location, Expression value, Expression pattern, Optional<Expression> escape)
+    public RLikePredicate(NodeLocation location, Expression value, Expression pattern, Optional<Expression> escape)
     {
         this(Optional.of(location), value, pattern, escape);
     }
 
-    public LikePredicate(Expression value, Expression pattern, Optional<Expression> escape)
+    public RLikePredicate(Expression value, Expression pattern, Optional<Expression> escape)
     {
         this(Optional.empty(), value, pattern, escape);
     }
 
-    private LikePredicate(Optional<NodeLocation> location, Expression value, Expression pattern, Optional<Expression> escape)
+    private RLikePredicate(Optional<NodeLocation> location, Expression value, Expression pattern, Optional<Expression> escape)
     {
-        super(location);
+        super(location, value, pattern, escape);
         requireNonNull(value, "value is null");
         requireNonNull(pattern, "pattern is null");
         requireNonNull(escape, "escape is null");
@@ -77,40 +78,6 @@ public class LikePredicate
     @Override
     public <R, C> R accept(AstVisitor<R, C> visitor, C context)
     {
-        return visitor.visitLikePredicate(this, context);
-    }
-
-    @Override
-    public List<Node> getChildren()
-    {
-        ImmutableList.Builder<Node> result = ImmutableList.<Node>builder()
-                .add(value)
-                .add(pattern);
-
-        escape.ifPresent(result::add);
-
-        return result.build();
-    }
-
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        LikePredicate that = (LikePredicate) o;
-        return Objects.equals(value, that.value) &&
-                Objects.equals(pattern, that.pattern) &&
-                Objects.equals(escape, that.escape);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(value, pattern, escape);
+        return visitor.visitRLikePredicate(this, context);
     }
 }

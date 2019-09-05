@@ -5,7 +5,7 @@ import org.testng.annotations.Test;
 import static io.airlift.slice.Slices.utf8Slice;
 import static org.testng.Assert.assertEquals;
 
-public class ShiftLeftFunctionTest {
+public class TestShiftLeftFunction {
 
     @Test
     private void testShiftRightFunction()

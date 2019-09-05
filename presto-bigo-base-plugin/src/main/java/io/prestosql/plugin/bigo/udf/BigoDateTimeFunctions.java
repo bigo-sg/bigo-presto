@@ -280,6 +280,50 @@ public class BigoDateTimeFunctions {
         }
     }
 
+    @Description("weekofyear of the given string")
+    @ScalarFunction("weekofyear")
+    @SqlType(StandardTypes.BIGINT)
+    public static long weekOfYear(@SqlType(StandardTypes.VARCHAR) Slice sliceDate) {
+        SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
+        SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat2);
+
+        Calendar calendar = Calendar.getInstance();
+        try {
+            Date date = null;
+            try {
+                date = formatter1.parse(sliceDate.toStringUtf8());
+            } catch (ParseException e) {
+                date = formatter2.parse(sliceDate.toStringUtf8());
+            }
+            calendar.setTime(date);
+            return calendar.get(Calendar.WEEK_OF_YEAR);
+        } catch (ParseException e) {
+            return -1;
+        }
+    }
+
+    @Description("weekofyear of the given string")
+    @ScalarFunction("weekofmonth")
+    @SqlType(StandardTypes.BIGINT)
+    public static long weekOfMonth(@SqlType(StandardTypes.VARCHAR) Slice sliceDate) {
+        SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
+        SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat2);
+
+        Calendar calendar = Calendar.getInstance();
+        try {
+            Date date = null;
+            try {
+                date = formatter1.parse(sliceDate.toStringUtf8());
+            } catch (ParseException e) {
+                date = formatter2.parse(sliceDate.toStringUtf8());
+            }
+            calendar.setTime(date);
+            return calendar.get(Calendar.WEEK_OF_MONTH);
+        } catch (ParseException e) {
+            return -1;
+        }
+    }
+
     @Description("quarter of the given string")
     @ScalarFunction("quarter")
     @SqlType(StandardTypes.BIGINT)

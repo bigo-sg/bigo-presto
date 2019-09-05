@@ -85,8 +85,8 @@ public class TypeConversion {
                 || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null) {
             return null;
         }
-        List<String> valueTypes = Arrays.asList(StandardTypes.TINYINT, StandardTypes.SMALLINT, StandardTypes.INTEGER,
-                StandardTypes.BIGINT, StandardTypes.DECIMAL);
+        List<String> valueTypes = Arrays.asList(StandardTypes.DOUBLE, StandardTypes.TINYINT, StandardTypes.SMALLINT,
+                StandardTypes.INTEGER, StandardTypes.BIGINT, StandardTypes.DECIMAL);
         String leftTypeName = leftType.getTypeSignature().getBase();
         String rightTypeName = rightType.getTypeSignature().getBase();
 

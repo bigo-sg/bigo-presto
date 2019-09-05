@@ -9,7 +9,7 @@ import static io.airlift.slice.Slices.utf8Slice;
 import static io.prestosql.plugin.bigo.udf.BigoDateTimeFunctions.unixTimestamp;
 import static org.testng.Assert.*;
 
-public class BigoDateTimeFunctionsTest {
+public class TestBigoDateTimeFunctions {
 
     @Test
     public void testDateAdd() {
@@ -39,7 +39,8 @@ public class BigoDateTimeFunctionsTest {
     @Test
     public void testUnixTimestamp()
     {
-        double uts = unixTimestamp(utf8Slice("2019-07-22 00:00:00"));
+        double uts = unixTimestamp(utf8Slice("2019-08-31 12:00:00"));
+        double n = (1.5672708E9 - 1567224000) / 3600;
         if(String.valueOf(uts).contains("E")){
             BigDecimal bd1 = new BigDecimal(uts);
             assertEquals(bd1.toPlainString(), "1563724800");

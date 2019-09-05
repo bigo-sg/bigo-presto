@@ -52,6 +52,15 @@ public class TestTypeConversion {
         assert(tc.compare3TypesOrder(varcharType, doubleType, intType) == varcharType);
         assert(tc.compare3TypesOrder(varcharType, timestampType, intType) == varcharType);
         assert(tc.compare3TypesOrder(dateType, doubleType, varcharType) == varcharType);
+    }
 
+    @Test
+    public void teststringAndValueType() {
+        assert (tc.stringAndValueType(doubleType, varcharType) == varcharType);
+        assert (tc.stringAndValueType(varcharType, doubleType) == varcharType);
+        assert (tc.stringAndValueType(doubleType, doubleType) == null);
+        assert (tc.stringAndValueType(intType, intType) == null);
+        assert (tc.stringAndValueType(null, intType) == null);
+        assert (tc.stringAndValueType(null, varcharType) == null);
     }
 }

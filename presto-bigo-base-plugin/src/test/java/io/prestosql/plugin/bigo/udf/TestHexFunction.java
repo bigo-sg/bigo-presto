@@ -3,7 +3,7 @@ package io.prestosql.plugin.bigo.udf;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 
-public class HexFunctionTest {
+public class TestHexFunction {
 
     @Test
     private void testHex()

@@ -24,9 +24,13 @@ import static java.util.Objects.requireNonNull;
 public class LikePredicate
         extends Expression
 {
-    private final Expression value;
+    private Expression value;
     private final Expression pattern;
     private final Optional<Expression> escape;
+
+    public void setValue(Expression value) {
+        this.value = value;
+    }
 
     public LikePredicate(Expression value, Expression pattern, Expression escape)
     {

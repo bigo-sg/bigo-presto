@@ -6,8 +6,8 @@ import org.testng.annotations.Test;
 import static io.airlift.slice.Slices.utf8Slice;
 import static org.testng.Assert.assertEquals;
 
-public class PosModFunctionTest {
-    private static final Logger log = Logger.get(PosModFunctionTest.class);
+public class TestPosModFunction {
+    private static final Logger log = Logger.get(TestPosModFunction.class);
 
     @Test
     private void testPosModFunction()

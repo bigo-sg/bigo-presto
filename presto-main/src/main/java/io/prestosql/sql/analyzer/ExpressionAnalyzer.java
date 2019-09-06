@@ -505,19 +505,26 @@ public class ExpressionAnalyzer
                     return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
                 }
                 if (tc.stringAndValueType(leftType, rightType) == leftType) {
-                    node.setLeft(new Cast(node.getLeft(), StandardTypes.DOUBLE));
-
-                    if (!rightType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)){
-                        node.setRight(new Cast(node.getRight(), StandardTypes.DOUBLE));
-                        rightType = process(node.getRight(), context);
+                    if (rightType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                        node.setLeft(new Cast(node.getLeft(), StandardTypes.BIGINT));
+                    } else {
+                        node.setLeft(new Cast(node.getLeft(), StandardTypes.DOUBLE));
+                        if (!rightType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                            node.setRight(new Cast(node.getRight(), StandardTypes.DOUBLE));
+                            rightType = process(node.getRight(), context);
+                        }
                     }
                     leftType = process(node.getLeft(), context);
                 }
                 else if (tc.stringAndValueType(leftType, rightType) == rightType) {
-                    node.setRight(new Cast(node.getRight(), StandardTypes.DOUBLE));
-                    if (!leftType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)){
-                        node.setLeft(new Cast(node.getLeft(), StandardTypes.DOUBLE));
-                        leftType = process(node.getLeft(), context);
+                    if (leftType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                        node.setRight(new Cast(node.getRight(), StandardTypes.BIGINT));
+                    } else {
+                        node.setRight(new Cast(node.getRight(), StandardTypes.DOUBLE));
+                        if (!leftType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                            node.setLeft(new Cast(node.getLeft(), StandardTypes.DOUBLE));
+                            leftType = process(node.getLeft(), context);
+                        }
                     }
                     rightType = process(node.getRight(), context);
                 }

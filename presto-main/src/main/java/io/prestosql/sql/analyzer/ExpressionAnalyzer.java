@@ -514,6 +514,33 @@ public class ExpressionAnalyzer
                 Type leftType = process(node.getLeft(), context);
                 Type rightType = process(node.getRight(), context);
 
+                if (leftType == null || rightType == null) {
+                    return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
+                }
+                if (tc.stringAndValueType(leftType, rightType) == leftType) {
+                    if (rightType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(BigintType.BIGINT)));
+                    } else {
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                        if (!rightType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                            node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                            rightType = process(node.getRight(), context);
+                        }
+                    }
+                    leftType = process(node.getLeft(), context);
+                }
+                else if (tc.stringAndValueType(leftType, rightType) == rightType) {
+                    if (leftType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                    } else {
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                        if (!leftType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                            node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
+                            leftType = process(node.getLeft(), context);
+                        }
+                    }
+                    rightType = process(node.getRight(), context);
+                }
+
                 if (tc.compare2TypesOrder(leftType, rightType) == rightType) {
                     if (tc.canConvertType(leftType, rightType)) {
                         Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());

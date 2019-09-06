@@ -17,8 +17,11 @@ import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.airlift.concurrent.ThreadPoolExecutorMBean;
 import io.airlift.log.Logger;
+import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.prestosql.ExceededCpuLimitException;
+import io.prestosql.ExceededInputDataLimitException;
+import io.prestosql.ExceededPhysicalInputDataLimitException;
 import io.prestosql.Session;
 import io.prestosql.event.QueryMonitor;
 import io.prestosql.execution.QueryExecution.QueryOutputInfo;
@@ -52,6 +55,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static io.airlift.concurrent.Threads.threadsNamed;
 import static io.prestosql.SystemSessionProperties.getQueryMaxCpuTime;
+import static io.prestosql.SystemSessionProperties.getQueryMaxInputData;
+import static io.prestosql.SystemSessionProperties.getQueryMaxPysicalInputData;
 import static io.prestosql.execution.QueryState.RUNNING;
 import static io.prestosql.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static java.lang.String.format;
@@ -69,6 +74,8 @@ public class SqlQueryManager
     private final QueryTracker<QueryExecution> queryTracker;
 
     private final Duration maxQueryCpuTime;
+    private final DataSize maxPhysicalInputDataSize;
+    private final DataSize maxInputDataSize;
 
     private final ExecutorService queryExecutor;
     private final ThreadPoolExecutorMBean queryExecutorMBean;
@@ -85,6 +92,8 @@ public class SqlQueryManager
         this.queryMonitor = requireNonNull(queryMonitor, "queryMonitor is null");
 
         this.maxQueryCpuTime = queryManagerConfig.getQueryMaxCpuTime();
+        this.maxPhysicalInputDataSize = queryManagerConfig.getQueryMaxPhsicalInputDataSize();
+        this.maxInputDataSize = queryManagerConfig.getQueryMaxInputDataSize();
 
         this.queryExecutor = newCachedThreadPool(threadsNamed("query-scheduler-%s"));
         this.queryExecutorMBean = new ThreadPoolExecutorMBean((ThreadPoolExecutor) queryExecutor);
@@ -112,6 +121,12 @@ public class SqlQueryManager
             }
             catch (Throwable e) {
                 log.error(e, "Error enforcing query CPU time limits");
+            }
+            try {
+                enforceInputDataLimits();
+            }
+            catch (Throwable e) {
+                log.error(e, "Error enforcing query input data size limits");
             }
         }, 1, 1, TimeUnit.SECONDS);
     }
@@ -310,6 +325,39 @@ public class SqlQueryManager
             Duration limit = Ordering.natural().min(maxQueryCpuTime, sessionLimit);
             if (cpuTime.compareTo(limit) > 0) {
                 query.fail(new ExceededCpuLimitException(limit));
+            }
+        }
+    }
+
+    /**
+     * Enforce query input data limits
+     */
+    private void enforceInputDataLimits()
+    {
+        for (QueryExecution query : queryTracker.getAllQueries()) {
+            QueryInfo queryInfo = query.getQueryInfo();
+            if (queryInfo == null) {
+                return;
+            }
+            QueryStats queryStats = queryInfo.getQueryStats();
+            if (queryStats == null) {
+                return;
+            }
+
+            DataSize physicalDataSize = queryStats.getPhysicalInputDataSize();
+            DataSize rowDataSize = query.getQueryInfo().getQueryStats().getProcessedInputDataSize();
+
+            DataSize physicalDataSizeLimit = getQueryMaxPysicalInputData(query.getSession());
+            DataSize dataSizeLimit = getQueryMaxInputData(query.getSession());
+
+            DataSize limit1 = Ordering.natural().min(maxPhysicalInputDataSize, physicalDataSizeLimit);
+            DataSize limit2 = Ordering.natural().min(maxInputDataSize, dataSizeLimit);
+
+            if (limit1.compareTo(physicalDataSize) < 0) {
+                query.fail(new ExceededPhysicalInputDataLimitException(limit1));
+            }
+            if (limit2.compareTo(rowDataSize) < 0) {
+                query.fail(new ExceededInputDataLimitException(limit2));
             }
         }
     }

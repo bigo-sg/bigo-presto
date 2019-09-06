@@ -17,7 +17,9 @@ import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigDescription;
 import io.airlift.configuration.DefunctConfig;
 import io.airlift.configuration.LegacyConfig;
+import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
+import io.airlift.units.MinDataSize;
 import io.airlift.units.MinDuration;
 
 import javax.validation.constraints.Max;
@@ -60,6 +62,8 @@ public class QueryManagerConfig
     private Duration queryMaxRunTime = new Duration(100, TimeUnit.DAYS);
     private Duration queryMaxExecutionTime = new Duration(100, TimeUnit.DAYS);
     private Duration queryMaxCpuTime = new Duration(1_000_000_000, TimeUnit.DAYS);
+    private DataSize queryMaxPhysicalInputDataSize = new DataSize(1000, DataSize.Unit.TERABYTE);
+    private DataSize queryMaxInputDataSize = new DataSize(1000, DataSize.Unit.TERABYTE);
 
     private int requiredWorkers = 1;
     private Duration requiredWorkersMaxWait = new Duration(5, TimeUnit.MINUTES);
@@ -292,6 +296,34 @@ public class QueryManagerConfig
     public QueryManagerConfig setQueryMaxCpuTime(Duration queryMaxCpuTime)
     {
         this.queryMaxCpuTime = queryMaxCpuTime;
+        return this;
+    }
+
+    @NotNull
+    @MinDataSize("1B")
+    public DataSize getQueryMaxPhsicalInputDataSize()
+    {
+        return queryMaxPhysicalInputDataSize;
+    }
+
+    @Config("query.max-physical-input-data-size")
+    public QueryManagerConfig setQueryMaxPhsicalInputDataSize(DataSize queryMaxPhysicalInputDataSize)
+    {
+        this.queryMaxPhysicalInputDataSize = queryMaxPhysicalInputDataSize;
+        return this;
+    }
+
+    @NotNull
+    @MinDataSize("1B")
+    public DataSize getQueryMaxInputDataSize()
+    {
+        return queryMaxPhysicalInputDataSize;
+    }
+
+    @Config("query.max-input-data-size")
+    public QueryManagerConfig setQueryMaxInputDataSize(DataSize queryMaxInputDataSize)
+    {
+        this.queryMaxInputDataSize = queryMaxInputDataSize;
         return this;
     }
 

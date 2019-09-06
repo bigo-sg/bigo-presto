@@ -68,6 +68,8 @@ public final class SystemSessionProperties
     public static final String QUERY_MAX_RUN_TIME = "query_max_run_time";
     public static final String RESOURCE_OVERCOMMIT = "resource_overcommit";
     public static final String QUERY_MAX_CPU_TIME = "query_max_cpu_time";
+    public static final String QUERY_MAX_PHYSICAL_INPUT_DATA_SIZE = "query_max_physical_input_data_size";
+    public static final String QUERY_MAX_INPUT_DATA_SIZE = "query_max_input_data_size";
     public static final String QUERY_MAX_STAGE_COUNT = "query_max_stage_count";
     public static final String REDISTRIBUTE_WRITES = "redistribute_writes";
     public static final String SCALE_WRITERS = "scale_writers";
@@ -243,6 +245,16 @@ public final class SystemSessionProperties
                         QUERY_MAX_CPU_TIME,
                         "Maximum CPU time of a query",
                         queryManagerConfig.getQueryMaxCpuTime(),
+                        false),
+                dataSizeProperty(
+                        QUERY_MAX_PHYSICAL_INPUT_DATA_SIZE,
+                        "Maximum physical input data size of a query",
+                        queryManagerConfig.getQueryMaxPhsicalInputDataSize(),
+                        false),
+                dataSizeProperty(
+                        QUERY_MAX_INPUT_DATA_SIZE,
+                        "Maximum input data size time of a query",
+                        queryManagerConfig.getQueryMaxInputDataSize(),
                         false),
                 dataSizeProperty(
                         QUERY_MAX_MEMORY,
@@ -732,6 +744,16 @@ public final class SystemSessionProperties
     public static Duration getQueryMaxCpuTime(Session session)
     {
         return session.getSystemProperty(QUERY_MAX_CPU_TIME, Duration.class);
+    }
+
+    public static DataSize getQueryMaxPysicalInputData(Session session)
+    {
+        return session.getSystemProperty(QUERY_MAX_PHYSICAL_INPUT_DATA_SIZE, DataSize.class);
+    }
+
+    public static DataSize getQueryMaxInputData(Session session)
+    {
+        return session.getSystemProperty(QUERY_MAX_INPUT_DATA_SIZE, DataSize.class);
     }
 
     public static boolean isSpillEnabled(Session session)

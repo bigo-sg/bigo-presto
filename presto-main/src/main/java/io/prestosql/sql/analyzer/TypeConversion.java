@@ -77,6 +77,15 @@ public class TypeConversion {
         return true;
     }
 
+    protected boolean isValueType(Type type) {
+        if (type == null) {
+            return false;
+        }
+        List<String> valueTypes = Arrays.asList(StandardTypes.TINYINT, StandardTypes.SMALLINT, StandardTypes.INTEGER,
+                StandardTypes.BIGINT, StandardTypes.DOUBLE, StandardTypes.DECIMAL);
+        return valueTypes.contains(type.getTypeSignature().getBase());
+    }
+
     protected Type stringAndValueType(Type leftType, Type rightType) {
         if (leftType == null || rightType == null) {
             return null;
@@ -106,6 +115,10 @@ public class TypeConversion {
                 || typeConvertOrderMap.get(rightType.getTypeSignature().getBase()) == null) {
             return null;
         }
+        if (isValueType(leftType) && isValueType(rightType)) {
+            return null;
+        }
+
         int leftOrder = typeConvertOrderMap.get(leftType.getTypeSignature().getBase());
         int rightOrder = typeConvertOrderMap.get(rightType.getTypeSignature().getBase());
 

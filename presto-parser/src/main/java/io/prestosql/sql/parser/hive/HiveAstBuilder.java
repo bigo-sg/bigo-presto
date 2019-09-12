@@ -360,6 +360,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         with = new With(getLocation(ctx), false, queries);
         return with;
     }
+    @Override public Node visitCreateFunction(SqlBaseParser.CreateFunctionContext ctx) {
+        return new CreateTemporyFunction(Optional.of(getLocation(ctx)), ctx.qualifiedName().getText(), ctx.className.getText());
+    }
 
     @Override
     public Node visitExplain(SqlBaseParser.ExplainContext ctx) {

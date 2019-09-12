@@ -38,6 +38,7 @@ public final class StatementRewrite
             new DescribeOutputRewrite(),
             new ShowQueriesRewrite(),
             new ShowStatsRewrite(),
+            new DownloadRewrite(),
             new ExplainRewrite());
 
     private StatementRewrite() {}

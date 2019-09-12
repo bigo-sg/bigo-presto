@@ -74,7 +74,7 @@ public final class Session
     private final Set<String> clientCapabilities;
     private final ResourceEstimates resourceEstimates;
     private final long startTime;
-    private final Map<String, String> systemProperties;
+    private Map<String, String> systemProperties; // removed final to make it changeable. hack :(
     private final Map<CatalogName, Map<String, String>> connectorProperties;
     private final Map<String, Map<String, String>> unprocessedCatalogProperties;
     private final SessionPropertyManager sessionPropertyManager;
@@ -248,6 +248,14 @@ public final class Session
     public <T> T getSystemProperty(String name, Class<T> type)
     {
         return sessionPropertyManager.decodeSystemPropertyValue(name, systemProperties.get(name), type);
+    }
+
+    // NOTE: make sure you really want to update a readonly instance.
+    public void addSystemProperty(String name, String value) {
+        Map<String, String> newProperties = new HashMap<>(systemProperties);
+        newProperties.put(name, value);
+
+        systemProperties = ImmutableMap.<String, String>builder().putAll(newProperties).build();
     }
 
     public Map<CatalogName, Map<String, String>> getConnectorProperties()

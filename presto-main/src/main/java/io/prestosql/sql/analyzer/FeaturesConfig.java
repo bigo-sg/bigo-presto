@@ -136,6 +136,8 @@ public class FeaturesConfig
     private int filterAndProjectMinOutputPageRowCount = 256;
     private int maxGroupingSets = 2048;
 
+    private String downloadWriteDBName = "presto_tmp";
+
     public enum JoinReorderingStrategy
     {
         NONE,
@@ -1013,8 +1015,7 @@ public class FeaturesConfig
     }
 
     @Config("optimizer.predicate-pushdown-use-table-properties")
-    public FeaturesConfig setPredicatePushdownUseTableProperties(boolean predicatePushdownUseTableProperties)
-    {
+    public FeaturesConfig setPredicatePushdownUseTableProperties(boolean predicatePushdownUseTableProperties) {
         this.predicatePushdownUseTableProperties = predicatePushdownUseTableProperties;
         return this;
     }
@@ -1025,9 +1026,18 @@ public class FeaturesConfig
     }
 
     @Config("optimizer.ignore-downstream-preferences")
-    public FeaturesConfig setIgnoreDownstreamPreferences(boolean ignoreDownstreamPreferences)
-    {
+    public FeaturesConfig setIgnoreDownstreamPreferences(boolean ignoreDownstreamPreferences) {
         this.ignoreDownstreamPreferences = ignoreDownstreamPreferences;
+    }
+    public String getDownloadWriteDBName()
+    {
+        return downloadWriteDBName;
+    }
+
+    @Config("bigo.download-rewrite-db-name")
+    public FeaturesConfig setDownloadWriteDBName(String downloadWriteDBName)
+    {
+        this.downloadWriteDBName = downloadWriteDBName;
         return this;
     }
 }

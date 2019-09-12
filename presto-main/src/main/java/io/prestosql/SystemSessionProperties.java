@@ -39,6 +39,7 @@ import static io.prestosql.spi.session.PropertyMetadata.dataSizeProperty;
 import static io.prestosql.spi.session.PropertyMetadata.durationProperty;
 import static io.prestosql.spi.session.PropertyMetadata.enumProperty;
 import static io.prestosql.spi.session.PropertyMetadata.integerProperty;
+import static io.prestosql.spi.session.PropertyMetadata.longProperty;
 import static io.prestosql.spi.session.PropertyMetadata.stringProperty;
 import static io.prestosql.spi.type.BigintType.BIGINT;
 import static io.prestosql.spi.type.BooleanType.BOOLEAN;
@@ -125,6 +126,9 @@ public final class SystemSessionProperties
     public static final String QUERY_MAX_TOTAL_MEMORY_PER_NODE = "query_max_total_memory_per_node";
 
     public static final String ENABLE_HIVE_SQL_SYNTAX = "enable_hive_syntax";
+    public static final String ENABLE_DOWNLOAD_REWRITE = "enable_download_rewrite";
+    public static final String DOWNLOAD_REWRITE_DB_NAME = "download_rewrite_db_name";
+    public static final String DOWNLOAD_REWRITE_ROW_LIMIT = "download_rewrite_row_limit";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -538,6 +542,21 @@ public final class SystemSessionProperties
                         "Maximum amount of total memory a query can use per node",
                         nodeMemoryConfig.getMaxQueryTotalMemoryPerNode(),
                         true),
+                booleanProperty(
+                        ENABLE_DOWNLOAD_REWRITE,
+                        "Bigo Feature: Enable download rewrite, presto will rewrite the query to create a temp table.",
+                        false,
+                        false),
+                stringProperty(
+                        DOWNLOAD_REWRITE_DB_NAME,
+                        "Bigo Feature: Download rewrite db name, results will be saved into this hive db",
+                        featuresConfig.getDownloadWriteDBName(),
+                        false),
+                longProperty(
+                        DOWNLOAD_REWRITE_ROW_LIMIT,
+                        "Bigo Feature: Save how many rows in the temp table.",
+                        20_000L,
+                        false),
                 booleanProperty(
                         ENABLE_HIVE_SQL_SYNTAX,
                         "Experimental: Use hive sql syntax",

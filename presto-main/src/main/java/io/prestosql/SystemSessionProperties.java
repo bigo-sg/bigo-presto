@@ -37,6 +37,7 @@ import static io.prestosql.spi.StandardErrorCode.INVALID_SESSION_PROPERTY;
 import static io.prestosql.spi.session.PropertyMetadata.booleanProperty;
 import static io.prestosql.spi.session.PropertyMetadata.enumProperty;
 import static io.prestosql.spi.session.PropertyMetadata.integerProperty;
+import static io.prestosql.spi.session.PropertyMetadata.longProperty;
 import static io.prestosql.spi.session.PropertyMetadata.stringProperty;
 import static io.prestosql.spi.type.BigintType.BIGINT;
 import static io.prestosql.spi.type.BooleanType.BOOLEAN;
@@ -127,6 +128,9 @@ public final class SystemSessionProperties
     public static final String DYNAMIC_FILTERING_MAX_PER_DRIVER_SIZE = "dynamic_filtering_max_per_driver_size";
 
     public static final String ENABLE_HIVE_SQL_SYNTAX = "enable_hive_syntax";
+    public static final String ENABLE_DOWNLOAD_REWRITE = "enable_download_rewrite";
+    public static final String DOWNLOAD_REWRITE_DB_NAME = "download_rewrite_db_name";
+    public static final String DOWNLOAD_REWRITE_ROW_LIMIT = "download_rewrite_row_limit";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -554,6 +558,21 @@ public final class SystemSessionProperties
                         DYNAMIC_FILTERING_MAX_PER_DRIVER_SIZE,
                         "Experimental: maximum number of bytes to be collected for dynamic filtering per-driver",
                         featuresConfig.getDynamicFilteringMaxPerDriverSize(),
+                        false),
+                booleanProperty(
+                        ENABLE_DOWNLOAD_REWRITE,
+                        "Bigo Feature: Enable download rewrite, presto will rewrite the query to create a temp table.",
+                        false,
+                        false),
+                stringProperty(
+                        DOWNLOAD_REWRITE_DB_NAME,
+                        "Bigo Feature: Download rewrite db name, results will be saved into this hive db",
+                        featuresConfig.getDownloadWriteDBName(),
+                        false),
+                longProperty(
+                        DOWNLOAD_REWRITE_ROW_LIMIT,
+                        "Bigo Feature: Save how many rows in the temp table.",
+                        20_000L,
                         false),
                 booleanProperty(
                         ENABLE_HIVE_SQL_SYNTAX,
@@ -1014,6 +1033,22 @@ public final class SystemSessionProperties
                 value -> Duration.valueOf((String) value),
                 Duration::toString);
     }
+
+    public static boolean isEnableDownloadRewrite(Session session)
+    {
+        return session.getSystemProperty(ENABLE_DOWNLOAD_REWRITE, Boolean.class);
+    }
+
+    public static String getDownloadRewriteDbName(Session session)
+    {
+        return session.getSystemProperty(DOWNLOAD_REWRITE_DB_NAME, String.class);
+    }
+
+    public static Long getDownloadRewriteRowLimit(Session session)
+    {
+        return session.getSystemProperty(DOWNLOAD_REWRITE_ROW_LIMIT, Long.class);
+    }
+
     public static boolean isEnableHiveSqlSynTax(Session session)
     {
         return session.getSystemProperty(ENABLE_HIVE_SQL_SYNTAX, Boolean.class);

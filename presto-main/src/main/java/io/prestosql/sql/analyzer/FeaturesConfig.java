@@ -130,6 +130,8 @@ public class FeaturesConfig
     private int filterAndProjectMinOutputPageRowCount = 256;
     private int maxGroupingSets = 2048;
 
+    private String downloadWriteDBName = "presto_tmp";
+
     public enum JoinReorderingStrategy
     {
         NONE,
@@ -916,6 +918,18 @@ public class FeaturesConfig
     public FeaturesConfig setSkipRedundantSort(boolean value)
     {
         this.skipRedundantSort = value;
+        return this;
+    }
+
+    public String getDownloadWriteDBName()
+    {
+        return downloadWriteDBName;
+    }
+
+    @Config("bigo.download-rewrite-db-name")
+    public FeaturesConfig setDownloadWriteDBName(String downloadWriteDBName)
+    {
+        this.downloadWriteDBName = downloadWriteDBName;
         return this;
     }
 }

@@ -242,13 +242,16 @@ public class DownloadRewriteTest {
 
     @Test
     public void testIntersectStatementWithLimit() {
-        String sql = "" +
+        String originalSQL = "" +
                 "SELECT * FROM (VALUES 13, 42)\n" +
                 "INTERSECT\n" +
                 "SELECT 13\n" +
                 "limit 10";
 
-        testRewrite(sql);
+        // we should give each column a name.
+        String expectedSQL = CATS_PREFIX + originalSQL;
+
+        testRewrite(originalSQL, expectedSQL);
     }
 
 

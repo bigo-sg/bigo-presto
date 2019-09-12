@@ -31,6 +31,7 @@ final public class DownloadRewrite
     static final Optional<String> COMMENT = Optional.of("This table is generated automatically by Presto to store temporary result for download. It is safe to delete.");
 
     @Override
+    // note, we didn't use visitor pattern in here as it's easier to implement in this way.
     public Statement rewrite(
             Session session,
             Metadata metadata,

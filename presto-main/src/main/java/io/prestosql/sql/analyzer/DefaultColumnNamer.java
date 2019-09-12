@@ -16,16 +16,19 @@ public class DefaultColumnNamer {
         // add default column name if needed.
         List<Field> outputFieldsWithDefaultName = new ArrayList<>();
         int defaultColumnNameIndex = 0;
-        for(Field field : fields) {
-            Optional<String> fieldName = field.getName();
 
-            if (!fieldName.isPresent()) {
-                String defaultFieldName = DEFAULT_COLUMN_NAME_PREFIX + defaultColumnNameIndex;
-                defaultColumnNameIndex++;
+        if (fields != null) {
+            for(Field field : fields) {
+                Optional<String> fieldName = field.getName();
 
-                outputFieldsWithDefaultName.add(Field.newUnqualified(defaultFieldName, field.getType()));
-            } else {
-                outputFieldsWithDefaultName.add(field);
+                if (!fieldName.isPresent()) {
+                    String defaultFieldName = DEFAULT_COLUMN_NAME_PREFIX + defaultColumnNameIndex;
+                    defaultColumnNameIndex++;
+
+                    outputFieldsWithDefaultName.add(Field.newUnqualified(defaultFieldName, field.getType()));
+                } else {
+                    outputFieldsWithDefaultName.add(field);
+                }
             }
         }
 

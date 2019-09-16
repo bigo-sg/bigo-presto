@@ -798,11 +798,6 @@ class StatementAnalyzer
                 outputFields.add(Field.newUnqualified(Optional.empty(), BIGINT));
             }
 
-            // todo: add a tag to make sure it's a rewrite query
-            if (SystemSessionProperties.isEnableDownloadRewrite(session)) {
-                outputFields = DefaultColumnNamer.assignDefaultNameIfNeeded(outputFields.build());
-            }
-
             return createAndAssignScope(node, scope, outputFields.build());
         }
 
@@ -1772,6 +1767,11 @@ class StatementAnalyzer
                 else {
                     throw new IllegalArgumentException("Unsupported SelectItem type: " + item.getClass().getName());
                 }
+            }
+
+            // todo: add a tag to make sure it's a rewrite query
+            if (SystemSessionProperties.isEnableDownloadRewrite(session)) {
+                outputFields = DefaultColumnNamer.assignDefaultNameIfNeeded(outputFields.build());
             }
 
             return createAndAssignScope(node, scope, outputFields.build());

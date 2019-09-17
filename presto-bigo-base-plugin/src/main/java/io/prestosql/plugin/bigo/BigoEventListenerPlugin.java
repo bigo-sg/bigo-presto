@@ -27,8 +27,11 @@ import io.prestosql.plugin.bigo.udf.BigoIsAVTest;
 import io.prestosql.plugin.bigo.udf.BigoStringFunctions;
 import io.prestosql.plugin.bigo.udf.BigoTypeConversionFunctions;
 import io.prestosql.plugin.bigo.udf.HexFunction;
+import io.prestosql.plugin.bigo.udf.MD5Function;
 import io.prestosql.plugin.bigo.udf.MapSizeFunction;
 import io.prestosql.plugin.bigo.udf.PosModFunction;
+import io.prestosql.plugin.bigo.udf.Sha2Function;
+import io.prestosql.plugin.bigo.udf.ShaFunction;
 import io.prestosql.plugin.bigo.udf.ShiftLeftFunction;
 import io.prestosql.plugin.bigo.udf.ShiftRightFunction;
 import io.prestosql.plugin.bigo.udf.ShiftRightUnsignedFunction;
@@ -73,6 +76,9 @@ public class BigoEventListenerPlugin
                 .add(BigoIndigoUidHashMod.class)
                 .add(BigoIsAVTest.class)
                 .add(BigoDecodeUrl.class)
+                .add(MD5Function.class)
+                .add(ShaFunction.class)
+                .add(Sha2Function.class)
                 .build();
     }
 }

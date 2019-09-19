@@ -12,14 +12,14 @@ public class UnHexFunction {
 
     @Description("Hex number to binary.")
     @ScalarFunction("unhex")
-    @SqlType(StandardTypes.VARCHAR)
+    @SqlType(StandardTypes.VARBINARY)
     @SqlNullable
     public static Slice hexToBinary(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         return utf8Slice(evaluateUnhex(slice.toStringUtf8()));
     }
 
-    protected static String evaluateUnhex(String s) {
+    static String evaluateUnhex(String s) {
         if (s == null) {
             return null;
         }

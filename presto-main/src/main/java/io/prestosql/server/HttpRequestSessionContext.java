@@ -348,7 +348,9 @@ public final class HttpRequestSessionContext
 
     private static Map<String, String> parseExtraCredentials(HttpServletRequest servletRequest)
     {
-        return parseProperty(servletRequest, PRESTO_EXTRA_CREDENTIAL);
+        Map<String, String> map = parseProperty(servletRequest, PRESTO_EXTRA_CREDENTIAL);
+        map.put(PRESTO_SOURCE, servletRequest.getHeader(PRESTO_SOURCE));
+        return map;
     }
 
     private static Map<String, String> parseProperty(HttpServletRequest servletRequest, String headerName)

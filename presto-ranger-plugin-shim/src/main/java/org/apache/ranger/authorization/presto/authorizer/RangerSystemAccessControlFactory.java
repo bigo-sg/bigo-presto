@@ -27,7 +27,7 @@ import static java.util.Objects.requireNonNull;
 
 public class RangerSystemAccessControlFactory
   implements SystemAccessControlFactory {
-  private static final String NAME = "ranger";
+  private static final String NAME = "ranger-plugin";
 
   @Override
   public String getName() {

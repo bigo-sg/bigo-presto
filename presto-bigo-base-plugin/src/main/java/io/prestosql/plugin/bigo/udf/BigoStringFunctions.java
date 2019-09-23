@@ -4,14 +4,18 @@ import com.google.common.primitives.Ints;
 import io.airlift.slice.Slice;
 import io.airlift.slice.SliceUtf8;
 import io.airlift.slice.Slices;
+import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.function.Description;
+import io.prestosql.spi.function.LiteralParameters;
 import io.prestosql.spi.function.ScalarFunction;
 import io.prestosql.spi.function.SqlType;
+import io.prestosql.spi.function.TypeParameter;
 import io.prestosql.spi.type.StandardTypes;
 
 import static io.airlift.slice.SliceUtf8.countCodePoints;
 import static io.airlift.slice.SliceUtf8.offsetOfCodePoint;
 import static io.airlift.slice.Slices.utf8Slice;
+import static io.prestosql.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
 import static io.prestosql.spi.type.Chars.trimTrailingSpaces;
 
 public class BigoStringFunctions {
@@ -45,6 +49,32 @@ public class BigoStringFunctions {
     public static long inStr(@SqlType(StandardTypes.VARCHAR) Slice string, @SqlType(StandardTypes.DOUBLE) double substring) {
         String str = Double.toString(substring);
         return inStr(string, utf8Slice(str));
+    }
+
+    @Description("returns index of first occurrence of a substring (or 0 if not found)")
+    @ScalarFunction("strpos")
+    @LiteralParameters({"x", "y"})
+    @SqlType(StandardTypes.BIGINT)
+    @TypeParameter("T")
+    public static long stringPosition(@SqlType("varchar(x)") Slice string, @SqlType("varchar(y)") Slice substring, @SqlType("T") long instance) {
+        if (instance <= 0) {
+            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "'instance' must be a positive number.");
+        }
+        if (substring.length() == 0) {
+            return 1;
+        }
+        int foundInstances = 0;
+        int index = -1;
+        do {
+            index = string.indexOf(substring, index + 1);
+            if (index < 0) {
+                return 0;
+            }
+            foundInstances++;
+        }
+        while (foundInstances < instance);
+
+        return countCodePoints(string, 0, index) + 1;
     }
 
     // for substr
@@ -145,12 +175,12 @@ public class BigoStringFunctions {
     @ScalarFunction("substr")
     @SqlType(StandardTypes.VARCHAR)
     public static Slice charSubstrDate(@SqlType(StandardTypes.DATE) long utf8,
-                                                    @SqlType(StandardTypes.BIGINT) long start) {
+                                       @SqlType(StandardTypes.BIGINT) long start) {
         return substring(utf8Slice(Long.toString(utf8)), start);
     }
 
     public static Slice substring(@SqlType(StandardTypes.VARCHAR) Slice utf8, @SqlType(StandardTypes.BIGINT) long start,
-                               @SqlType(StandardTypes.BIGINT) long length) {
+                                  @SqlType(StandardTypes.BIGINT) long length) {
         if (start == 0 || (length <= 0) || (utf8.length() == 0)) {
             return Slices.EMPTY_SLICE;
         }

@@ -21,11 +21,14 @@ public class BigoTypeConversionFunctions {
     @SqlNullable
     public static Long intFunctionSlice(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
-
         try {
             return (long)(int)Long.parseLong(slice.toStringUtf8());
         } catch (NumberFormatException e) {
-            return (long)(int)Double.parseDouble(slice.toStringUtf8());
+            try {
+                return (long)(int)Double.parseDouble(slice.toStringUtf8());
+            } catch (NumberFormatException ex) {
+                return null;
+            }
         } catch (Exception e) {
             return null;
         }
@@ -299,7 +302,11 @@ public class BigoTypeConversionFunctions {
         try {
             return Long.parseLong(slice.toStringUtf8());
         } catch (NumberFormatException e) {
-            return (long)Double.parseDouble(slice.toStringUtf8());
+            try {
+                return (long)Double.parseDouble(slice.toStringUtf8());
+            } catch (NumberFormatException ex) {
+                return null;
+            }
         } catch (Exception e) {
             return null;
         }

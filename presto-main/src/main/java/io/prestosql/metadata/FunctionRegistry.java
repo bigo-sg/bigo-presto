@@ -244,6 +244,7 @@ import static io.prestosql.operator.scalar.ArrayToArrayCast.ARRAY_TO_ARRAY_CAST;
 import static io.prestosql.operator.scalar.ArrayToElementConcatFunction.ARRAY_TO_ELEMENT_CONCAT_FUNCTION;
 import static io.prestosql.operator.scalar.ArrayToJsonCast.ARRAY_TO_JSON;
 import static io.prestosql.operator.scalar.ArrayTransformFunction.ARRAY_TRANSFORM_FUNCTION;
+import static io.prestosql.operator.scalar.BigoArrayFunction.BIGO_ARRAY_FUNCTION;
 import static io.prestosql.operator.scalar.CastFromUnknownOperator.CAST_FROM_UNKNOWN;
 import static io.prestosql.operator.scalar.ConcatFunction.VARBINARY_CONCAT;
 import static io.prestosql.operator.scalar.ConcatFunction.VARCHAR_CONCAT;
@@ -609,6 +610,7 @@ public class FunctionRegistry
                 .function(FORMAT_FUNCTION)
                 .function(TRY_CAST)
                 .function(new LiteralFunction())
+                .function(BIGO_ARRAY_FUNCTION)
                 .aggregate(MergeSetDigestAggregation.class)
                 .aggregate(BuildSetDigestAggregation.class)
                 .scalars(SetDigestFunctions.class)

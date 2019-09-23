@@ -5,6 +5,7 @@ import org.testng.annotations.Test;
 
 import static io.airlift.slice.Slices.utf8Slice;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 public class TestBigoTypeConversionFunctions {
 
@@ -29,6 +30,12 @@ public class TestBigoTypeConversionFunctions {
         assertEquals(r6, 0);
         assertEquals(r7, 2147483647);
         assertEquals(r8, -2147483648);
+    }
+
+    @Test
+    private void testBigint(){
+        assertEquals(BigoTypeConversionFunctions.bigintFunctionBigint(100L).longValue(), 100L);
+        assertNull(BigoTypeConversionFunctions.bigintFunctionSlice(utf8Slice("")));
     }
 
     @Test

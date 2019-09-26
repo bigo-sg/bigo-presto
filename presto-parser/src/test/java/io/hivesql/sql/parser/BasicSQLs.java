@@ -307,4 +307,11 @@ public class BasicSQLs extends SQLTester {
         checkASTNode(hiveSql);
     }
 
+    @Test
+    public void testCreateTempFunction()
+    {
+        String hiveSql = "CREATE TEMPORARY FUNCTION ntohl AS 'Ntohl'";
+        runHiveSQL(hiveSql);
+    }
+
 }

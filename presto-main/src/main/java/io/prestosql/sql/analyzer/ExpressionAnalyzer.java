@@ -172,6 +172,7 @@ import static java.lang.String.format;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
 public class ExpressionAnalyzer
 {
@@ -1023,6 +1024,29 @@ public class ExpressionAnalyzer
                         }
                         if (argList.size() > 0) {
                             node.setArguments(argList);
+                        }
+                        argumentTypes = getCallArgumentTypes(node.getArguments(), context);
+                    }
+                }
+                // support implicit type conversion for concat function
+                if (funcName.equals("concat")) {
+                    List<Expression> concatArgList = new ArrayList<>();
+                    Set<String> typeSet = newKeySet();
+                    Type argType = process(node.getArguments().get(0), context);
+
+                    for (Expression expression : node.getArguments()) {
+                        Type expressionType = process(expression, context);
+                        typeSet.add(expressionType.getTypeSignature().getBase());
+                    }
+                    TypeConversion tc = new TypeConversion();
+
+                    if (typeSet.size() > 1
+                            || (typeSet.size() == 1 && tc.isValueType(argType))) {
+                        for (Expression expression : node.getArguments()) {
+                            concatArgList.add(new Cast(expression, StandardTypes.VARCHAR));
+                        }
+                        if (concatArgList.size() > 0) {
+                            node.setArguments(concatArgList);
                         }
                         argumentTypes = getCallArgumentTypes(node.getArguments(), context);
                     }

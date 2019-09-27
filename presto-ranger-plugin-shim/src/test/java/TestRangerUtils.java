@@ -1,7 +1,9 @@
 import com.alibaba.fastjson.JSON;
-import io.utils.FileUtils;
-import org.apache.ranger.authorization.presto.authorizer.utils.PrestoAccessType;
-import org.apache.ranger.authorization.presto.authorizer.utils.RangerUtils;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import sg.bigo.utils.FileUtils;
+import sg.bigo.ranger.PrestoAccessType;
+import sg.bigo.ranger.RangerUtils;
 import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -15,6 +17,7 @@ import java.util.List;
  */
 public class TestRangerUtils {
 
+    private JSONObject hivePolicy = null;
     /**
      * unit test policies model:
      * user:
@@ -31,10 +34,10 @@ public class TestRangerUtils {
      * unit_group 可以访问unit_db2的除了t1表的所有表（t2,t3），select、update
      * unit_source 只可以访问unit_db3的t1，select、drop
      * unit_group1 对除了unit_db1，unit_db2，unit_db3对有所有db的所有表有访问权限,，select、update,create,drop
-      */
+     */
     @BeforeTest
     public void prepare() {
-        RangerUtils.setHivePolicies(JSON.parseObject(getResourceContent("policies")));
+        hivePolicy = JSON.parseObject(getResourceContent("policies"));
     }
 
     @Test
@@ -43,6 +46,7 @@ public class TestRangerUtils {
         groups.add("unit_group");
         Assert.assertEquals(RangerUtils
                 .checkPermission(
+                        hivePolicy,
                         groups,
                         "default",
                         "unit_user1",
@@ -54,6 +58,7 @@ public class TestRangerUtils {
         groups.add("unit_group");
         Assert.assertEquals(RangerUtils
                 .checkPermission(
+                        hivePolicy,
                         groups,
                         "default",
                         "unit_user1",
@@ -63,6 +68,7 @@ public class TestRangerUtils {
                 ), false);
         Assert.assertEquals(RangerUtils
                 .checkPermission(
+                        hivePolicy,
                         groups,
                         "default",
                         "unit_user1",
@@ -72,6 +78,7 @@ public class TestRangerUtils {
                 ), false);
         Assert.assertEquals(RangerUtils
                 .checkPermission(
+                        hivePolicy,
                         groups,
                         "default",
                         "unit_user1",
@@ -86,6 +93,7 @@ public class TestRangerUtils {
         List<String> groups = new ArrayList<>();
         Assert.assertEquals(RangerUtils
                 .checkPermission(
+                        hivePolicy,
                         groups,
                         "unit_source",
                         "unit_user2",
@@ -95,6 +103,7 @@ public class TestRangerUtils {
                 ), true);
         Assert.assertEquals(RangerUtils
                 .checkPermission(
+                        hivePolicy,
                         groups,
                         "unit_source",
                         "unit_user2",
@@ -104,6 +113,7 @@ public class TestRangerUtils {
                 ), false);
         Assert.assertEquals(RangerUtils
                 .checkPermission(
+                        hivePolicy,
                         groups,
                         "unit_source",
                         "unit_user2",
@@ -113,6 +123,7 @@ public class TestRangerUtils {
                 ), false);
         Assert.assertEquals(RangerUtils
                 .checkPermission(
+                        hivePolicy,
                         groups,
                         "unit_source",
                         "unit_user2",
@@ -128,6 +139,7 @@ public class TestRangerUtils {
         groups.add("unit_group1");
         Assert.assertEquals(RangerUtils
                 .checkPermission(
+                        hivePolicy,
                         groups,
                         "default",
                         "unit_user3",
@@ -137,6 +149,7 @@ public class TestRangerUtils {
                 ), true);
         Assert.assertEquals(RangerUtils
                 .checkPermission(
+                        hivePolicy,
                         groups,
                         "default",
                         "unit_user3",
@@ -144,6 +157,25 @@ public class TestRangerUtils {
                         "t1",
                         PrestoAccessType.CREATE
                 ), false);
+    }
+
+    @Test
+    public void testJsonArraySerial() {
+        List<String> data = new ArrayList<>();
+        data.add("1");
+        data.add("2");
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("key", data);
+        List<String> data1 = jsonObject.getJSONArray("key").toJavaList(String.class);
+        Assert.assertEquals(data1.size(), 2);
+    }
+
+    @Test
+    public void testJsonArraySerial1() {
+        String dataJson = "{\"key\":[\"1\",\"2\"]}";
+        JSONObject jsonObject = JSON.parseObject(dataJson);
+        List<String> data1 = jsonObject.getJSONArray("key").toJavaList(String.class);
+        Assert.assertEquals(data1.size(), 2);
     }
 
     public String getResourceContent(String path) {

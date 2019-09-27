@@ -1,4 +1,4 @@
-package org.apache.ranger.authorization.presto.authorizer.utils;
+package sg.bigo.ranger;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -6,6 +6,8 @@ import com.alibaba.fastjson.JSONObject;
 import io.prestosql.spi.connector.CatalogSchemaName;
 import io.prestosql.spi.connector.CatalogSchemaTableName;
 import io.prestosql.spi.security.Identity;
+import sg.bigo.utils.FileUtils;
+import sg.bigo.utils.HttpClientCreator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -16,8 +18,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author tangyun@bigo.sg
@@ -27,10 +32,16 @@ import java.util.concurrent.locks.ReentrantLock;
 public class RangerUtils {
     private static String hostPrefix = null;
     private static final long POLICY_UPDATE_FREQUENCY = 1000 * 60 * 60 * 24;
-    private static JSONObject hivePolicies = null;
+    private static JSONArray hivePolicies = null;
+    private static JSONObject userInfo = null;
     public static final String PRESTO_SOURCE = "X-Presto-Source";
+    public static String cachePath = null;
     private static String userNameAndPassword = null;
-    private static Lock lock = new ReentrantLock();
+    private static String[] policyNames = null;
+    private static Lock policyLock = new ReentrantLock();
+    private static Lock userInfoLock = new ReentrantLock();
+    public static final String POLICY_CACHE_FILE_NAME = "hive-ranger-policies.json";
+    public static final String USER_INFO_CACHE_FILE_NAME = "hive-ranger-users.json";
     private static long lastUpdateTime = System.currentTimeMillis();
     public static String getRangerData(String url) {
         HttpClient httpClient = HttpClientCreator.getHttpClient();
@@ -53,6 +64,17 @@ public class RangerUtils {
         return null;
     }
 
+    public static void init(Map<String, String> config) {
+        RangerUtils.hostPrefix = config.get("ranger.host-port");
+        requireNonNull(hostPrefix, "hostPrefix is null");
+        RangerUtils.userNameAndPassword = config.get("ranger.username-password");
+        String policies = config.get("ranger.policy-names");
+        requireNonNull(policies, "policies is null");
+        RangerUtils.policyNames = policies.split(",");
+        RangerUtils.cachePath = config.get("ranger.cache-path");
+        requireNonNull(cachePath, "cachePath is null");
+    }
+
     public static void setHostPrefix(String hostPrefix) {
         RangerUtils.hostPrefix = hostPrefix;
     }
@@ -61,29 +83,72 @@ public class RangerUtils {
         RangerUtils.userNameAndPassword = userNameAndPassword;
     }
 
-    public static void setHivePolicies(JSONObject hivePolicies) {
+    public static void setHivePolicies(JSONArray hivePolicies) {
         RangerUtils.hivePolicies = hivePolicies;
     }
 
+    public static void setPolicyNames(String[] policyNames) {
+        RangerUtils.policyNames = policyNames;
+    }
+
     public static void getPolicy() {
-        if (hivePolicies == null) {
-            lock.lock();
+        long now = System.currentTimeMillis();
+        // also update local policies everyday
+        if (hivePolicies == null || now - lastUpdateTime > POLICY_UPDATE_FREQUENCY) {
+            policyLock.lock();
             try {
-                long now = System.currentTimeMillis();
-                // also update local policies everyday
                 if (hivePolicies == null || now - lastUpdateTime > POLICY_UPDATE_FREQUENCY) {
                     lastUpdateTime = now;
-                    String url = hostPrefix + "/service/plugins/policies/download/hivedev";
-                    hivePolicies = JSONObject.parseObject(getRangerData(url));
+                    updateAndCachePolicies();
+                    if (FileUtils.exists(cachePath+ "/" + USER_INFO_CACHE_FILE_NAME)) {
+                        userInfo = JSON.parseObject(
+                                new String(FileUtils.getFileAsBytes(
+                                        cachePath+ "/" + USER_INFO_CACHE_FILE_NAME)));
+                    }
                 }
             } finally {
-                lock.unlock();
+                policyLock.unlock();
             }
         }
     }
 
-    public static List<String> getGroups(String userName) {
+    private static void updateAndCachePolicies() {
+        JSONArray hivePoliciesTmp = new JSONArray();
+        boolean success = true;
+        for (String policyName: policyNames) {
+            String url = hostPrefix + "/service/plugins/policies/download/" + policyName;
+            int i = 3;
+            while (true) {
+                try {
+                    JSONObject hivePolicy = JSONObject.parseObject(getRangerData(url));
+                    hivePoliciesTmp.add(hivePolicy);
+                } catch (Exception e) {
+                    log.warn("get policy failed ", e);
+                    --i;
+                    if (i < 0) {
+                        success = false;
+                        break;
+                    }
+                }
+            }
+            if (!success) {
+                break;
+            }
+        }
+        if (success) {
+            hivePolicies = hivePoliciesTmp;
+            FileUtils.saveBytesAsFile(hivePolicies.toJSONString().getBytes(),
+                    cachePath+ "/" + POLICY_CACHE_FILE_NAME);
+        } else {
+            if (hivePolicies == null) {
+                String policies = new String(FileUtils.getFileAsBytes(
+                        cachePath+ "/" + POLICY_CACHE_FILE_NAME));
+                hivePolicies = JSON.parseArray(policies);
+            }
+        }
+    }
 
+    public static List<String> getGroupsFromRemote(String userName) {
         String url = hostPrefix + "/service/xusers/users/userName/" + userName;
         String userInfo = getRangerData(url);
         if (userInfo == null) {
@@ -102,6 +167,32 @@ public class RangerUtils {
         JSONObject userGroupInfoJson = JSON.parseObject(userGroupInfo);
         List<String> groups = userGroupInfoJson.getJSONArray("groupNameList")
                 .toJavaList(String.class);
+        return groups;
+    }
+
+    public static List<String> getGroups(String userName) {
+        boolean success = true;
+        int i = 0;
+        List<String> groups;
+        while (true) {
+            groups = getGroupsFromRemote(userName);
+            if (groups.size() == 0) {
+                --i;
+                if (i < 0) {
+                    success = false;
+                    break;
+                }
+            }
+        }
+        if (success) {
+            if (!userInfo.containsKey(userName)) {
+                userInfo.put(userName, groups);
+                FileUtils.saveBytesAsFile(userInfo.toJSONString().getBytes(),
+                        cachePath+ "/" + USER_INFO_CACHE_FILE_NAME);
+            }
+        } else {
+            groups = userInfo.getJSONArray(userName).toJavaList(String.class);
+        }
         return groups;
     }
 
@@ -129,7 +220,18 @@ public class RangerUtils {
 
     public static boolean checkPermission(List<String> groups, String resource, String userName, String db,
                                           String table, PrestoAccessType accessType) {
-        JSONArray policies = hivePolicies.getJSONArray("policies");
+        for (Object o : hivePolicies) {
+            JSONObject hivePolicy = (JSONObject) o;
+            if (checkPermission(hivePolicy, groups, resource, userName, db, table, accessType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean checkPermission(JSONObject hivePolicy, List<String> groups, String resource, String userName, String db,
+                                          String table, PrestoAccessType accessType) {
+        JSONArray policies = hivePolicy.getJSONArray("policies");
         groups.add(resource);
 
         for (Object o : policies) {

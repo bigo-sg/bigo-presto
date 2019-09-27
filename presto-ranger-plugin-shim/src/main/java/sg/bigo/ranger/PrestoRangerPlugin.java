@@ -1,4 +1,4 @@
-package org.apache.ranger.authorization.presto.authorizer;
+package sg.bigo.ranger;
 
 import io.prestosql.spi.Plugin;
 import io.prestosql.spi.security.SystemAccessControlFactory;

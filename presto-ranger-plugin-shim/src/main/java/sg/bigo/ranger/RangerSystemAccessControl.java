@@ -1,4 +1,4 @@
-package org.apache.ranger.authorization.presto.authorizer;
+package sg.bigo.ranger;
 
 import io.prestosql.spi.connector.CatalogSchemaName;
 import io.prestosql.spi.connector.CatalogSchemaTableName;
@@ -6,8 +6,8 @@ import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.spi.security.AccessDeniedException;
 import io.prestosql.spi.security.Identity;
 import io.prestosql.spi.security.SystemAccessControl;
-import org.apache.ranger.authorization.presto.authorizer.utils.PrestoAccessType;
-import org.apache.ranger.authorization.presto.authorizer.utils.RangerUtils;
+import sg.bigo.ranger.PrestoAccessType;
+import sg.bigo.ranger.RangerUtils;
 
 import javax.inject.Inject;
 import java.security.Principal;

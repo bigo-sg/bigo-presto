@@ -1,4 +1,4 @@
-package org.apache.ranger.authorization.presto.authorizer.utils;
+package sg.bigo.ranger;
 
 /**
  * @author tangyun@bigo.sg

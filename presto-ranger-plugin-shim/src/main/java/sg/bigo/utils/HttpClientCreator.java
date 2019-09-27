@@ -1,4 +1,4 @@
-package org.apache.ranger.authorization.presto.authorizer.utils;
+package sg.bigo.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.HttpClient;

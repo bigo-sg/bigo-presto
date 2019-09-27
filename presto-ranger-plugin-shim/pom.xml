@@ -18,11 +18,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.ranger</groupId>
-            <artifactId>ranger-plugins-common</artifactId>
-            <version>1.2.0</version>
-        </dependency>
-        <dependency>
             <groupId>io.prestosql</groupId>
             <artifactId>presto-spi</artifactId>
             <scope>provided</scope>
@@ -55,19 +50,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.bval</groupId>
-            <artifactId>bval-jsr</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>slice</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.airlift</groupId>
-            <artifactId>units</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -83,41 +67,23 @@
             <version>4.5.4</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpmime -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpmime</artifactId>
             <version>4.5.5</version>
-        </dependency>
-
-        <!-- used by tests but also needed transitively -->
-        <dependency>
-            <groupId>io.airlift</groupId>
-            <artifactId>log-manager</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/io.airlift/log -->
-        <dependency>
-            <groupId>io.airlift</groupId>
-            <artifactId>log</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.101tec</groupId>
-            <artifactId>zkclient</artifactId>
-            <version>0.10</version>
-            <scope>runtime</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>log4j</artifactId>
-                    <groupId>log4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -132,42 +98,6 @@
             <artifactId>testng</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>io.airlift</groupId>
-            <artifactId>testing</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.prestosql</groupId>
-            <artifactId>presto-main</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!--<dependency>-->
-            <!--<groupId>io.prestosql</groupId>-->
-            <!--<artifactId>presto-tpch</artifactId>-->
-            <!--<scope>test</scope>-->
-        <!--</dependency>-->
-
-        <dependency>
-            <groupId>io.prestosql</groupId>
-            <artifactId>presto-client</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!--<dependency>-->
-            <!--<groupId>io.airlift.tpch</groupId>-->
-            <!--<artifactId>tpch</artifactId>-->
-            <!--<scope>test</scope>-->
-        <!--</dependency>-->
-
-        <!--<dependency>-->
-            <!--<groupId>org.jetbrains</groupId>-->
-            <!--<artifactId>annotations</artifactId>-->
-            <!--<scope>test</scope>-->
-        <!--</dependency>-->
 
         <!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
         <dependency>

@@ -1,4 +1,4 @@
-package io.utils;
+package sg.bigo.utils;
 
 public class ByteBuffer {
     private byte[] buffer;

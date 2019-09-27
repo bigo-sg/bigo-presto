@@ -1,11 +1,10 @@
-package org.apache.ranger.authorization.presto.authorizer;
+package sg.bigo.ranger;
 
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import io.airlift.bootstrap.Bootstrap;
 import io.prestosql.spi.security.SystemAccessControl;
 import io.prestosql.spi.security.SystemAccessControlFactory;
-import org.apache.ranger.authorization.presto.authorizer.utils.RangerUtils;
 
 import java.util.Map;
 
@@ -29,9 +28,7 @@ public class RangerSystemAccessControlFactory
   @Override
   public SystemAccessControl create(Map<String, String> config) {
     requireNonNull(config, "config is null");
-
-    RangerUtils.setHostPrefix(config.get("ranger.host-port"));
-    RangerUtils.setUserNameAndPassword(config.get("ranger.username-password"));
+    RangerUtils.init(config);
     try {
       Bootstrap app = new Bootstrap(
         binder -> {

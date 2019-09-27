@@ -1,4 +1,4 @@
-package io.utils;
+package sg.bigo.utils;
 
 
 import java.io.File;
@@ -73,6 +73,11 @@ public class FileUtils {
         }
 
         return byteBuffer.getData();
+    }
+
+    public static boolean exists(String path) {
+        File file = new File(path);
+        return file.exists();
     }
 
     private static boolean deleteDir(File dir) {

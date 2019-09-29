@@ -45,29 +45,27 @@ public class ConcatWsFunction {
         return utf8Slice(result.toString());
     }
 
-    @TypeParameter("T")
     @SqlType(StandardTypes.VARCHAR)
     @SqlNullable
     @ScalarFunction("concat_ws")
     @Description("concat with a separator")
     public static Slice concat_ws(
             @SqlType(StandardTypes.VARCHAR) Slice separator,
-            @SqlType("T") Slice value1) {
+            @SqlType(StandardTypes.VARCHAR) Slice value1) {
         if (separator == null) {
             return null;
         }
         return value1;
     }
 
-    @TypeParameter("T")
     @SqlType(StandardTypes.VARCHAR)
     @SqlNullable
     @ScalarFunction("concat_ws")
     @Description("concat with a separator")
     public static Slice concat_ws(
             @SqlType(StandardTypes.VARCHAR) Slice separator,
-            @SqlType("T") Slice value1,
-            @SqlType("T") Slice value2) {
+            @SqlType(StandardTypes.VARCHAR) Slice value1,
+            @SqlType(StandardTypes.VARCHAR) Slice value2) {
         if (separator == null) {
             return null;
         }
@@ -81,22 +79,20 @@ public class ConcatWsFunction {
             result.append(value1.toStringUtf8());
             result.append(sep);
         }
-        if (value2 != null) {
-            result.append(value2.toStringUtf8());
-        }
+        result.append(value2.toStringUtf8());
+
         return utf8Slice(result.toString());
     }
 
-    @TypeParameter("T")
     @SqlType(StandardTypes.VARCHAR)
     @SqlNullable
     @ScalarFunction("concat_ws")
     @Description("concat with a separator")
     public static Slice concat_ws(
             @SqlType(StandardTypes.VARCHAR) Slice separator,
-            @SqlType("T") Slice value1,
-            @SqlType("T") Slice value2,
-            @SqlType("T") Slice value3) {
+            @SqlType(StandardTypes.VARCHAR) Slice value1,
+            @SqlType(StandardTypes.VARCHAR) Slice value2,
+            @SqlType(StandardTypes.VARCHAR) Slice value3) {
         if (separator == null) {
             return null;
         }

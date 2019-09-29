@@ -176,13 +176,15 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.BIGINT)
-    public static long castToBigint(@SqlType("varchar(x)") Slice slice)
+    @SqlNullable
+    public static Long castToBigint(@SqlType("varchar(x)") Slice slice)
     {
         try {
             return Long.parseLong(slice.toStringUtf8());
         }
         catch (Exception e) {
-            throw new PrestoException(INVALID_CAST_ARGUMENT, format("Cannot cast '%s' to BIGINT", slice.toStringUtf8()));
+//            throw new PrestoException(INVALID_CAST_ARGUMENT, format("Cannot cast '%s' to BIGINT", slice.toStringUtf8()));
+            return null;
         }
     }
 

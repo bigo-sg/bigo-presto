@@ -1,15 +1,16 @@
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import sg.bigo.utils.FileUtils;
-import sg.bigo.ranger.PrestoAccessType;
-import sg.bigo.ranger.RangerUtils;
 import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import sg.bigo.ranger.PrestoAccessType;
+import sg.bigo.ranger.RangerUtils;
+import sg.bigo.utils.FileUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author tangyun@bigo.sg
@@ -18,26 +19,50 @@ import java.util.List;
 public class TestRangerUtils {
 
     private JSONObject hivePolicy = null;
-    /**
-     * unit test policies model:
-     * user:
-     * unit_user1, 所属组：unit_group，
-     * unit_user2，所属source：unit_source,在ranger中找不到
-     * unit_user3, 所属组：unit_group1
-     * dbs:
-     * unit_db1
-     * unit_db2
-     * unit_db3
-     * unit_db4
-     * policies:
-     * unit_user1 可以访问unit_db1所有表（t1,t2），select、update
-     * unit_group 可以访问unit_db2的除了t1表的所有表（t2,t3），select、update
-     * unit_source 只可以访问unit_db3的t1，select、drop
-     * unit_group1 对除了unit_db1，unit_db2，unit_db3对有所有db的所有表有访问权限,，select、update,create,drop
-     */
     @BeforeTest
     public void prepare() {
+        Map<String, String> config = getConfigFromFile("/etc/presto-ranger-test/config");
+        RangerUtils.init(config);
+
+        /**
+         * unit test policies model:
+         * user:
+         * unit_user1, 所属组：unit_group，
+         * unit_user2，所属source：unit_source,在ranger中找不到
+         * unit_user3, 所属组：unit_group1
+         * dbs:
+         * unit_db1
+         * unit_db2
+         * unit_db3
+         * unit_db4
+         * policies:
+         * unit_user1 可以访问unit_db1所有表（t1,t2），select、update
+         * unit_group 可以访问unit_db2的除了t1表的所有表（t2,t3），select、update
+         * unit_source 只可以访问unit_db3的t1，select、drop
+         * unit_group1 对除了unit_db1，unit_db2，unit_db3对有所有db的所有表有访问权限,，select、update,create,drop
+         */
         hivePolicy = JSON.parseObject(getResourceContent("policies"));
+    }
+
+    private static Map<String, String> getConfigFromFile(String path) {
+        String data = new String(FileUtils.getFileAsBytes(path));
+        String[] configStrings = data.split("\n");
+        Map<String, String> config = new HashMap<>();
+        for (String configString: configStrings) {
+            String[] configPair = configString.split("=");
+            config.put(configPair[0], configPair[1]);
+        }
+        return config;
+    }
+
+    @Test
+    public void testGetPolicies() {
+        RangerUtils.getPolicy();
+    }
+
+    @Test
+    public void testGetGroups() {
+        RangerUtils.getGroups("unit_user1");
     }
 
     @Test

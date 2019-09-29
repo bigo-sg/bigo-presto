@@ -6,8 +6,6 @@ import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.spi.security.AccessDeniedException;
 import io.prestosql.spi.security.Identity;
 import io.prestosql.spi.security.SystemAccessControl;
-import sg.bigo.ranger.PrestoAccessType;
-import sg.bigo.ranger.RangerUtils;
 
 import javax.inject.Inject;
 import java.security.Principal;

@@ -35,7 +35,7 @@ public class RangerUtils {
     private static JSONArray hivePolicies = null;
     private static JSONObject userInfo = null;
     public static final String PRESTO_SOURCE = "X-Presto-Source";
-    public static String cachePath = null;
+    private static String cachePath = null;
     private static String userNameAndPassword = null;
     private static String[] policyNames = null;
     private static Lock policyLock = new ReentrantLock();
@@ -53,10 +53,8 @@ public class RangerUtils {
         httpGet.setHeader("Authorization", "Basic " +
                 Base64.getEncoder().encodeToString(userNameAndPassword.getBytes()));
         try {
-            log.info("before request http {}", url);
             HttpResponse httpResponse = httpClient.execute(httpGet);
             String response = EntityUtils.toString(httpResponse.getEntity());
-            log.info("response {}", response);
             return response;
         } catch (IOException e) {
             log.error("failed to request url {}", url, e);
@@ -101,9 +99,14 @@ public class RangerUtils {
                     lastUpdateTime = now;
                     updateAndCachePolicies();
                     if (FileUtils.exists(cachePath+ "/" + USER_INFO_CACHE_FILE_NAME)) {
-                        userInfo = JSON.parseObject(
-                                new String(FileUtils.getFileAsBytes(
-                                        cachePath+ "/" + USER_INFO_CACHE_FILE_NAME)));
+                        userInfoLock.lock();
+                        try {
+                            userInfo = JSON.parseObject(
+                                    new String(FileUtils.getFileAsBytes(
+                                            cachePath + "/" + USER_INFO_CACHE_FILE_NAME)));
+                        } finally {
+                            userInfoLock.unlock();
+                        }
                     }
                 }
             } finally {
@@ -121,7 +124,17 @@ public class RangerUtils {
             while (true) {
                 try {
                     JSONObject hivePolicy = JSONObject.parseObject(getRangerData(url));
-                    hivePoliciesTmp.add(hivePolicy);
+                    if (hivePolicy == null) {
+                        log.warn("get policy failed ");
+                        --i;
+                        if (i < 0) {
+                            success = false;
+                            break;
+                        }
+                    } else {
+                        hivePoliciesTmp.add(hivePolicy);
+                        break;
+                    }
                 } catch (Exception e) {
                     log.warn("get policy failed ", e);
                     --i;
@@ -141,6 +154,7 @@ public class RangerUtils {
                     cachePath+ "/" + POLICY_CACHE_FILE_NAME);
         } else {
             if (hivePolicies == null) {
+                log.warn("cant get remote policy, use cached policy");
                 String policies = new String(FileUtils.getFileAsBytes(
                         cachePath+ "/" + POLICY_CACHE_FILE_NAME));
                 hivePolicies = JSON.parseArray(policies);
@@ -165,14 +179,13 @@ public class RangerUtils {
             return new ArrayList<>();
         }
         JSONObject userGroupInfoJson = JSON.parseObject(userGroupInfo);
-        List<String> groups = userGroupInfoJson.getJSONArray("groupNameList")
+        return userGroupInfoJson.getJSONArray("groupNameList")
                 .toJavaList(String.class);
-        return groups;
     }
 
     public static List<String> getGroups(String userName) {
         boolean success = true;
-        int i = 0;
+        int i = 3;
         List<String> groups;
         while (true) {
             groups = getGroupsFromRemote(userName);
@@ -182,13 +195,23 @@ public class RangerUtils {
                     success = false;
                     break;
                 }
+            } else {
+                break;
             }
         }
         if (success) {
+            if (userInfo == null) {
+                userInfo = new JSONObject();
+            }
             if (!userInfo.containsKey(userName)) {
                 userInfo.put(userName, groups);
-                FileUtils.saveBytesAsFile(userInfo.toJSONString().getBytes(),
-                        cachePath+ "/" + USER_INFO_CACHE_FILE_NAME);
+                userInfoLock.lock();
+                try {
+                    FileUtils.saveBytesAsFile(userInfo.toJSONString().getBytes(),
+                            cachePath + "/" + USER_INFO_CACHE_FILE_NAME);
+                } finally {
+                    userInfoLock.unlock();
+                }
             }
         } else {
             groups = userInfo.getJSONArray(userName).toJavaList(String.class);
@@ -204,9 +227,24 @@ public class RangerUtils {
                                           PrestoAccessType accessType) {
         getPolicy();
         List<String> groups = getGroups(identity.getUser());
-        return checkPermission(groups, getResource(identity), identity.getUser(),
+        boolean ret = checkPermission(groups, getResource(identity), identity.getUser(),
                 table.getSchemaTableName().getSchemaName(),
                 table.getSchemaTableName().getTableName(), accessType);
+        log.info("user {},schema {}, table {}, source {}, type {}, result {}",
+                identity.getUser(), table.getSchemaTableName().getSchemaName(),
+                table.getSchemaTableName().getTableName(), identity.getExtraCredentials().get(PRESTO_SOURCE),
+                accessType.toString(), ret);
+        return ret;
+    }
+
+    public static boolean checkPermission(String user, String schema,
+                                          String table, String source,
+                                          PrestoAccessType accessType) {
+        getPolicy();
+        List<String> groups = getGroups(user);
+        return checkPermission(groups, source, user,
+                schema,
+                table, accessType);
     }
 
     public static boolean checkPermission(Identity identity, CatalogSchemaName schema,

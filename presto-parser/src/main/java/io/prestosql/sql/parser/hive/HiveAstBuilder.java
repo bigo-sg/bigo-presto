@@ -798,11 +798,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             if (identifier.isPresent()) {
                 throw parseError("todo", ctx);
             }
+            List<Identifier> aliases = ImmutableList.of();
 
             if (starExpression.getIdentifier().isPresent()) {
-                return new AllColumns(nodeLocation, getQualifiedName(starExpression.getIdentifier().get()));
+                Expression prefixExpression = ((StarExpression)expression).getIdentifier().get();
+                return new AllColumns(nodeLocation, Optional.of(prefixExpression), aliases);
             } else {
-                return new AllColumns(nodeLocation);
+                return new AllColumns(nodeLocation, Optional.empty(), aliases);
             }
         } else {
             return new SingleColumn(nodeLocation, expression, identifier);
@@ -1248,6 +1250,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Optional.empty(),//filter,
                     Optional.empty(),//orderBy,
                     distinct,
+                    Optional.empty(),
                     new ArrayList<>()
             );
         }
@@ -1261,6 +1264,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Optional.empty(),//filter,
                     Optional.empty(),//orderBy,
                     distinct,
+                    Optional.empty(),
                     Arrays.asList(row)
             );
         }
@@ -1271,6 +1275,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 Optional.empty(),//filter,
                 Optional.empty(),//orderBy,
                 distinct,
+                Optional.empty(),
                 expressions
                 );
     }

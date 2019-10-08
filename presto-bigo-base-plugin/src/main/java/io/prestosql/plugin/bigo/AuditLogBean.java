@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.time.ZoneOffset;
+import java.time.temporal.TemporalUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -121,7 +122,7 @@ public class AuditLogBean
         queuedTime = statistics.getQueuedTime();
         waitingTime = getFromOptionalDuration(statistics.getResourceWaitingTime());
         analysisTime = getFromOptionalDuration(statistics.getAnalysisTime());
-        distributedPlanningTime = getFromOptionalDuration(statistics.getDistributedPlanningTime());
+        distributedPlanningTime = Duration.ofHours(0);
         peakUserMemoryBytes = statistics.getPeakUserMemoryBytes();
         peakTotalNonRevocableMemoryBytes = statistics.getPeakTotalNonRevocableMemoryBytes();
         peakTaskUserMemory = statistics.getPeakTaskUserMemory();

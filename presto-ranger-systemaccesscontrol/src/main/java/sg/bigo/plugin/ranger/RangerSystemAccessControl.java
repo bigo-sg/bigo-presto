@@ -24,11 +24,12 @@ import io.prestosql.spi.connector.CatalogSchemaName;
 import io.prestosql.spi.connector.CatalogSchemaTableName;
 import io.prestosql.spi.connector.ColumnMetadata;
 import io.prestosql.spi.connector.SchemaTableName;
-import io.prestosql.spi.security.Identity;
+
 import io.prestosql.spi.security.PrestoPrincipal;
 import io.prestosql.spi.security.Privilege;
 import io.prestosql.spi.security.SystemAccessControl;
 import io.prestosql.spi.security.SystemAccessControlFactory;
+import io.prestosql.spi.security.SystemSecurityContext;
 
 import java.nio.file.Paths;
 import java.security.Principal;
@@ -38,7 +39,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static io.prestosql.plugin.base.JsonUtils.parseJson;
 import static io.prestosql.spi.StandardErrorCode.CONFIGURATION_INVALID;
@@ -63,7 +63,6 @@ import static io.prestosql.spi.security.AccessDeniedException.denySetUser;
 import static io.prestosql.spi.security.AccessDeniedException.denyShowColumnsMetadata;
 import static io.prestosql.spi.security.AccessDeniedException.denyShowSchemas;
 import static io.prestosql.spi.security.AccessDeniedException.denyShowTablesMetadata;
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -179,34 +178,34 @@ public class RangerSystemAccessControl
     }
 
     @Override
-    public void checkCanSetSystemSessionProperty(Identity identity, String propertyName)
+    public void checkCanSetSystemSessionProperty(SystemSecurityContext context, String propertyName)
     {
     }
 
     @Override
-    public void checkCanAccessCatalog(Identity identity, String catalogName)
+    public void checkCanAccessCatalog(SystemSecurityContext context, String catalogName)
     {
-        if (!canAccessCatalog(identity, catalogName)) {
+        if (!canAccessCatalog(context, catalogName)) {
             denyCatalogAccess(catalogName);
         }
     }
 
     @Override
-    public Set<String> filterCatalogs(Identity identity, Set<String> catalogs)
+    public Set<String> filterCatalogs(SystemSecurityContext context, Set<String> catalogs)
     {
         ImmutableSet.Builder<String> filteredCatalogs = ImmutableSet.builder();
         for (String catalog : catalogs) {
-            if (canAccessCatalog(identity, catalog)) {
+            if (canAccessCatalog(context, catalog)) {
                 filteredCatalogs.add(catalog);
             }
         }
         return filteredCatalogs.build();
     }
 
-    private boolean canModifyCatalog(Identity identity, String catalogName)
+    private boolean canModifyCatalog(SystemSecurityContext context, String catalogName)
     {
         for (CatalogAccessControlRule rule : catalogRules) {
-            CatalogAccessControlRule.MatchResult matchResult = rule.match(identity.getUser(), catalogName);
+            CatalogAccessControlRule.MatchResult matchResult = rule.match(context.getIdentity().getUser(), catalogName);
             if (matchResult.isAllow().isPresent() && matchResult.isAllow().get()) {
                 return true;
             }
@@ -214,10 +213,10 @@ public class RangerSystemAccessControl
         return false;
     }
 
-    private boolean canModifyCatalogSchema(Identity identity, String catalogName, String schema)
+    private boolean canModifyCatalogSchema(SystemSecurityContext context, String catalogName, String schema)
     {
         for (CatalogAccessControlRule rule : catalogRules) {
-            CatalogAccessControlRule.MatchResult matchResult = rule.match(identity.getUser(), catalogName, schema);
+            CatalogAccessControlRule.MatchResult matchResult = rule.match(context.getIdentity().getUser(), catalogName, schema);
             if (matchResult.isAllow().isPresent() && matchResult.isAllow().get()) {
                 return true;
             }
@@ -225,10 +224,10 @@ public class RangerSystemAccessControl
         return false;
     }
 
-    private boolean canAccessCatalog(Identity identity, String catalogName)
+    private boolean canAccessCatalog(SystemSecurityContext context, String catalogName)
     {
         for (CatalogAccessControlRule rule : catalogRules) {
-            CatalogAccessControlRule.MatchResult matchResult = rule.match(identity.getUser(), catalogName);
+            CatalogAccessControlRule.MatchResult matchResult = rule.match(context.getIdentity().getUser(), catalogName);
 
             if (matchResult.isReadOnly().isPresent() && matchResult.isReadOnly().get()) {
                 return true;
@@ -241,41 +240,41 @@ public class RangerSystemAccessControl
     }
 
     @Override
-    public void checkCanCreateSchema(Identity identity, CatalogSchemaName schema)
+    public void checkCanCreateSchema(SystemSecurityContext context, CatalogSchemaName schema)
     {
-        if (!canModifyCatalog(identity, schema.getCatalogName())) {
+        if (!canModifyCatalog(context, schema.getCatalogName())) {
             denyCreateSchema(schema.getSchemaName());
         }
     }
 
     @Override
-    public void checkCanDropSchema(Identity identity, CatalogSchemaName schema)
+    public void checkCanDropSchema(SystemSecurityContext context, CatalogSchemaName schema)
     {
-        if (!canModifyCatalog(identity, schema.getCatalogName())) {
+        if (!canModifyCatalog(context, schema.getCatalogName())) {
             denyDropSchema(schema.getSchemaName());
         }
     }
 
     @Override
-    public void checkCanRenameSchema(Identity identity, CatalogSchemaName schema, String newSchemaName)
+    public void checkCanRenameSchema(SystemSecurityContext context, CatalogSchemaName schema, String newSchemaName)
     {
-        if (!canModifyCatalog(identity, schema.getCatalogName())) {
+        if (!canModifyCatalog(context, schema.getCatalogName())) {
             denyRenameSchema(schema.getSchemaName(), newSchemaName);
         }
     }
 
     @Override
-    public void checkCanShowSchemas(Identity identity, String catalogName)
+    public void checkCanShowSchemas(SystemSecurityContext context, String catalogName)
     {
-        if (!canAccessCatalog(identity, catalogName)) {
+        if (!canAccessCatalog(context, catalogName)) {
             denyShowSchemas();
         }
     }
 
     @Override
-    public Set<String> filterSchemas(Identity identity, String catalogName, Set<String> schemaNames)
+    public Set<String> filterSchemas(SystemSecurityContext context, String catalogName, Set<String> schemaNames)
     {
-        if (!canAccessCatalog(identity, catalogName)) {
+        if (!canAccessCatalog(context, catalogName)) {
             return ImmutableSet.of();
         }
 
@@ -283,51 +282,51 @@ public class RangerSystemAccessControl
     }
 
     @Override
-    public void checkCanCreateTable(Identity identity, CatalogSchemaTableName table)
+    public void checkCanCreateTable(SystemSecurityContext context, CatalogSchemaTableName table)
     {
         // only support create table for now.
-        if (!canModifyCatalog(identity, table.getCatalogName()) &&
-                !canModifyCatalogSchema(identity, table.getCatalogName(), table.getSchemaTableName().getSchemaName())) {
+        if (!canModifyCatalog(context, table.getCatalogName()) &&
+                !canModifyCatalogSchema(context, table.getCatalogName(), table.getSchemaTableName().getSchemaName())) {
             denyCreateTable(table.toString());
         }
     }
 
     @Override
-    public void checkCanDropTable(Identity identity, CatalogSchemaTableName table)
+    public void checkCanDropTable(SystemSecurityContext context, CatalogSchemaTableName table)
     {
-        if (!canModifyCatalog(identity, table.getCatalogName())) {
+        if (!canModifyCatalog(context, table.getCatalogName())) {
             denyDropTable(table.toString());
         }
     }
 
     @Override
-    public void checkCanRenameTable(Identity identity, CatalogSchemaTableName table, CatalogSchemaTableName newTable)
+    public void checkCanRenameTable(SystemSecurityContext context, CatalogSchemaTableName table, CatalogSchemaTableName newTable)
     {
-        if (!canModifyCatalog(identity, table.getCatalogName())) {
+        if (!canModifyCatalog(context, table.getCatalogName())) {
             denyRenameTable(table.toString(), newTable.toString());
         }
     }
 
     @Override
-    public void checkCanSetTableComment(Identity identity, CatalogSchemaTableName table)
+    public void checkCanSetTableComment(SystemSecurityContext context, CatalogSchemaTableName table)
     {
-        if (!canModifyCatalog(identity, table.getCatalogName())) {
+        if (!canModifyCatalog(context, table.getCatalogName())) {
             denyCommentTable(table.toString());
         }
     }
 
     @Override
-    public void checkCanShowTablesMetadata(Identity identity, CatalogSchemaName schema)
+    public void checkCanShowTablesMetadata(SystemSecurityContext context, CatalogSchemaName schema)
     {
-        if (!canAccessCatalog(identity, schema.getCatalogName())) {
+        if (!canAccessCatalog(context, schema.getCatalogName())) {
             denyShowTablesMetadata(schema.toString());
         }
     }
 
     @Override
-    public Set<SchemaTableName> filterTables(Identity identity, String catalogName, Set<SchemaTableName> tableNames)
+    public Set<SchemaTableName> filterTables(SystemSecurityContext context, String catalogName, Set<SchemaTableName> tableNames)
     {
-        if (!canAccessCatalog(identity, catalogName)) {
+        if (!canAccessCatalog(context, catalogName)) {
             return ImmutableSet.of();
         }
 
@@ -335,17 +334,17 @@ public class RangerSystemAccessControl
     }
 
     @Override
-    public void checkCanShowColumnsMetadata(Identity identity, CatalogSchemaTableName table)
+    public void checkCanShowColumnsMetadata(SystemSecurityContext context, CatalogSchemaTableName table)
     {
-        if (!canAccessCatalog(identity, table.getCatalogName())) {
+        if (!canAccessCatalog(context, table.getCatalogName())) {
             denyShowColumnsMetadata(table.toString());
         }
     }
 
     @Override
-    public List<ColumnMetadata> filterColumns(Identity identity, CatalogSchemaTableName tableName, List<ColumnMetadata> columns)
+    public List<ColumnMetadata> filterColumns(SystemSecurityContext context, CatalogSchemaTableName tableName, List<ColumnMetadata> columns)
     {
-        if (!canAccessCatalog(identity, tableName.getCatalogName())) {
+        if (!canAccessCatalog(context, tableName.getCatalogName())) {
             return ImmutableList.of();
         }
 
@@ -353,94 +352,94 @@ public class RangerSystemAccessControl
     }
 
     @Override
-    public void checkCanAddColumn(Identity identity, CatalogSchemaTableName table)
+    public void checkCanAddColumn(SystemSecurityContext context, CatalogSchemaTableName table)
     {
-        if (!canModifyCatalog(identity, table.getCatalogName())) {
+        if (!canModifyCatalog(context, table.getCatalogName())) {
             denyAddColumn(table.toString());
         }
     }
 
     @Override
-    public void checkCanDropColumn(Identity identity, CatalogSchemaTableName table)
+    public void checkCanDropColumn(SystemSecurityContext context, CatalogSchemaTableName table)
     {
-        if (!canModifyCatalog(identity, table.getCatalogName())) {
+        if (!canModifyCatalog(context, table.getCatalogName())) {
             denyDropColumn(table.toString());
         }
     }
 
     @Override
-    public void checkCanRenameColumn(Identity identity, CatalogSchemaTableName table)
+    public void checkCanRenameColumn(SystemSecurityContext context, CatalogSchemaTableName table)
     {
-        if (!canModifyCatalog(identity, table.getCatalogName())) {
+        if (!canModifyCatalog(context, table.getCatalogName())) {
             denyRenameColumn(table.toString());
         }
     }
 
     @Override
-    public void checkCanSelectFromColumns(Identity identity, CatalogSchemaTableName table, Set<String> columns)
+    public void checkCanSelectFromColumns(SystemSecurityContext context, CatalogSchemaTableName table, Set<String> columns)
     {
-        if (!canAccessCatalog(identity, table.getCatalogName())) {
+        if (!canAccessCatalog(context, table.getCatalogName())) {
             denySelectColumns(table.toString(), columns);
         }
     }
 
     @Override
-    public void checkCanInsertIntoTable(Identity identity, CatalogSchemaTableName table)
+    public void checkCanInsertIntoTable(SystemSecurityContext context, CatalogSchemaTableName table)
     {
-        if (!canModifyCatalog(identity, table.getCatalogName())) {
+        if (!canModifyCatalog(context, table.getCatalogName())) {
             denyInsertTable(table.toString());
         }
     }
 
     @Override
-    public void checkCanDeleteFromTable(Identity identity, CatalogSchemaTableName table)
+    public void checkCanDeleteFromTable(SystemSecurityContext context, CatalogSchemaTableName table)
     {
-        if (!canModifyCatalog(identity, table.getCatalogName())) {
+        if (!canModifyCatalog(context, table.getCatalogName())) {
             denyDeleteTable(table.toString());
         }
     }
 
     @Override
-    public void checkCanCreateView(Identity identity, CatalogSchemaTableName view)
+    public void checkCanCreateView(SystemSecurityContext context, CatalogSchemaTableName view)
     {
-        if (!canModifyCatalog(identity, view.getCatalogName())) {
+        if (!canModifyCatalog(context, view.getCatalogName())) {
             denyCreateView(view.toString());
         }
     }
 
     @Override
-    public void checkCanDropView(Identity identity, CatalogSchemaTableName view)
+    public void checkCanDropView(SystemSecurityContext context, CatalogSchemaTableName view)
     {
-        if (!canModifyCatalog(identity, view.getCatalogName())) {
+        if (!canModifyCatalog(context, view.getCatalogName())) {
             denyDropView(view.toString());
         }
     }
 
     @Override
-    public void checkCanCreateViewWithSelectFromColumns(Identity identity, CatalogSchemaTableName table, Set<String> columns)
+    public void checkCanCreateViewWithSelectFromColumns(SystemSecurityContext context, CatalogSchemaTableName table, Set<String> columns)
     {
-        if (!canModifyCatalog(identity, table.getCatalogName())) {
-            denyCreateViewWithSelect(table.toString(), identity);
+        if (!canModifyCatalog(context, table.getCatalogName())) {
+            denyCreateViewWithSelect(table.toString(), context.getIdentity());
         }
     }
 
     @Override
-    public void checkCanSetCatalogSessionProperty(Identity identity, String catalogName, String propertyName)
+    public void checkCanSetCatalogSessionProperty(SystemSecurityContext context, String catalogName, String propertyName)
     {
     }
 
     @Override
-    public void checkCanGrantTablePrivilege(Identity identity, Privilege privilege, CatalogSchemaTableName table, PrestoPrincipal grantee, boolean withGrantOption)
+    public void checkCanGrantTablePrivilege(SystemSecurityContext context, Privilege privilege, CatalogSchemaTableName table, PrestoPrincipal grantee, boolean withGrantOption)
     {
     }
 
     @Override
-    public void checkCanRevokeTablePrivilege(Identity identity, Privilege privilege, CatalogSchemaTableName table, PrestoPrincipal revokee, boolean grantOptionFor)
+    public void checkCanRevokeTablePrivilege(SystemSecurityContext context, Privilege privilege, CatalogSchemaTableName table, PrestoPrincipal revokee, boolean grantOptionFor)
     {
     }
 
     @Override
-    public void checkCanShowRoles(Identity identity, String catalogName)
+    public void checkCanShowRoles(SystemSecurityContext context, String catalogName)
     {
     }
 }

@@ -978,6 +978,21 @@ public final class SystemSessionProperties
         return session.getSystemProperty(QUERY_MAX_TOTAL_MEMORY_PER_NODE, DataSize.class);
     }
 
+    public static boolean isEnableDownloadRewrite(Session session)
+    {
+        return session.getSystemProperty(ENABLE_DOWNLOAD_REWRITE, Boolean.class);
+    }
+
+    public static String getDownloadRewriteDbName(Session session)
+    {
+        return session.getSystemProperty(DOWNLOAD_REWRITE_DB_NAME, String.class);
+    }
+
+    public static Long getDownloadRewriteRowLimit(Session session)
+    {
+        return session.getSystemProperty(DOWNLOAD_REWRITE_ROW_LIMIT, Long.class);
+    }
+
     public static boolean isEnableHiveSqlSynTax(Session session)
     {
         return session.getSystemProperty(ENABLE_HIVE_SQL_SYNTAX, Boolean.class);

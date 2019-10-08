@@ -30,7 +30,11 @@ public class FunctionCall
     private final Optional<OrderBy> orderBy;
     private final boolean distinct;
     private final Optional<NullTreatment> nullTreatment;
-    private final List<Expression> arguments;
+    private List<Expression> arguments;
+
+    public void setArguments(List<Expression> arguments) {
+        this.arguments = arguments;
+    }
 
     public FunctionCall(QualifiedName name, List<Expression> arguments)
     {

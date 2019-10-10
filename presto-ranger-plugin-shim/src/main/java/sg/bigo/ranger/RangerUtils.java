@@ -31,7 +31,8 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class RangerUtils {
     private static String hostPrefix = null;
-    private static final long POLICY_UPDATE_FREQUENCY = 1000 * 60 * 60 * 24;
+    private static long policyUpdateCycle = 1000 * 60 * 10;
+    private static long userInfoUpdateCycle = 1000 * 60 * 10;
     private static JSONArray hivePolicies = null;
     private static JSONObject userInfo = null;
     public static final String PRESTO_SOURCE = "X-Presto-Source";
@@ -42,7 +43,8 @@ public class RangerUtils {
     private static Lock userInfoLock = new ReentrantLock();
     public static final String POLICY_CACHE_FILE_NAME = "hive-ranger-policies.json";
     public static final String USER_INFO_CACHE_FILE_NAME = "hive-ranger-users.json";
-    private static long lastUpdateTime = System.currentTimeMillis();
+    private static long lastPolicyUpdateTime = System.currentTimeMillis();
+    private static long lastUserUpdateTime = System.currentTimeMillis();
     public static String getRangerData(String url) {
         HttpClient httpClient = HttpClientCreator.getHttpClient();
         HttpGet httpGet = new HttpGet(url);
@@ -64,50 +66,30 @@ public class RangerUtils {
 
     public static void init(Map<String, String> config) {
         RangerUtils.hostPrefix = config.get("ranger.host-port");
-        requireNonNull(hostPrefix, "hostPrefix is null");
+        requireNonNull(hostPrefix, "ranger.host-port is null");
         RangerUtils.userNameAndPassword = config.get("ranger.username-password");
         String policies = config.get("ranger.policy-names");
-        requireNonNull(policies, "policies is null");
+        requireNonNull(policies, "ranger.policy-names is null");
         RangerUtils.policyNames = policies.split(",");
         RangerUtils.cachePath = config.get("ranger.cache-path");
-        requireNonNull(cachePath, "cachePath is null");
-    }
-
-    public static void setHostPrefix(String hostPrefix) {
-        RangerUtils.hostPrefix = hostPrefix;
-    }
-
-    public static void setUserNameAndPassword(String userNameAndPassword) {
-        RangerUtils.userNameAndPassword = userNameAndPassword;
-    }
-
-    public static void setHivePolicies(JSONArray hivePolicies) {
-        RangerUtils.hivePolicies = hivePolicies;
-    }
-
-    public static void setPolicyNames(String[] policyNames) {
-        RangerUtils.policyNames = policyNames;
+        requireNonNull(cachePath, "ranger.cache-path is null");
+        String cycle = config.get("ranger.policy-update-cycle");
+        requireNonNull(cycle, "ranger.policy-update-cycle is null");
+        RangerUtils.policyUpdateCycle = Long.parseLong(cycle);
+        cycle = config.get("ranger.user-update-cycle");
+        requireNonNull(cycle, "ranger.user-update-cycle is null");
+        RangerUtils.userInfoUpdateCycle = Long.parseLong(cycle);
     }
 
     public static void getPolicy() {
         long now = System.currentTimeMillis();
         // also update local policies everyday
-        if (hivePolicies == null || now - lastUpdateTime > POLICY_UPDATE_FREQUENCY) {
+        if (hivePolicies == null || now - lastPolicyUpdateTime > policyUpdateCycle) {
             policyLock.lock();
             try {
-                if (hivePolicies == null || now - lastUpdateTime > POLICY_UPDATE_FREQUENCY) {
-                    lastUpdateTime = now;
+                if (hivePolicies == null || now - lastPolicyUpdateTime > policyUpdateCycle) {
+                    lastPolicyUpdateTime = now;
                     updateAndCachePolicies();
-                    if (FileUtils.exists(cachePath+ "/" + USER_INFO_CACHE_FILE_NAME)) {
-                        userInfoLock.lock();
-                        try {
-                            userInfo = JSON.parseObject(
-                                    new String(FileUtils.getFileAsBytes(
-                                            cachePath + "/" + USER_INFO_CACHE_FILE_NAME)));
-                        } finally {
-                            userInfoLock.unlock();
-                        }
-                    }
                 }
             } finally {
                 policyLock.unlock();
@@ -184,6 +166,23 @@ public class RangerUtils {
     }
 
     public static List<String> getGroups(String userName) {
+        if (userInfo == null) {
+            userInfoLock.lock();
+            try {
+                if (userInfo == null) {
+                    if (FileUtils.exists(cachePath + "/" + USER_INFO_CACHE_FILE_NAME)) {
+                        userInfo = JSON.parseObject(new String(FileUtils.getFileAsBytes(
+                                cachePath + "/" + USER_INFO_CACHE_FILE_NAME)));
+                    }
+                    if (userInfo == null) {
+                        userInfo = new JSONObject();
+                    }
+                }
+            } finally {
+                userInfoLock.unlock();
+            }
+        }
+
         boolean success = true;
         int i = 3;
         List<String> groups;
@@ -199,23 +198,24 @@ public class RangerUtils {
                 break;
             }
         }
-        if (success) {
-            if (userInfo == null) {
-                userInfo = new JSONObject();
-            }
-            if (!userInfo.containsKey(userName)) {
+
+        userInfoLock.lock();
+        try {
+            if (success) {
                 userInfo.put(userName, groups);
-                userInfoLock.lock();
-                try {
+                long now = System.currentTimeMillis();
+                if (lastUserUpdateTime - now > userInfoUpdateCycle) {
+                    lastUserUpdateTime = now;
                     FileUtils.saveBytesAsFile(userInfo.toJSONString().getBytes(),
                             cachePath + "/" + USER_INFO_CACHE_FILE_NAME);
-                } finally {
-                    userInfoLock.unlock();
                 }
+            } else {
+                groups = userInfo.getJSONArray(userName).toJavaList(String.class);
             }
-        } else {
-            groups = userInfo.getJSONArray(userName).toJavaList(String.class);
+        } finally {
+            userInfoLock.unlock();
         }
+
         return groups;
     }
 

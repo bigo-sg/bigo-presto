@@ -185,6 +185,31 @@ public class TestRangerUtils {
     }
 
     @Test
+    public void testGetGroup() {
+        List<String> data = RangerUtils.getGroupsFromRemote("not_in_ranger");
+        List<String> expect = new ArrayList<>();
+        expect.add("user_not_in_ranger");
+        Assert.assertEquals(data, expect);
+    }
+
+    @Test
+    public void testGetGroup1() {
+        List<String> data = RangerUtils.getGroupsFromRemote("rangerusersync");
+        List<String> expect = new ArrayList<>();
+        expect.add("user_not_belong_any_group");
+        Assert.assertEquals(data, expect);
+    }
+
+    @Test
+    public void testGetGroup2() {
+        List<String> data = RangerUtils.getGroupsFromRemote("test1");
+        List<String> expect = new ArrayList<>();
+        expect.add("default");
+        expect.add("realtime_computing");
+        Assert.assertEquals(data, expect);
+    }
+
+    @Test
     public void testJsonArraySerial() {
         List<String> data = new ArrayList<>();
         data.add("1");

@@ -228,14 +228,6 @@ public class BasicSQLs extends SQLTester {
     }
 
     @Test
-    public void testSelectCountNULL()
-    {
-        String sql = "SELECT count(NULL) from tb1";
-
-        checkASTNode(sql);
-    }
-
-    @Test
     public void testSelectCountOne()
     {
         String sql = "SELECT count(1) from tb1";
@@ -351,20 +343,6 @@ public class BasicSQLs extends SQLTester {
         String prestoSql = "delete from tbl";
         String hiveSql = "truncate table tbl";
         checkASTNode(prestoSql, hiveSql);
-    }
-
-    @Test
-    public void testConcatPipe()
-    {
-        String hiveSql = "SELECT a||b from t";
-        checkASTNode(hiveSql);
-    }
-
-    @Test
-    public void testCreateTempFunction()
-    {
-        String hiveSql = "CREATE TEMPORARY FUNCTION ntohl AS 'Ntohl'";
-        runHiveSQL(hiveSql);
     }
 
 }

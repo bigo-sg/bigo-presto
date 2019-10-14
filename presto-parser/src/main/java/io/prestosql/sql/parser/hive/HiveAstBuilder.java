@@ -108,6 +108,47 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 ctx.EXISTS() != null,
                 properties);
     }
+
+    @Override public Node visitDelete(SqlBaseParser.DeleteContext ctx) {
+        return new Delete(
+                getLocation(ctx),
+                new Table(getLocation(ctx), getQualifiedName(ctx.qualifiedName())),
+                visitIfPresent(ctx.booleanExpression(), Expression.class));
+    }
+
+    @Override public Node visitAddTableColumns(SqlBaseParser.AddTableColumnsContext ctx) {
+        if (ctx.colTypeList().colType().size() != 1) {
+            throw parseError("not support to add more than or less than 1 columns at one time", ctx);
+        }
+
+        SqlBaseParser.ColTypeContext colTypeContext = ctx.colTypeList().colType(0);
+        String type = colTypeContext.dataType().getText();
+        if (type.contains("<") && type.contains(">")) {
+            type = colTypeTransformComplex(type);
+        } else {
+            type = colTypeTransformSimple(type);
+        }
+        String comment = "";
+        if (colTypeContext.COMMENT() != null) {
+            comment = colTypeContext.STRING().getText()
+                    .substring(1, colTypeContext.STRING().getText().length() - 1);
+        }
+        ColumnDefinition columnDefinition = new ColumnDefinition(
+                new Identifier(getLocation(colTypeContext),
+                        colTypeContext.identifier().getText(), true),
+                type,
+                true,
+                new ArrayList<>(),
+                Optional.of(comment));
+
+        return new AddColumn(getLocation(ctx), getQualifiedName(ctx.tableIdentifier()),
+                columnDefinition);
+    }
+
+    @Override public Node visitRenameTable(SqlBaseParser.RenameTableContext ctx) {
+        return new RenameTable(getLocation(ctx), getQualifiedName(ctx.from), getQualifiedName(ctx.to));
+    }
+
     @Override public Node visitTableProperty(SqlBaseParser.TablePropertyContext ctx)
     {
         Expression value = null;
@@ -820,6 +861,39 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
         visit(ctx.db);
         return use;
+    }
+
+    @Override public Node visitTruncateTable(SqlBaseParser.TruncateTableContext ctx) {
+        Optional<Expression> condition = Optional.empty();
+        SqlBaseParser.PartitionSpecContext partitionSpecContext = ctx.partitionSpec();
+        Expression expression;
+        if (partitionSpecContext != null) {
+            List<SqlBaseParser.PartitionValContext> partitionValContexts =
+                    partitionSpecContext.partitionVal();
+            SqlBaseParser.PartitionValContext partitionValContext = partitionValContexts.get(0);
+            expression = new ComparisonExpression(getLocation(partitionValContexts.get(0)),
+                    ComparisonExpression.Operator.EQUAL,
+                    new Identifier(partitionValContext.identifier().getText()),
+                    new StringLiteral(getLocation(partitionValContext),
+                            unquote(partitionValContext.constant().getText())));
+            if (partitionValContexts.size() > 1) {
+                for (int i = 1; i < partitionValContexts.size(); ++i) {
+                    partitionValContext = partitionValContexts.get(i);
+                    expression = new LogicalBinaryExpression(LogicalBinaryExpression.Operator.AND,
+                            expression,
+                            new ComparisonExpression(getLocation(partitionValContext),
+                                    ComparisonExpression.Operator.EQUAL,
+                                    new Identifier(partitionValContext.identifier().getText()),
+                                    new StringLiteral(getLocation(partitionValContext),
+                                            unquote(partitionValContext.constant().getText()))));
+                }
+            }
+            condition = Optional.of(expression);
+        }
+        return new Delete(
+                getLocation(ctx),
+                new Table(getLocation(ctx), getQualifiedName(ctx.tableIdentifier())),
+                condition);
     }
 
     @Override
@@ -1779,6 +1853,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 .replaceAll("( )*:( )*INT( )*", " INTEGER")
                 .replaceAll("\\(( )*INT( )*", "(INTEGER")
                 .replaceAll("INT( )*\\)", "INTEGER)")
+                .replace("BIGINTEGER", "BIGINT")
                 .replaceAll("( )*:( )*FLOAT( )*", " REAL")
                 .replaceAll("\\(( )*FLOAT( )*", "(REAL")
                 .replaceAll("FLOAT( )*\\)", "REAL)")

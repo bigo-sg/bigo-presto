@@ -45,6 +45,9 @@ public class RangerUtils {
     public static final String USER_INFO_CACHE_FILE_NAME = "hive-ranger-users.json";
     private static long lastPolicyUpdateTime = System.currentTimeMillis();
     private static long lastUserUpdateTime = System.currentTimeMillis();
+
+    private static final String USER_NOT_IN_RANGER = "user_not_in_ranger";
+    private static final String USER_NOT_BELONG_ANY_GROUP = "user_not_belong_any_group";
     public static String getRangerData(String url) {
         HttpClient httpClient = HttpClientCreator.getHttpClient();
         HttpGet httpGet = new HttpGet(url);
@@ -153,7 +156,9 @@ public class RangerUtils {
         JSONObject userInfoJson = JSON.parseObject(userInfo);
         String uid = userInfoJson.getString("id");
         if (uid == null) {
-            return new ArrayList<>();
+            List<String> group = new ArrayList<>();
+            group.add(USER_NOT_IN_RANGER);
+            return group;
         }
         url = hostPrefix + "/service/xusers/secure/users/" + uid;
         String userGroupInfo = getRangerData(url);
@@ -161,8 +166,12 @@ public class RangerUtils {
             return new ArrayList<>();
         }
         JSONObject userGroupInfoJson = JSON.parseObject(userGroupInfo);
-        return userGroupInfoJson.getJSONArray("groupNameList")
+        List<String> group = userGroupInfoJson.getJSONArray("groupNameList")
                 .toJavaList(String.class);
+        if (group.size() == 0) {
+            group.add(USER_NOT_BELONG_ANY_GROUP);
+        }
+        return group;
     }
 
     public static List<String> getGroups(String userName) {

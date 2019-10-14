@@ -44,6 +44,12 @@
         </artifact>
     </artifactSet>
 
+    <artifactSet to="plugin/presto-ranger-plugin-shim">
+        <artifact id="${project.groupId}:presto-ranger-plugin-shim:zip:${project.version}">
+            <unpack />
+        </artifact>
+    </artifactSet>
+
     <artifactSet to="plugin/bigo-base-plugin">
         <artifact id="${project.groupId}:presto-bigo-base-plugin:zip:${project.version}">
             <unpack />

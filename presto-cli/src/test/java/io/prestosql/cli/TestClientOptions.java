@@ -32,7 +32,7 @@ public class TestClientOptions
     {
         ClientSession session = new ClientOptions().toClientSession();
         assertEquals(session.getServer().toString(), "http://localhost:8080");
-        assertEquals(session.getSource(), "bigo-presto-cli");
+        assertEquals(session.getSource(), "presto-cli");
     }
 
     @Test

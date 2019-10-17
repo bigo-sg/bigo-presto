@@ -96,7 +96,7 @@ public class ClientOptions
     public boolean password;
 
     @Option(name = "--source", title = "source", description = "Name of source making query")
-    public String source = "presto-cli";
+    public String source = "bigo-presto-cli";
 
     @Option(name = "--client-info", title = "client-info", description = "Extra information about client making query")
     public String clientInfo;

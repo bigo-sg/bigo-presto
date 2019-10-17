@@ -50,6 +50,12 @@
         </artifact>
     </artifactSet>
 
+    <artifactSet to="plugin/presto-ranger-plugin-shim">
+        <artifact id="${project.groupId}:presto-ranger-plugin-shim:zip:${project.version}">
+            <unpack />
+        </artifact>
+    </artifactSet>
+
     <artifactSet to="plugin/session-property-managers">
         <artifact id="${project.groupId}:presto-session-property-managers:zip:${project.version}">
             <unpack />

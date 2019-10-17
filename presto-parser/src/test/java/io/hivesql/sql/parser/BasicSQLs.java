@@ -314,4 +314,35 @@ public class BasicSQLs extends SQLTester {
         runHiveSQL(hiveSql);
     }
 
+    @Test
+    public void testDelete()
+    {
+        String sql = "delete from tbl where day='2019-10-10'";
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testTruncate()
+    {
+        String prestoSql = "delete from tbl where day='2019-10-10' and hour='00' and event_id='010101'";
+        String hiveSql = "truncate table tbl partition (day='2019-10-10',hour='00',event_id='010101')";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testTruncate1()
+    {
+        String prestoSql = "delete from tbl where day='2019-10-10'";
+        String hiveSql = "truncate table tbl partition (day='2019-10-10')";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testTruncate2()
+    {
+        String prestoSql = "delete from tbl";
+        String hiveSql = "truncate table tbl";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
 }

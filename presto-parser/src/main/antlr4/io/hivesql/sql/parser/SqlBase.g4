@@ -74,6 +74,7 @@ statement
     | CREATE DATABASE (IF NOT EXISTS)? identifier
         (COMMENT comment=STRING)? locationSpec?
         (WITH DBPROPERTIES tablePropertyList)?                         #createDatabase
+    | DELETE FROM qualifiedName (WHERE booleanExpression)?             #delete
     | ALTER DATABASE identifier SET DBPROPERTIES tablePropertyList     #setDatabaseProperties
     | DROP DATABASE (IF EXISTS)? identifier (RESTRICT | CASCADE)?      #dropDatabase
     | createTableHeader ('(' colTypeList ')')? tableProvider

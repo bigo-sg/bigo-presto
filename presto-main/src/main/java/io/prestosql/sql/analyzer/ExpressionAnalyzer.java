@@ -172,6 +172,7 @@ import static java.lang.String.format;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
 public class ExpressionAnalyzer
 {
@@ -505,19 +506,26 @@ public class ExpressionAnalyzer
                     return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
                 }
                 if (tc.stringAndValueType(leftType, rightType) == leftType) {
-                    node.setLeft(new Cast(node.getLeft(), StandardTypes.DOUBLE));
-
-                    if (!rightType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)){
-                        node.setRight(new Cast(node.getRight(), StandardTypes.DOUBLE));
-                        rightType = process(node.getRight(), context);
+                    if (rightType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                        node.setLeft(new Cast(node.getLeft(), StandardTypes.BIGINT));
+                    } else {
+                        node.setLeft(new Cast(node.getLeft(), StandardTypes.DOUBLE));
+                        if (!rightType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                            node.setRight(new Cast(node.getRight(), StandardTypes.DOUBLE));
+                            rightType = process(node.getRight(), context);
+                        }
                     }
                     leftType = process(node.getLeft(), context);
                 }
                 else if (tc.stringAndValueType(leftType, rightType) == rightType) {
-                    node.setRight(new Cast(node.getRight(), StandardTypes.DOUBLE));
-                    if (!leftType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)){
-                        node.setLeft(new Cast(node.getLeft(), StandardTypes.DOUBLE));
-                        leftType = process(node.getLeft(), context);
+                    if (leftType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                        node.setRight(new Cast(node.getRight(), StandardTypes.BIGINT));
+                    } else {
+                        node.setRight(new Cast(node.getRight(), StandardTypes.DOUBLE));
+                        if (!leftType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {
+                            node.setLeft(new Cast(node.getLeft(), StandardTypes.DOUBLE));
+                            leftType = process(node.getLeft(), context);
+                        }
                     }
                     rightType = process(node.getRight(), context);
                 }
@@ -1016,6 +1024,29 @@ public class ExpressionAnalyzer
                         }
                         if (argList.size() > 0) {
                             node.setArguments(argList);
+                        }
+                        argumentTypes = getCallArgumentTypes(node.getArguments(), context);
+                    }
+                }
+                // support implicit type conversion for concat function
+                if (funcName.equals("concat")) {
+                    List<Expression> concatArgList = new ArrayList<>();
+                    Set<String> typeSet = newKeySet();
+                    Type argType = process(node.getArguments().get(0), context);
+
+                    for (Expression expression : node.getArguments()) {
+                        Type expressionType = process(expression, context);
+                        typeSet.add(expressionType.getTypeSignature().getBase());
+                    }
+                    TypeConversion tc = new TypeConversion();
+
+                    if (typeSet.size() > 1
+                            || (typeSet.size() == 1 && tc.isValueType(argType))) {
+                        for (Expression expression : node.getArguments()) {
+                            concatArgList.add(new Cast(expression, StandardTypes.VARCHAR));
+                        }
+                        if (concatArgList.size() > 0) {
+                            node.setArguments(concatArgList);
                         }
                         argumentTypes = getCallArgumentTypes(node.getArguments(), context);
                     }

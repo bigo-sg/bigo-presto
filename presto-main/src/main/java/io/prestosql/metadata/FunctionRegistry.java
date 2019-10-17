@@ -71,6 +71,8 @@ import io.prestosql.operator.aggregation.RealSumAggregation;
 import io.prestosql.operator.aggregation.SumDataSizeForStats;
 import io.prestosql.operator.aggregation.VarianceAggregation;
 import io.prestosql.operator.aggregation.arrayagg.ArrayAggregationFunction;
+import io.prestosql.operator.aggregation.arrayagg.BigoCollectListFunction;
+import io.prestosql.operator.aggregation.arrayagg.BigoCollectSetFunction;
 import io.prestosql.operator.aggregation.histogram.Histogram;
 import io.prestosql.operator.aggregation.multimapagg.MultimapAggregationFunction;
 import io.prestosql.operator.scalar.ArrayAllMatchFunction;
@@ -260,6 +262,7 @@ import static io.prestosql.operator.scalar.ArrayToArrayCast.ARRAY_TO_ARRAY_CAST;
 import static io.prestosql.operator.scalar.ArrayToElementConcatFunction.ARRAY_TO_ELEMENT_CONCAT_FUNCTION;
 import static io.prestosql.operator.scalar.ArrayToJsonCast.ARRAY_TO_JSON;
 import static io.prestosql.operator.scalar.ArrayTransformFunction.ARRAY_TRANSFORM_FUNCTION;
+import static io.prestosql.operator.scalar.BigoArrayFunction.BIGO_ARRAY_FUNCTION;
 import static io.prestosql.operator.scalar.CastFromUnknownOperator.CAST_FROM_UNKNOWN;
 import static io.prestosql.operator.scalar.ConcatFunction.VARBINARY_CONCAT;
 import static io.prestosql.operator.scalar.ConcatFunction.VARCHAR_CONCAT;
@@ -614,6 +617,8 @@ public class FunctionRegistry
                 .function(ARRAY_CONCAT_FUNCTION)
                 .functions(ARRAY_CONSTRUCTOR, ARRAY_SUBSCRIPT, ARRAY_TO_JSON, JSON_TO_ARRAY, JSON_STRING_TO_ARRAY)
                 .function(new ArrayAggregationFunction(featuresConfig.getArrayAggGroupImplementation()))
+                .function(new BigoCollectListFunction(featuresConfig.getArrayAggGroupImplementation()))
+                .function(new BigoCollectSetFunction(featuresConfig.getArrayAggGroupImplementation()))
                 .functions(new MapSubscriptOperator())
                 .functions(MAP_CONSTRUCTOR, MAP_TO_JSON, JSON_TO_MAP, JSON_STRING_TO_MAP)
                 .functions(MAP_AGG, MAP_UNION)
@@ -653,6 +658,7 @@ public class FunctionRegistry
                 .functions(MAP_FILTER_FUNCTION, MAP_TRANSFORM_KEY_FUNCTION, MAP_TRANSFORM_VALUE_FUNCTION)
                 .function(FORMAT_FUNCTION)
                 .function(TRY_CAST)
+                .function(BIGO_ARRAY_FUNCTION)
                 .aggregate(MergeSetDigestAggregation.class)
                 .aggregate(BuildSetDigestAggregation.class)
                 .scalars(SetDigestFunctions.class)

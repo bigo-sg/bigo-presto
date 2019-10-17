@@ -8,7 +8,7 @@ import static org.testng.Assert.assertEquals;
 public class TestBigoStringFunctions {
 
     @Test
-    private void testStrPosAndPosition()
+    public void testStrPosAndPosition()
     {
         long pos = BigoStringFunctions.inStr(utf8Slice("bigolive"), utf8Slice("go"));
 
@@ -16,7 +16,7 @@ public class TestBigoStringFunctions {
     }
 
     @Test
-    private void testSubstr()
+    public void testSubstr()
     {
         Slice res1 = BigoStringFunctions.substring(utf8Slice("hello"), 3);
         Slice res2 = BigoStringFunctions.substring(utf8Slice("hello"), 3, 2);
@@ -25,4 +25,11 @@ public class TestBigoStringFunctions {
         assertEquals(res2.toStringUtf8(), "ll");
     }
 
+    @Test
+    public void testStrPos()
+    {
+        assertEquals(BigoStringFunctions.stringPosition(utf8Slice("abcdabcd"), utf8Slice("b"), 2), 6);
+        assertEquals(BigoStringFunctions.stringPosition(utf8Slice("hello"), utf8Slice("l"), 1), 3);
+        assertEquals(BigoStringFunctions.stringPosition(utf8Slice("hello"), utf8Slice("world"), 1), 0);
+    }
 }

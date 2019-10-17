@@ -11,29 +11,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.prestosql.operator.aggregation.arrayagg;
+package io.prestosql;
 
-import io.prestosql.spi.block.Block;
-import io.prestosql.spi.function.AccumulatorState;
+import io.airlift.units.DataSize;
+import io.prestosql.spi.PrestoException;
 
-public interface ArrayAggregationState
-        extends AccumulatorState
+import static io.prestosql.spi.StandardErrorCode.EXCEEDED_INPUT_DATA_LIMIT;
+
+public class ExceededInputDataLimitException
+        extends PrestoException
 {
-    void add(Block block, int position);
-
-    void forEach(ArrayAggregationStateConsumer consumer);
-
-    boolean isEmpty();
-
-    default void merge(ArrayAggregationState otherState)
+    public ExceededInputDataLimitException(DataSize dataSize)
     {
-        otherState.forEach(this::add);
+        super(EXCEEDED_INPUT_DATA_LIMIT, "Exceeded InputData limit of " + dataSize.toString());
     }
-
-    default void reset()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    String getBlockSimpleName();
 }

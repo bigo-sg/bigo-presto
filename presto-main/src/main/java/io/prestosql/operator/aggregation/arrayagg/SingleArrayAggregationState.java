@@ -33,6 +33,10 @@ public class SingleArrayAggregationState
         this.type = requireNonNull(type, "type is null");
     }
 
+    public String getBlockSimpleName() {
+        return blockBuilder.getClass().getSimpleName();
+    }
+
     @Override
     public long getEstimatedSize()
     {

@@ -51,6 +51,11 @@ final public class DownloadRewrite
             return node;
         }
 
+        // only rewrite the query if this is the original statement.
+        if (! node.getLocation().isPresent()) {
+            return node;
+        }
+
         Query query = updateQuery((Query) node, session);
 
         // use query Id(append a prefix to make sure table name not started with number) as the temp table name.

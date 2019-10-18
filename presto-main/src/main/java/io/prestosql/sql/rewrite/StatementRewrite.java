@@ -34,11 +34,11 @@ import static java.util.Objects.requireNonNull;
 public final class StatementRewrite
 {
     private static final List<Rewrite> REWRITES = ImmutableList.of(
+            new DownloadRewrite(), // NOTE: DownloadRewrite need to be the first one.
             new DescribeInputRewrite(),
             new DescribeOutputRewrite(),
             new ShowQueriesRewrite(),
             new ShowStatsRewrite(),
-            new DownloadRewrite(),
             new ExplainRewrite());
 
     private StatementRewrite() {}

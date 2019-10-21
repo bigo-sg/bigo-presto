@@ -399,7 +399,9 @@ public final class HttpRequestSessionContext
 
     private static Map<String, String> parseExtraCredentials(MultivaluedMap<String, String> headers)
     {
-        return parseProperty(headers, PRESTO_EXTRA_CREDENTIAL);
+        Map<String, String> result = parseProperty(headers, PRESTO_EXTRA_CREDENTIAL);
+        result.put(PRESTO_SOURCE, headers.getFirst(PRESTO_SOURCE));
+        return result;
     }
 
     private static Map<String, String> parseProperty(MultivaluedMap<String, String> headers, String headerName)

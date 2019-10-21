@@ -228,6 +228,27 @@ public class TestRangerUtils {
         Assert.assertEquals(data1.size(), 2);
     }
 
+    @Test
+    public void testCacheUserinfo() {
+        FileUtils.remove("/tmp/hive-ranger-users.json");
+        List<String> g = RangerUtils.getGroups("unit_user1");
+        List<String> g1 = new ArrayList<>();
+        g1.add("unit_group");
+        Assert.assertEquals(g, g1);
+        Assert.assertEquals(FileUtils.exists("/tmp/hive-ranger-users.json"), true);
+    }
+
+    @Test
+    public void testCacheUserinfo1() {
+        FileUtils.remove("/tmp/hive-ranger-users.json");
+        RangerUtils.getGroups("unit_user1");
+        RangerUtils.setHostPrefix("wrong_url");
+        List<String> g = RangerUtils.getGroups("unit_user1");
+        List<String> g1 = new ArrayList<>();
+        g1.add("unit_group");
+        Assert.assertEquals(g, g1);
+    }
+
     public String getResourceContent(String path) {
         String fullPath =
                 this.getClass().

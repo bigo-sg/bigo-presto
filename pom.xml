@@ -81,6 +81,7 @@
         <module>presto-kafka</module>
         <module>presto-kinesis</module>
         <module>presto-redis</module>
+        <module>presto-clickhouse</module>
         <module>presto-accumulo</module>
         <module>presto-cassandra</module>
         <module>presto-blackhole</module>

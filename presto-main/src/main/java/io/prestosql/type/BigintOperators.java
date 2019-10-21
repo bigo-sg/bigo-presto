@@ -243,11 +243,15 @@ public final class BigintOperators
 
     @ScalarOperator(DIVIDE)
     @SqlType(StandardTypes.BIGINT)
-    public static long divide(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.BIGINT) long right)
+    @SqlNullable
+    public static Long divide(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.BIGINT) long right)
     {
         try {
             if (left == Long.MIN_VALUE && right == -1) {
                 throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, format("bigint division overflow: %s / %s", left, right));
+            }
+            if (right == 0) {
+                return null;
             }
             return left / right;
         }
@@ -258,8 +262,12 @@ public final class BigintOperators
 
     @ScalarOperator(MODULUS)
     @SqlType(StandardTypes.BIGINT)
-    public static long modulus(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.BIGINT) long right)
+    @SqlNullable
+    public static Long modulus(@SqlType(StandardTypes.BIGINT) long left, @SqlType(StandardTypes.BIGINT) long right)
     {
+        if (right == 0) {
+            return null;
+        }
         try {
             return left % right;
         }

@@ -241,13 +241,14 @@ public class ScalarStatsCalculator
             double leftHigh = left.getHighValue();
             double rightLow = right.getLowValue();
             double rightHigh = right.getHighValue();
+
             if (isNaN(leftLow) || isNaN(leftHigh) || isNaN(rightLow) || isNaN(rightHigh)) {
                 result.setLowValue(NaN)
                         .setHighValue(NaN);
             }
             else if (node.getOperator() == ArithmeticBinaryExpression.Operator.DIVIDE && rightLow < 0 && rightHigh > 0) {
-                result.setLowValue(Double.NEGATIVE_INFINITY)
-                        .setHighValue(Double.POSITIVE_INFINITY);
+                result.setLowValue(NaN)
+                        .setHighValue(NaN);
             }
             else if (node.getOperator() == ArithmeticBinaryExpression.Operator.MODULUS) {
                 double maxDivisor = max(abs(rightLow), abs(rightHigh));

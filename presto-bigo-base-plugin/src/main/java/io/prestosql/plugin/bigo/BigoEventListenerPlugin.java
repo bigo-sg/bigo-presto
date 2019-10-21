@@ -26,6 +26,7 @@ import io.prestosql.plugin.bigo.udf.BigoIndigoUidHashMod;
 import io.prestosql.plugin.bigo.udf.BigoIsAVTest;
 import io.prestosql.plugin.bigo.udf.BigoStringFunctions;
 import io.prestosql.plugin.bigo.udf.BigoTypeConversionFunctions;
+import io.prestosql.plugin.bigo.udf.BigoVarbinaryFunctions;
 import io.prestosql.plugin.bigo.udf.BinaryFunction;
 import io.prestosql.plugin.bigo.udf.ConcatWsFunction;
 import io.prestosql.plugin.bigo.udf.DecodeFunction;
@@ -87,6 +88,7 @@ public class BigoEventListenerPlugin
                 .add(EncodeFunction.class)
                 .add(BinaryFunction.class)
                 .add(ConcatWsFunction.class)
+                .add(BigoVarbinaryFunctions.class)
                 .build();
     }
 }

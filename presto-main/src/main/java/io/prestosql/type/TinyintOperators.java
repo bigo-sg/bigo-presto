@@ -95,9 +95,13 @@ public final class TinyintOperators
 
     @ScalarOperator(DIVIDE)
     @SqlType(StandardTypes.TINYINT)
-    public static long divide(@SqlType(StandardTypes.TINYINT) long left, @SqlType(StandardTypes.TINYINT) long right)
+    @SqlNullable
+    public static Long divide(@SqlType(StandardTypes.TINYINT) long left, @SqlType(StandardTypes.TINYINT) long right)
     {
         try {
+            if (right == 0) {
+                return null;
+            }
             return left / right;
         }
         catch (ArithmeticException e) {
@@ -107,9 +111,13 @@ public final class TinyintOperators
 
     @ScalarOperator(MODULUS)
     @SqlType(StandardTypes.TINYINT)
-    public static long modulus(@SqlType(StandardTypes.TINYINT) long left, @SqlType(StandardTypes.TINYINT) long right)
+    @SqlNullable
+    public static Long modulus(@SqlType(StandardTypes.TINYINT) long left, @SqlType(StandardTypes.TINYINT) long right)
     {
         try {
+            if (right == 0) {
+                return null;
+            }
             return left % right;
         }
         catch (ArithmeticException e) {

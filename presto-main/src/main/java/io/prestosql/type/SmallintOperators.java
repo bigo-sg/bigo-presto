@@ -97,9 +97,13 @@ public final class SmallintOperators
 
     @ScalarOperator(DIVIDE)
     @SqlType(StandardTypes.SMALLINT)
-    public static long divide(@SqlType(StandardTypes.SMALLINT) long left, @SqlType(StandardTypes.SMALLINT) long right)
+    @SqlNullable
+    public static Long divide(@SqlType(StandardTypes.SMALLINT) long left, @SqlType(StandardTypes.SMALLINT) long right)
     {
         try {
+            if (right == 0) {
+                return null;
+            }
             return left / right;
         }
         catch (ArithmeticException e) {
@@ -109,9 +113,13 @@ public final class SmallintOperators
 
     @ScalarOperator(MODULUS)
     @SqlType(StandardTypes.SMALLINT)
-    public static long modulus(@SqlType(StandardTypes.SMALLINT) long left, @SqlType(StandardTypes.SMALLINT) long right)
+    @SqlNullable
+    public static Long modulus(@SqlType(StandardTypes.SMALLINT) long left, @SqlType(StandardTypes.SMALLINT) long right)
     {
         try {
+            if (right == 0) {
+                return null;
+            }
             return left % right;
         }
         catch (ArithmeticException e) {

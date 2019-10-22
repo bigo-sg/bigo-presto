@@ -80,6 +80,11 @@ public class FileUtils {
         return file.exists();
     }
 
+    public static boolean remove(String path) {
+        File file = new File(path);
+        return file.delete();
+    }
+
     private static boolean deleteDir(File dir) {
         if (dir.isDirectory()) {
             String[] children = dir.list();

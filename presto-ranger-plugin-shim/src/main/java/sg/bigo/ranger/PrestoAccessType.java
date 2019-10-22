@@ -8,7 +8,7 @@ public enum  PrestoAccessType {
     CREATE("create"),
     DROP("drop"),
     SELECT("select"),
-    DELETE("update"),
+    DELETE("alter"),
     SHOW("select"),
     INSERT("update"),
     ALTER("alter");

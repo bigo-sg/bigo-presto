@@ -67,6 +67,10 @@ public class RangerUtils {
         return null;
     }
 
+    public static void setHostPrefix(String hostPrefix) {
+        RangerUtils.hostPrefix = hostPrefix;
+    }
+
     public static void init(Map<String, String> config) {
         RangerUtils.hostPrefix = config.get("ranger.host-port");
         requireNonNull(hostPrefix, "ranger.host-port is null");
@@ -213,7 +217,7 @@ public class RangerUtils {
             if (success) {
                 userInfo.put(userName, groups);
                 long now = System.currentTimeMillis();
-                if (lastUserUpdateTime - now > userInfoUpdateCycle) {
+                if (now - lastUserUpdateTime > userInfoUpdateCycle || userInfo.size() <= 1) {
                     lastUserUpdateTime = now;
                     FileUtils.saveBytesAsFile(userInfo.toJSONString().getBytes(),
                             cachePath + "/" + USER_INFO_CACHE_FILE_NAME);
@@ -355,6 +359,9 @@ public class RangerUtils {
 
     private static boolean isFitResource(String db, String table, JSONObject resources) {
         JSONObject database = resources.getJSONObject("database");
+        if (database == null) {
+            return false;
+        }
         JSONArray values = database.getJSONArray("values");
         boolean isExcludes = database.getBoolean("isExcludes");
 
@@ -366,6 +373,9 @@ public class RangerUtils {
             return true;
         }
         JSONObject tables = resources.getJSONObject("table");
+        if (tables == null) {
+            return false;
+        }
         values = tables.getJSONArray("values");
         isExcludes = tables.getBoolean("isExcludes");
         // no any access to all table of this policy

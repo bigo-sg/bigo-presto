@@ -42,7 +42,7 @@ public class HADiscoveryModule
 
         // bind discovery client and dependencies
         binder.bind(DiscoveryLookupClient.class).to(HttpDiscoveryLookupClient.class).in(Scopes.SINGLETON);
-        binder.bind(DiscoveryAnnouncementClient.class).to(HttpDiscoveryAnnouncementClient.class).in(Scopes.SINGLETON);
+        binder.bind(DiscoveryAnnouncementClient.class).to(HAHttpDiscoveryAnnouncementClient.class).in(Scopes.SINGLETON);
         jsonCodecBinder(binder).bindJsonCodec(ServiceDescriptorsRepresentation.class);
         jsonCodecBinder(binder).bindJsonCodec(Announcement.class);
 

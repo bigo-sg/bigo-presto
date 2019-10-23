@@ -29,6 +29,10 @@ public class HAEmbeddedDiscoveryModule
         configBinder(binder).bindConfig(DiscoveryConfig.class);
         jaxrsBinder(binder).bind(ServiceResource.class);
 
+        configBinder(binder).bindConfig(HAConfig.class);
+        jaxrsBinder(binder).bind(Elector.class);
+        jaxrsBinder(binder).bind(HADiscoveryResource.class);
+
         discoveryBinder(binder).bindHttpAnnouncement("discovery");
 
         jsonCodecBinder(binder).bindJsonCodec(Service.class);

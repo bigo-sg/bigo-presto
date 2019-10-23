@@ -37,6 +37,7 @@ import io.prestosql.eventlistener.EventListenerModule;
 import io.prestosql.execution.resourcegroups.ResourceGroupManager;
 import io.prestosql.execution.scheduler.NodeSchedulerConfig;
 import io.prestosql.execution.warnings.WarningCollectorModule;
+import io.prestosql.ha.HADiscoveryModule;
 import io.prestosql.metadata.Catalog;
 import io.prestosql.metadata.CatalogManager;
 import io.prestosql.metadata.StaticCatalogStore;
@@ -93,7 +94,7 @@ public class PrestoServer
         ImmutableList.Builder<Module> modules = ImmutableList.builder();
         modules.add(
                 new NodeModule(),
-                new DiscoveryModule(),
+                new HADiscoveryModule(),
                 new HttpServerModule(),
                 new JsonModule(),
                 new JaxrsModule(),

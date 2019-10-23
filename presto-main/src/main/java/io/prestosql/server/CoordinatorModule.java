@@ -93,6 +93,7 @@ import io.prestosql.execution.scheduler.ExecutionPolicy;
 import io.prestosql.execution.scheduler.PhasedExecutionPolicy;
 import io.prestosql.execution.scheduler.SplitSchedulerStats;
 import io.prestosql.failuredetector.FailureDetectorModule;
+import io.prestosql.ha.HAEmbeddedDiscoveryModule;
 import io.prestosql.memory.ClusterMemoryManager;
 import io.prestosql.memory.ForMemoryManager;
 import io.prestosql.memory.LowMemoryKiller;
@@ -185,7 +186,7 @@ public class CoordinatorModule
         httpServerBinder(binder).bindResource("/tableau", "webapp/tableau");
 
         // discovery server
-        install(installModuleIf(EmbeddedDiscoveryConfig.class, EmbeddedDiscoveryConfig::isEnabled, new EmbeddedDiscoveryModule()));
+        install(installModuleIf(EmbeddedDiscoveryConfig.class, EmbeddedDiscoveryConfig::isEnabled, new HAEmbeddedDiscoveryModule()));
 
         // presto coordinator announcement
         discoveryBinder(binder).bindHttpAnnouncement("presto-coordinator");

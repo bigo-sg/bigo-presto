@@ -140,6 +140,7 @@
         <module>presto-kudu</module>
         <module>presto-elasticsearch</module>
         <module>presto-ranger-plugin-shim</module>
+        <module>presto-ha</module>
     </modules>
 
     <dependencyManagement>
@@ -198,6 +199,12 @@
             <dependency>
                 <groupId>io.prestosql</groupId>
                 <artifactId>presto-plugin-toolkit</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.prestosql</groupId>
+                <artifactId>presto-ha</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

@@ -1,7 +1,11 @@
 package io.prestosql.ha;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.airlift.log.Logger;
 import org.I0Itec.zkclient.ZkClient;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -9,6 +13,10 @@ import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 
 /**
  * @author tangyun@bigo.sg
@@ -18,17 +26,56 @@ public class Elector {
 
     private boolean master = false;
 
-    private ZkClient zkClient = new ZkClient("146.196.79.230:2181",50000);
+    private HAConfig haConfig;
+    private ZkClient zkClient;
 
     private NodeInfo thisNodeInfo = new NodeInfo();
     private NodeInfo masterNodeInfo = null;
+    private final ScheduledThreadPoolExecutor executor =
+            new ScheduledThreadPoolExecutor(1,
+                    daemonThreadsNamed("ha-elector"));
+    private static final Logger log = Logger.get(Elector.class);
 
     public NodeInfo getMasterNodeInfo() {
         return masterNodeInfo;
     }
 
-    public static void main(String[] args) throws SocketException, InterruptedException {
-        Elector elector = new Elector();
+    @Inject
+    public Elector(HAConfig haConfig) {
+        this.haConfig = haConfig;
+        zkClient = new ZkClient(haConfig.getZkServers(), 50000);
+    }
+
+
+    public Elector() {
+
+    }
+
+
+    @PostConstruct
+    public void start()
+    {
+        executor.scheduleWithFixedDelay(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try {
+                    elect();
+                }
+                catch (Throwable e) {
+                    // ignore to avoid getting unscheduled
+                    log.warn(e, "Error electing");
+                }
+            }
+        }, 0, 5, TimeUnit.SECONDS);
+    }
+
+
+    public static void main(String[] args) throws InterruptedException {
+        HAConfig haConfig = new HAConfig();
+        haConfig.setZkServers("");
+        Elector elector = new Elector(haConfig);
         elector.elect();
         while (true) {
             Thread.sleep(4000);
@@ -63,9 +110,9 @@ public class Elector {
             if (remoteNodeInfo.nodeId.equals(thisNodeInfo.nodeId)) {
                 master = true;
             } else {
-                masterNodeInfo = remoteNodeInfo;
                 master = false;
             }
+            masterNodeInfo = remoteNodeInfo;
         }
     }
 
@@ -106,10 +153,12 @@ public class Elector {
         private String ip;
         private String nodeId;
 
+        @JsonProperty
         public String getIp() {
             return ip;
         }
 
+        @JsonProperty
         public String getNodeId() {
             return nodeId;
         }

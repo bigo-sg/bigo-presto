@@ -149,9 +149,13 @@ public final class IntegerOperators
 
     @ScalarOperator(DIVIDE)
     @SqlType(StandardTypes.INTEGER)
-    public static long divide(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.INTEGER) long right)
+    @SqlNullable
+    public static Long divide(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.INTEGER) long right)
     {
         try {
+            if (right == 0) {
+                return null;
+            }
             return left / right;
         }
         catch (ArithmeticException e) {
@@ -161,9 +165,13 @@ public final class IntegerOperators
 
     @ScalarOperator(MODULUS)
     @SqlType(StandardTypes.INTEGER)
-    public static long modulus(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.INTEGER) long right)
+    @SqlNullable
+    public static Long modulus(@SqlType(StandardTypes.INTEGER) long left, @SqlType(StandardTypes.INTEGER) long right)
     {
         try {
+            if (right == 0) {
+                return null;
+            }
             return left % right;
         }
         catch (ArithmeticException e) {

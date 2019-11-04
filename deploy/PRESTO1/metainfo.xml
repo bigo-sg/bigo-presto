@@ -30,7 +30,7 @@
           <name>PRESTO_COORDINATOR_SECOND</name>
           <displayName>Presto second coordinator</displayName>
           <category>MASTER</category>
-          <cardinality>1</cardinality>
+          <cardinality>1+</cardinality>
           <versionAdvertised>true</versionAdvertised>
           <commandScript>
             <script>scripts/presto_coordinator.py</script>

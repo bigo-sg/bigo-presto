@@ -86,6 +86,25 @@ public class QueryResource
     }
 
     @GET
+    @Path("states")
+    public List<BasicQueryInfo> getAllQueryInfos(@QueryParam("states") String statesFilter)
+    {
+        String[] states = statesFilter == null? null:statesFilter.toUpperCase().split(",");
+        ImmutableList.Builder<BasicQueryInfo> builder = new ImmutableList.Builder<>();
+        for (BasicQueryInfo queryInfo : dispatchManager.getQueries()) {
+            if (statesFilter != null) {
+                for (String state: states) {
+                    if (state.equals(queryInfo.getState().toString())) {
+                        builder.add(queryInfo);
+                        break;
+                    }
+                }
+            }
+        }
+        return builder.build();
+    }
+
+    @GET
     @Path("{queryId}")
     public Response getQueryInfo(@PathParam("queryId") QueryId queryId, @Context HttpServletRequest servletRequest, @Context HttpHeaders httpHeaders)
     {

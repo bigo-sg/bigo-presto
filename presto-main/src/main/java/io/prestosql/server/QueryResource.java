@@ -38,10 +38,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -77,6 +74,25 @@ public class QueryResource
         for (BasicQueryInfo queryInfo : dispatchManager.getQueries()) {
             if (stateFilter == null || queryInfo.getState() == expectedState) {
                 builder.add(queryInfo);
+            }
+        }
+        return builder.build();
+    }
+
+    @GET
+    @Path("states")
+    public List<BasicQueryInfo> getAllQueryInfos(@QueryParam("states") String statesFilter)
+    {
+        String[] states = statesFilter == null? null:statesFilter.toUpperCase().split(",");
+        ImmutableList.Builder<BasicQueryInfo> builder = new ImmutableList.Builder<>();
+        for (BasicQueryInfo queryInfo : dispatchManager.getQueries()) {
+            if (statesFilter != null) {
+                for (String state: states) {
+                    if (state.equals(queryInfo.getState().toString())) {
+                        builder.add(queryInfo);
+                        break;
+                    }
+                }
             }
         }
         return builder.build();

@@ -58,6 +58,7 @@ import io.prestosql.operator.aggregation.IntervalDayToSecondAverageAggregation;
 import io.prestosql.operator.aggregation.IntervalDayToSecondSumAggregation;
 import io.prestosql.operator.aggregation.IntervalYearToMonthAverageAggregation;
 import io.prestosql.operator.aggregation.IntervalYearToMonthSumAggregation;
+import io.prestosql.operator.aggregation.BitmapCountDistinctFunction;
 import io.prestosql.operator.aggregation.LongSumAggregation;
 import io.prestosql.operator.aggregation.MaxDataSizeForStats;
 import io.prestosql.operator.aggregation.MergeHyperLogLogAggregation;
@@ -443,6 +444,7 @@ public class FunctionRegistry
                 .aggregates(BigoApproximateDoublePercentileArrayAggregations.class)
                 .aggregates(BigoApproximateRealPercentileAggregations.class)
                 .aggregates(BigoApproximateRealPercentileArrayAggregations.class)
+                .aggregate(BitmapCountDistinctFunction.class)
                 .aggregates(CountIfAggregation.class)
                 .aggregates(BooleanAndAggregation.class)
                 .aggregates(BooleanOrAggregation.class)

@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import uuid
-import os.path as path
-
-from resource_management.libraries.script.script import Script
-from resource_management.core.resources.system import Execute
-from common import PRESTO_RPM_URL, PRESTO_RPM_NAME, create_connectors, \
-    delete_connectors
-from resource_management.libraries.functions.check_process_status import check_process_status
-
-import os, re
-import sys
 import logging
-import json
+import os.path as path
+import sys
+import uuid
+
+from resource_management.core.resources.system import Execute
+from resource_management.libraries.functions.check_process_status import check_process_status
+from resource_management.libraries.script.script import Script
+
+import presto_rolling
+from common import create_connectors, \
+    delete_connectors
 
 logging.basicConfig(stream=sys.stdout)
 _LOGGER = logging.getLogger(__name__)
@@ -33,13 +32,14 @@ key_val_template = '{0}={1}\n'
 
 class Worker(Script):
     def install(self, env):
-        from params import java_home
         Execute('mkdir -p /etc/presto')
         Execute('mkdir -p /etc/presto/catalog')
         self.configure(env)
 
     def stop(self, env):
         from params import daemon_control_script
+        self.configure(self)
+        presto_rolling.prepare_stop_worker('/etc/presto')
         try:
             Execute('source /etc/profile_presto && {0} stop'.format(daemon_control_script))
         except Exception as e:
@@ -90,9 +90,6 @@ class Worker(Script):
 
         create_connectors(node_properties, connectors_to_add)
         delete_connectors(node_properties, connectors_to_delete)
-        # This is a separate call because we always want the tpch connector to
-        # be available because it is used to smoketest the installation.
-        # create_connectors(node_properties, "{'tpch': ['connector.name=tpch']}")
 
 if __name__ == '__main__':
     Worker().execute()

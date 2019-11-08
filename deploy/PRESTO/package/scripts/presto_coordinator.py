@@ -12,19 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import uuid
-import os.path as path
-
-from resource_management.libraries.script.script import Script
-from resource_management.core.resources.system import Execute
-from common import PRESTO_RPM_URL, PRESTO_RPM_NAME, create_connectors,\
-    delete_connectors
-from resource_management.libraries.functions.check_process_status import check_process_status
-
-import os, re  
-import sys
-import logging
 import json
+import logging
+import os
+import os.path as path
+import sys
+import uuid
+
+from resource_management.core.resources.system import Execute
+from resource_management.libraries.functions.check_process_status import check_process_status
+from resource_management.libraries.script.script import Script
+
+import presto_rolling
+from common import create_connectors, \
+    delete_connectors
 
 logging.basicConfig(stream=sys.stdout)
 _LOGGER = logging.getLogger(__name__)
@@ -45,6 +46,9 @@ class Coordinator(Script):
 
     def stop(self, env):
         from params import daemon_control_script
+        self.configure(self)
+        presto_rolling.prepare_stop_coord('/etc/presto')
+        print 'stopping...'
         try:
             Execute('source /etc/profile_presto && {0} stop'.format(daemon_control_script))
         except Exception as e:
@@ -53,7 +57,9 @@ class Coordinator(Script):
     def start(self, env):
         from params import daemon_control_script
         self.configure(env)
+        print 'starting...'
         Execute('source /etc/profile_presto && {0} start'.format(daemon_control_script))
+        presto_rolling.active_cluster('/etc/presto')
 
     def status(self, env):
         check_process_status('/data1/var/presto/data/var/run/launcher.pid')
@@ -76,7 +82,7 @@ class Coordinator(Script):
 
     def configure(self, env):
         from params import config, node_properties, jvm_config, config_properties, \
-            config_directory, memory_configs, host_info, connectors_to_add, connectors_to_delete
+            config_directory, memory_configs, connectors_to_add, connectors_to_delete
 
         print "config", json.dumps(config)
 

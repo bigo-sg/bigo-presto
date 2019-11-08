@@ -25,6 +25,7 @@ import os
 import sys
 import logging
 import json
+import presto_rolling
 
 logging.basicConfig(stream=sys.stdout)
 _LOGGER = logging.getLogger(__name__)
@@ -45,6 +46,9 @@ class Coordinator(Script):
 
     def stop(self, env):
         from params import *
+        self.configure(self)
+        presto_rolling.prepare_stop_coord(config_directory)
+        print 'stopping'
         try:
             Execute('source /etc/profile_presto && {0} stop'.format(daemon_control_script))
         except Exception as e:
@@ -53,7 +57,9 @@ class Coordinator(Script):
     def start(self, env):
         from params import *
         self.configure(env)
+        print 'starting'
         Execute('source /etc/profile_presto && {0} start'.format(daemon_control_script))
+        presto_rolling.active_cluster(config_directory)
 
     def status(self, env):
         from params import *

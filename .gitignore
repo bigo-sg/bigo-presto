@@ -24,3 +24,5 @@ benchmark_outputs
 .checkstyle
 .mvn/timing.properties
 node_modules
+*.zip
+*.ZIP

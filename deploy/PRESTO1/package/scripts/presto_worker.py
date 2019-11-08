@@ -16,6 +16,7 @@ import logging
 import os.path as path
 import sys
 import uuid
+import presto_rolling
 
 from resource_management.core.resources.system import Execute
 from resource_management.libraries.functions.check_process_status import check_process_status
@@ -38,6 +39,9 @@ class Worker(Script):
 
     def stop(self, env):
         from params import *
+        self.configure(self)
+        presto_rolling.prepare_stop_worker(config_directory)
+        print 'stopping'
         try:
             Execute('source /etc/profile_presto && {0} stop'.format(daemon_control_script))
         except Exception as e:

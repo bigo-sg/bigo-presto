@@ -120,4 +120,15 @@ public class SetOperations extends SQLTester {
 
         checkASTNode(sql);
     }
+
+    @Test
+    public void testBothSidesAreQuery()
+    {
+        String sql = "" +
+                "(select a from ta)\n" +
+                "union all\n" +
+                "(select b from tb)";
+
+        runHiveSQL(sql);
+    }
 }

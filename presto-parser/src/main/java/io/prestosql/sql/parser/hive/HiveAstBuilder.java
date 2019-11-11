@@ -212,6 +212,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return super.visitConstantList(ctx);
     }
 
+    @Override public Node visitManageResource(SqlBaseParser.ManageResourceContext ctx) {
+        throw parseError("presto not support 'add jar' or 'add file' please delete 'add file/jar' and try again", ctx);
+    }
+
     @Override
     public Node visitCreateHiveTable(SqlBaseParser.CreateHiveTableContext ctx) {
 
@@ -242,7 +246,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             SqlBaseParser.RowFormatContext rowFormatContext = ctx.rowFormat(0);
             String format = ((SqlBaseParser.RowFormatSerdeContext) rowFormatContext).name.getText();
             if (rowFormatContext instanceof SqlBaseParser.RowFormatSerdeContext) {
-                if (format.contains("org.apache.hive.hcatalog.data.JsonSerDe")) {
+                if (format.contains("org.apache.hive.hcatalog.data.JsonSerDe")
+                        || format.contains("org.openx.data.jsonserde.JsonSerDe")) {
                     Property property = new Property(new Identifier("format", false),
                             new StringLiteral("JSON"));
                     properties.add(property);

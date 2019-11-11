@@ -454,9 +454,18 @@ public class ThriftHiveMetastore
 
         io.prestosql.plugin.hive.metastore.Table table = fromMetastoreApiTable(modifiedTable);
         OptionalLong rowCount = basicStatistics.getRowCount();
-        List<ColumnStatisticsObj> metastoreColumnStatistics = updatedStatistics.getColumnStatistics().entrySet().stream()
-                .map(entry -> createMetastoreColumnStatistics(entry.getKey(), table.getColumn(entry.getKey()).get().getType(), entry.getValue(), rowCount))
-                .collect(toImmutableList());
+
+        // there is a chance that `table.getColumn(entry.getKey()).get()` will throw a "java.util.NoSuchElementException: No value present"
+        // so we will try catch here.
+        List<ColumnStatisticsObj> metastoreColumnStatistics = new ArrayList<>();
+        try {
+            metastoreColumnStatistics = updatedStatistics.getColumnStatistics().entrySet().stream()
+                    .map(entry -> createMetastoreColumnStatistics(entry.getKey(), table.getColumn(entry.getKey()).get().getType(), entry.getValue(), rowCount))
+                    .collect(toImmutableList());
+        } catch (Exception e) {
+            // ignore it
+        }
+
         if (!metastoreColumnStatistics.isEmpty()) {
             setTableColumnStatistics(identity, databaseName, tableName, metastoreColumnStatistics);
         }

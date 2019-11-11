@@ -73,8 +73,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitSetOperation(SqlBaseParser.SetOperationContext ctx) {
-        QueryBody left = (QueryBody) visit(ctx.left);
-        QueryBody right = (QueryBody) visit(ctx.right);
+        QueryBody left = getQueryBody(visit(ctx.left));
+        QueryBody right = getQueryBody(visit(ctx.right));
 
         boolean distinct = ctx.setQuantifier() == null || ctx.setQuantifier().DISTINCT() != null;
 
@@ -1026,6 +1026,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     private static boolean isDistinct(io.hivesql.sql.parser.SqlBaseParser.SetQuantifierContext setQuantifier)
     {
         return setQuantifier != null && setQuantifier.DISTINCT() != null;
+    }
+
+    private static QueryBody getQueryBody(Node node) {
+        if (node instanceof Query) {
+            Query query = (Query) node;
+
+            return query.getQueryBody();
+        } else {
+            return (QueryBody)node;
+        }
     }
 
     @Override

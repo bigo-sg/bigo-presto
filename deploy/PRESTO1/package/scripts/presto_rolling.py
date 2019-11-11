@@ -18,6 +18,15 @@ import random
 import requests
 
 
+def can_stop(coordinator):
+    url = coordinator + '/v1/query/states?states=QUEUED,WAITING_FOR_RESOURCES,DISPATCHING,PLANNING,STARTING,RUNNING,FINISHING'
+    r = requests.get(url)
+    print r.text
+    result = json.loads(r.text)
+    if len(result) > 0:
+        return False
+    return True
+
 def cluster_can_stop(coordinator):
     url = coordinator + "/v1/cluster"
     req = urllib2.Request(url)
@@ -25,11 +34,40 @@ def cluster_can_stop(coordinator):
         res_data = urllib2.urlopen(req)
         res = res_data.read()
         s = json.loads(res)
-        if int(s['runningQueries']) == 0 and int(s['queuedQueries']) == 0:
+        if int(s['runningQueries']) == 0 and int(s['queuedQueries']) == 0 and can_stop(coordinator):
             return True
     except urllib2.URLError:
         return True
     return False
+
+def presto_prepared(coordinator):
+    try:
+        result = req_statement(coordinator)
+        return result
+    except requests.exceptions.ConnectionError:
+        print 'starting1..'
+        return False
+
+def req_statement(coordinator):
+    url = coordinator + '/v1/statement'
+    body = 'select 1'
+    header = {'X-Presto-User':'test','X-Presto-Source':'bigo-presto-cli'}
+    r = requests.post(url,data=body, headers=header)
+    print r.text
+    result = json.loads(r.text)
+    while True:
+        if result['stats'].has_key('state'):
+            if result['stats']['state'] == 'FAILED':
+                print 'starting..'
+                return False
+        if not result.has_key('nextUri'):
+            return True;
+        else:
+            time.sleep(0.1)
+            nextUri = result['nextUri']
+            r = requests.get(nextUri)
+            print r.text
+            result = json.loads(r.text)
 
 def cluster_can_activate(coordinator, needed_workers):
     url = coordinator + "/v1/cluster"
@@ -39,7 +77,11 @@ def cluster_can_activate(coordinator, needed_workers):
         res = res_data.read()
         s = json.loads(res)
         if int(s['activeWorkers']) >= int(needed_workers):
-            return True
+            while True:
+                if presto_prepared(coordinator):
+                    return True
+                else:
+                    time.sleep(0.5)
     except urllib2.URLError:
         return False
     return False

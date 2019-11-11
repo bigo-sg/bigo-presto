@@ -64,13 +64,7 @@ import org.weakref.jmx.Managed;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalLong;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -396,9 +390,18 @@ public class ThriftHiveMetastore
 
         io.prestosql.plugin.hive.metastore.Table table = fromMetastoreApiTable(modifiedTable);
         OptionalLong rowCount = basicStatistics.getRowCount();
-        List<ColumnStatisticsObj> metastoreColumnStatistics = updatedStatistics.getColumnStatistics().entrySet().stream()
-                .map(entry -> createMetastoreColumnStatistics(entry.getKey(), table.getColumn(entry.getKey()).get().getType(), entry.getValue(), rowCount))
-                .collect(toImmutableList());
+
+        // there is a chance that `table.getColumn(entry.getKey()).get()` will throw a "java.util.NoSuchElementException: No value present"
+        // so we will try catch here.
+        List<ColumnStatisticsObj> metastoreColumnStatistics = new ArrayList<>();
+        try {
+            metastoreColumnStatistics = updatedStatistics.getColumnStatistics().entrySet().stream()
+                    .map(entry -> createMetastoreColumnStatistics(entry.getKey(), table.getColumn(entry.getKey()).get().getType(), entry.getValue(), rowCount))
+                    .collect(toImmutableList());
+        } catch (Exception e) {
+            // ignore it
+        }
+
         if (!metastoreColumnStatistics.isEmpty()) {
             setTableColumnStatistics(databaseName, tableName, metastoreColumnStatistics);
         }

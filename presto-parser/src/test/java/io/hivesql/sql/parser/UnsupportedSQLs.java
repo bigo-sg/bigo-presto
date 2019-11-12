@@ -13,16 +13,9 @@ public class UnsupportedSQLs extends SQLTester {
     }
 
     @Test(expectedExceptions = ParsingException.class)
-    public void addFileShouldThrowException()
+    public void listResourceThrowException()
     {
-        String sql = "add file /data/opt/hive/udf/ip_country.txt";
-        runHiveSQL(sql);
-    }
-
-    @Test(expectedExceptions = ParsingException.class)
-    public void addJarShouldThrowException()
-    {
-        String sql = "add jar /data/opt/hive/udf/ip_country.jar";
+        String sql = "LIST FILES";
         runHiveSQL(sql);
     }
 }

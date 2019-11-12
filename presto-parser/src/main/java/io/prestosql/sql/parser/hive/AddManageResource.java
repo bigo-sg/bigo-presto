@@ -7,16 +7,10 @@ import io.prestosql.sql.tree.Statement;
 import java.util.List;
 import java.util.Optional;
 
-public class CreateTemporyFunction extends Statement {
+public class AddManageResource extends Statement {
 
-    private final String functionName;
-    private final String className;
-
-    protected CreateTemporyFunction(Optional<NodeLocation> location,
-                                    String functionName, String className) {
+    protected AddManageResource(Optional<NodeLocation> location) {
         super(location);
-        this.functionName = functionName;
-        this.className = className;
     }
 
     @Override

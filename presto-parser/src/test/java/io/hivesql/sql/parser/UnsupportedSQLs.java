@@ -9,7 +9,13 @@ public class UnsupportedSQLs extends SQLTester {
     public void sortByShouldThrowException()
     {
         String sql = "SELECT a from b sort by c";
+        runHiveSQL(sql);
+    }
 
+    @Test(expectedExceptions = ParsingException.class)
+    public void listResourceThrowException()
+    {
+        String sql = "LIST FILES";
         runHiveSQL(sql);
     }
 }

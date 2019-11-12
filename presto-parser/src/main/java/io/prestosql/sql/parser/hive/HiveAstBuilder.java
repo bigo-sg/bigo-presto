@@ -73,8 +73,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitSetOperation(SqlBaseParser.SetOperationContext ctx) {
-        QueryBody left = (QueryBody) visit(ctx.left);
-        QueryBody right = (QueryBody) visit(ctx.right);
+        QueryBody left = getQueryBody(visit(ctx.left));
+        QueryBody right = getQueryBody(visit(ctx.right));
 
         boolean distinct = ctx.setQuantifier() == null || ctx.setQuantifier().DISTINCT() != null;
 
@@ -213,6 +213,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
+    public Node visitManageResource(SqlBaseParser.ManageResourceContext ctx) {
+        if (ctx.LIST() != null) {
+            throw parseError("Don't support 'list resource' command", ctx);
+        } else {
+            return new AddManageResource(Optional.of(getLocation(ctx)));
+        }
+    }
+
+    @Override
     public Node visitCreateHiveTable(SqlBaseParser.CreateHiveTableContext ctx) {
 
         // get table comment
@@ -242,7 +251,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             SqlBaseParser.RowFormatContext rowFormatContext = ctx.rowFormat(0);
             String format = ((SqlBaseParser.RowFormatSerdeContext) rowFormatContext).name.getText();
             if (rowFormatContext instanceof SqlBaseParser.RowFormatSerdeContext) {
-                if (format.contains("org.apache.hive.hcatalog.data.JsonSerDe")) {
+                if (format.contains("org.apache.hive.hcatalog.data.JsonSerDe")
+                        || format.contains("org.openx.data.jsonserde.JsonSerDe")) {
                     Property property = new Property(new Identifier("format", false),
                             new StringLiteral("JSON"));
                     properties.add(property);
@@ -433,8 +443,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         with = new With(getLocation(ctx), false, queries);
         return with;
     }
-    @Override public Node visitCreateFunction(SqlBaseParser.CreateFunctionContext ctx) {
-        return new CreateTemporyFunction(Optional.of(getLocation(ctx)), ctx.qualifiedName().getText(), ctx.className.getText());
+
+    @Override
+    public Node visitCreateFunction(SqlBaseParser.CreateFunctionContext ctx) {
+        return new CreateFunction(Optional.of(getLocation(ctx)), ctx.qualifiedName().getText(), ctx.className.getText());
     }
 
     @Override
@@ -447,7 +459,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 );
     }
 
-    @Override public Node visitDropTable(SqlBaseParser.DropTableContext ctx) {
+    @Override
+    public Node visitDropTable(SqlBaseParser.DropTableContext ctx) {
 
         QualifiedName qualifiedName;
         if (ctx.tableIdentifier().db != null) {
@@ -1059,6 +1072,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     private static boolean isDistinct(io.hivesql.sql.parser.SqlBaseParser.SetQuantifierContext setQuantifier)
     {
         return setQuantifier != null && setQuantifier.DISTINCT() != null;
+    }
+
+    private static QueryBody getQueryBody(Node node) {
+        if (node instanceof Query) {
+            Query query = (Query) node;
+
+            return query.getQueryBody();
+        } else {
+            return (QueryBody)node;
+        }
     }
 
     @Override

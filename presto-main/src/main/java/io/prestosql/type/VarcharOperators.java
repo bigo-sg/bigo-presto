@@ -49,7 +49,8 @@ public final class VarcharOperators
     @ScalarOperator(EQUAL)
     @SqlType(StandardTypes.BOOLEAN)
     @SqlNullable
-    public static Boolean equal(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+//    public static Boolean equal(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+    public static Boolean equal(@SqlType(StandardTypes.VARCHAR) Slice left, @SqlType(StandardTypes.VARCHAR) Slice right)
     {
         return left.equals(right);
     }
@@ -58,7 +59,8 @@ public final class VarcharOperators
     @ScalarOperator(NOT_EQUAL)
     @SqlType(StandardTypes.BOOLEAN)
     @SqlNullable
-    public static Boolean notEqual(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+//    public static Boolean notEqual(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+    public static Boolean notEqual(@SqlType(StandardTypes.VARCHAR) Slice left, @SqlType(StandardTypes.VARCHAR) Slice right)
     {
         return !left.equals(right);
     }
@@ -66,7 +68,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(LESS_THAN)
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean lessThan(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+//    public static boolean lessThan(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+    public static boolean lessThan(@SqlType(StandardTypes.VARCHAR) Slice left, @SqlType(StandardTypes.VARCHAR) Slice right)
     {
         return left.compareTo(right) < 0;
     }
@@ -74,7 +77,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(LESS_THAN_OR_EQUAL)
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean lessThanOrEqual(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+//    public static boolean lessThanOrEqual(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+    public static boolean lessThanOrEqual(@SqlType(StandardTypes.VARCHAR) Slice left, @SqlType(StandardTypes.VARCHAR) Slice right)
     {
         return left.compareTo(right) <= 0;
     }
@@ -82,7 +86,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(GREATER_THAN)
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean greaterThan(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+//    public static boolean greaterThan(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+    public static boolean greaterThan(@SqlType(StandardTypes.VARCHAR) Slice left, @SqlType(StandardTypes.VARCHAR) Slice right)
     {
         return left.compareTo(right) > 0;
     }
@@ -90,7 +95,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(GREATER_THAN_OR_EQUAL)
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean greaterThanOrEqual(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+//    public static boolean greaterThanOrEqual(@SqlType("varchar(x)") Slice left, @SqlType("varchar(x)") Slice right)
+    public static boolean greaterThanOrEqual(@SqlType(StandardTypes.VARCHAR) Slice left, @SqlType(StandardTypes.VARCHAR) Slice right)
     {
         return left.compareTo(right) >= 0;
     }
@@ -98,7 +104,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(BETWEEN)
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean between(@SqlType("varchar(x)") Slice value, @SqlType("varchar(x)") Slice min, @SqlType("varchar(x)") Slice max)
+//    public static boolean between(@SqlType("varchar(x)") Slice value, @SqlType("varchar(x)") Slice min, @SqlType("varchar(x)") Slice max)
+    public static boolean between(@SqlType(StandardTypes.VARCHAR) Slice value, @SqlType(StandardTypes.VARCHAR) Slice min, @SqlType(StandardTypes.VARCHAR) Slice max)
     {
         return min.compareTo(value) <= 0 && value.compareTo(max) <= 0;
     }
@@ -106,7 +113,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean castToBoolean(@SqlType("varchar(x)") Slice value)
+//    public static boolean castToBoolean(@SqlType("varchar(x)") Slice value)
+    public static boolean castToBoolean(@SqlType(StandardTypes.VARCHAR) Slice value)
     {
         if (value.length() == 1) {
             byte character = toUpperCase(value.getByte(0));
@@ -149,7 +157,8 @@ public final class VarcharOperators
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.DOUBLE)
     @SqlNullable
-    public static Double castToDouble(@SqlType("varchar(x)") Slice slice)
+//    public static Double castToDouble(@SqlType("varchar(x)") Slice slice)
+    public static Double castToDouble(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         try {
             return Double.parseDouble(slice.toStringUtf8());
@@ -163,7 +172,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.REAL)
-    public static long castToFloat(@SqlType("varchar(x)") Slice slice)
+//    public static long castToFloat(@SqlType("varchar(x)") Slice slice)
+    public static long castToFloat(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         try {
             return Float.floatToIntBits(Float.parseFloat(slice.toStringUtf8()));
@@ -177,7 +187,8 @@ public final class VarcharOperators
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.BIGINT)
     @SqlNullable
-    public static Long castToBigint(@SqlType("varchar(x)") Slice slice)
+//    public static Long castToBigint(@SqlType("varchar(x)") Slice slice)
+    public static Long castToBigint(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         try {
             return Long.parseLong(slice.toStringUtf8());
@@ -191,7 +202,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.INTEGER)
-    public static long castToInteger(@SqlType("varchar(x)") Slice slice)
+//    public static long castToInteger(@SqlType("varchar(x)") Slice slice)
+    public static long castToInteger(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         try {
             return Integer.parseInt(slice.toStringUtf8());
@@ -204,7 +216,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.SMALLINT)
-    public static long castToSmallint(@SqlType("varchar(x)") Slice slice)
+//    public static long castToSmallint(@SqlType("varchar(x)") Slice slice)
+    public static long castToSmallint(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         try {
             return Short.parseShort(slice.toStringUtf8());
@@ -217,7 +230,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.TINYINT)
-    public static long castToTinyint(@SqlType("varchar(x)") Slice slice)
+//    public static long castToTinyint(@SqlType("varchar(x)") Slice slice)
+    public static long castToTinyint(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         try {
             return Byte.parseByte(slice.toStringUtf8());
@@ -230,7 +244,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.VARBINARY)
-    public static Slice castToBinary(@SqlType("varchar(x)") Slice slice)
+//    public static Slice castToBinary(@SqlType("varchar(x)") Slice slice)
+    public static Slice castToBinary(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         return slice;
     }
@@ -238,7 +253,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(HASH_CODE)
     @SqlType(StandardTypes.BIGINT)
-    public static long hashCode(@SqlType("varchar(x)") Slice value)
+    public static long hashCode(@SqlType(StandardTypes.VARCHAR) Slice value)
+//    public static long hashCode(@SqlType("varchar(x)") Slice value)
     {
         return xxHash64(value);
     }
@@ -290,7 +306,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(XX_HASH_64)
     @SqlType(StandardTypes.BIGINT)
-    public static long xxHash64(@SqlType("varchar(x)") Slice slice)
+//    public static long xxHash64(@SqlType("varchar(x)") Slice slice)
+    public static long xxHash64(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
         return XxHash64.hash(slice);
     }
@@ -298,7 +315,8 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(INDETERMINATE)
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean indeterminate(@SqlType("varchar(x)") Slice value, @IsNull boolean isNull)
+//    public static boolean indeterminate(@SqlType("varchar(x)") Slice value, @IsNull boolean isNull)
+    public static boolean indeterminate(@SqlType(StandardTypes.VARCHAR) Slice value, @IsNull boolean isNull)
     {
         return isNull;
     }

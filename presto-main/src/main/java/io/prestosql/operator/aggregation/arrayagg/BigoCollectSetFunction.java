@@ -3,7 +3,9 @@ package io.prestosql.operator.aggregation.arrayagg;
 import com.google.common.collect.ImmutableList;
 import io.airlift.bytecode.DynamicClassLoader;
 import io.prestosql.metadata.BoundVariables;
+import io.prestosql.metadata.FunctionMetadata;
 import io.prestosql.metadata.Metadata;
+import io.prestosql.metadata.Signature;
 import io.prestosql.metadata.SqlAggregationFunction;
 import io.prestosql.operator.aggregation.AccumulatorCompiler;
 import io.prestosql.operator.aggregation.AggregationMetadata;
@@ -18,15 +20,18 @@ import io.prestosql.spi.function.AccumulatorStateFactory;
 import io.prestosql.spi.function.AccumulatorStateSerializer;
 import io.prestosql.spi.type.ArrayType;
 import io.prestosql.spi.type.Type;
+import io.prestosql.spi.type.TypeSignature;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 
 import java.lang.invoke.MethodHandle;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.prestosql.metadata.FunctionKind.AGGREGATE;
 import static io.prestosql.metadata.Signature.typeVariable;
 import static io.prestosql.operator.aggregation.AggregationMetadata.ParameterMetadata.ParameterType.BLOCK_INDEX;
 import static io.prestosql.operator.aggregation.AggregationMetadata.ParameterMetadata.ParameterType.NULLABLE_BLOCK_INPUT_CHANNEL;
@@ -34,7 +39,6 @@ import static io.prestosql.operator.aggregation.AggregationMetadata.ParameterMet
 import static io.prestosql.operator.aggregation.AggregationUtils.generateAggregationName;
 import static io.prestosql.spi.type.BigintType.BIGINT;
 import static io.prestosql.spi.type.IntegerType.INTEGER;
-import static io.prestosql.spi.type.TypeSignature.parseTypeSignature;
 import static io.prestosql.spi.type.VarcharType.VARCHAR;
 import static io.prestosql.spi.type.BooleanType.BOOLEAN;
 
@@ -50,18 +54,21 @@ public class BigoCollectSetFunction
 
     private final ArrayAggGroupImplementation groupMode;
 
-    public BigoCollectSetFunction(ArrayAggGroupImplementation groupMode) {
-        super(NAME,
-                ImmutableList.of(typeVariable("T")),
-                ImmutableList.of(),
-                parseTypeSignature("array(T)"),
-                ImmutableList.of(parseTypeSignature("T")));
+    public BigoCollectSetFunction(ArrayAggGroupImplementation groupMode)
+    {
+        super(new FunctionMetadata(
+                new Signature(
+                        NAME,
+                        AGGREGATE,
+                        ImmutableList.of(typeVariable("T")),
+                        ImmutableList.of(),
+                        TypeSignature.arrayType(new TypeSignature("T")),
+                        ImmutableList.of(new TypeSignature("T")),
+                        false),
+                false,
+                true,
+                "return an array of values"));
         this.groupMode = requireNonNull(groupMode, "groupMode is null");
-    }
-
-    @Override
-    public String getDescription() {
-        return "return an array of values";
     }
 
     @Override
@@ -90,6 +97,7 @@ public class BigoCollectSetFunction
                 generateAggregationName(NAME, type.getTypeSignature(), inputTypes.stream().map(Type::getTypeSignature).collect(toImmutableList())),
                 inputParameterMetadata,
                 inputFunction,
+                Optional.empty(),
                 combineFunction,
                 outputFunction,
                 ImmutableList.of(new AccumulatorStateDescriptor(

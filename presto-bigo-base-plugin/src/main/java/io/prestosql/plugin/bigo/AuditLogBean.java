@@ -122,6 +122,7 @@ public class AuditLogBean
         waitingTime = getFromOptionalDuration(statistics.getResourceWaitingTime());
         analysisTime = getFromOptionalDuration(statistics.getAnalysisTime());
         distributedPlanningTime = getFromOptionalDuration(statistics.getDistributedPlanningTime());
+        statistics.getPlanNodeStatsAndCosts()
         peakUserMemoryBytes = statistics.getPeakUserMemoryBytes();
         peakTotalNonRevocableMemoryBytes = statistics.getPeakTotalNonRevocableMemoryBytes();
         peakTaskUserMemory = statistics.getPeakTaskUserMemory();

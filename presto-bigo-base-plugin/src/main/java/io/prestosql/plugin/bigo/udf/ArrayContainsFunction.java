@@ -28,7 +28,7 @@ public final class ArrayContainsFunction
     @SqlNullable
     public static Boolean contains(
             @TypeParameter("T") Type elementType,
-            @OperatorDependency(operator = EQUAL, returnType = StandardTypes.BOOLEAN, argumentTypes = {"T", "T"}) MethodHandle equals,
+            @OperatorDependency(operator = EQUAL, argumentTypes = {"T", "T"}) MethodHandle equals,
             @SqlType("array(T)") Block arrayBlock,
             @SqlType("T") Block value) throws Exception {
         boolean foundNull = false;
@@ -59,7 +59,7 @@ public final class ArrayContainsFunction
     @SqlNullable
     public static Boolean contains(
             @TypeParameter("T") Type elementType,
-            @OperatorDependency(operator = EQUAL, returnType = StandardTypes.BOOLEAN, argumentTypes = {"T", "T"}) MethodHandle equals,
+            @OperatorDependency(operator = EQUAL, argumentTypes = {"T", "T"}) MethodHandle equals,
             @SqlType("array(T)") Block arrayBlock,
             @SqlType("T") Slice value) throws Exception {
         boolean foundNull = false;
@@ -90,7 +90,7 @@ public final class ArrayContainsFunction
     @SqlNullable
     public static Boolean contains(
             @TypeParameter("T") Type elementType,
-            @OperatorDependency(operator = EQUAL, returnType = StandardTypes.BOOLEAN, argumentTypes = {"T", "T"}) MethodHandle equals,
+            @OperatorDependency(operator = EQUAL, argumentTypes = {"T", "T"}) MethodHandle equals,
             @SqlType("array(T)") Block arrayBlock,
             @SqlType("T") long value) throws Exception {
         boolean foundNull = false;
@@ -121,7 +121,7 @@ public final class ArrayContainsFunction
     @SqlNullable
     public static Boolean contains(
             @TypeParameter("T") Type elementType,
-            @OperatorDependency(operator = EQUAL, returnType = StandardTypes.BOOLEAN, argumentTypes = {"T", "T"}) MethodHandle equals,
+            @OperatorDependency(operator = EQUAL, argumentTypes = {"T", "T"}) MethodHandle equals,
             @SqlType("array(T)") Block arrayBlock,
             @SqlType("T") boolean value) throws Exception {
         boolean foundNull = false;
@@ -152,7 +152,7 @@ public final class ArrayContainsFunction
     @SqlNullable
     public static Boolean contains(
             @TypeParameter("T") Type elementType,
-            @OperatorDependency(operator = EQUAL, returnType = StandardTypes.BOOLEAN, argumentTypes = {"T", "T"}) MethodHandle equals,
+            @OperatorDependency(operator = EQUAL, argumentTypes = {"T", "T"}) MethodHandle equals,
             @SqlType("array(T)") Block arrayBlock,
             @SqlType("T") double value) throws Exception {
         boolean foundNull = false;

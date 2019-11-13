@@ -22,6 +22,7 @@ import io.prestosql.plugin.jdbc.BaseJdbcConfig;
 import io.prestosql.plugin.jdbc.ConnectionFactory;
 import io.prestosql.plugin.jdbc.DriverConnectionFactory;
 import io.prestosql.plugin.jdbc.JdbcClient;
+import io.prestosql.plugin.jdbc.credential.CredentialProvider;
 import ru.yandex.clickhouse.ClickHouseDriver;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
@@ -38,8 +39,8 @@ public class ClickhouseClientModule
 
     @Provides
     @Singleton
-    public ConnectionFactory getConnectionFactory(BaseJdbcConfig config)
+    public ConnectionFactory getConnectionFactory(BaseJdbcConfig config, CredentialProvider credentialProvider)
     {
-        return new DriverConnectionFactory(new ClickHouseDriver(), config);
+        return new DriverConnectionFactory(new ClickHouseDriver(), config, credentialProvider);
     }
 }

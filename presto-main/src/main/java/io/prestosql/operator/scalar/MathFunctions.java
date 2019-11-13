@@ -448,32 +448,48 @@ public final class MathFunctions
     @Description("natural logarithm")
     @ScalarFunction
     @SqlType(StandardTypes.DOUBLE)
-    public static double ln(@SqlType(StandardTypes.DOUBLE) double num)
+    @SqlNullable
+    public static Double ln(@SqlType(StandardTypes.DOUBLE) double num)
     {
+        if (num <= 0) {
+            return NaN();
+        }
         return Math.log(num);
     }
 
     @Description("logarithm to given base")
     @ScalarFunction
     @SqlType(StandardTypes.DOUBLE)
-    public static double log(@SqlType(StandardTypes.DOUBLE) double base, @SqlType(StandardTypes.DOUBLE) double number)
+    @SqlNullable
+    public static Double log(@SqlType(StandardTypes.DOUBLE) double base, @SqlType(StandardTypes.DOUBLE) double number)
     {
+        if (base <= 0 || number <= 0) {
+            return NaN();
+        }
         return Math.log(number) / Math.log(base);
     }
 
     @Description("logarithm to base 2")
     @ScalarFunction
     @SqlType(StandardTypes.DOUBLE)
-    public static double log2(@SqlType(StandardTypes.DOUBLE) double num)
+    @SqlNullable
+    public static Double log2(@SqlType(StandardTypes.DOUBLE) double num)
     {
+        if (num <= 0) {
+            return NaN();
+        }
         return Math.log(num) / Math.log(2);
     }
 
     @Description("logarithm to base 10")
     @ScalarFunction
     @SqlType(StandardTypes.DOUBLE)
-    public static double log10(@SqlType(StandardTypes.DOUBLE) double num)
+    @SqlNullable
+    public static Double log10(@SqlType(StandardTypes.DOUBLE) double num)
     {
+        if (num <= 0) {
+            return NaN();
+        }
         return Math.log10(num);
     }
 

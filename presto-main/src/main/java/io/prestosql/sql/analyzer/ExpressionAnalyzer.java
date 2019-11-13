@@ -1089,7 +1089,7 @@ public class ExpressionAnalyzer
                     if (typeSet.size() > 1
                             || (typeSet.size() == 1 && tc.isValueType(argType))) {
                         for (Expression expression : node.getArguments()) {
-                            concatArgList.add(new Cast(expression, StandardTypes.VARCHAR));
+                            concatArgList.add(new Cast(expression, TypeSignatureTranslator.toSqlType(VarcharType.VARCHAR)));
                         }
                         if (concatArgList.size() > 0) {
                             node.setArguments(concatArgList);

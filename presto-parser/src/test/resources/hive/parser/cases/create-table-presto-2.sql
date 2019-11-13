@@ -1,7 +1,7 @@
  CREATE TABLE tmp.rec_like_event_orc (
-    uid BIGINT,
-    day VARCHAR ,
-    hour VARCHAR
+    uid bigint,
+    day string ,
+    hour string
  )                                           
  WITH (                                      
     partitioned_by = ARRAY['day','hour'],

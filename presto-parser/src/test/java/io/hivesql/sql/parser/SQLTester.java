@@ -28,6 +28,16 @@ public abstract class SQLTester {
         Assert.assertEquals(hiveNode, prestoNode);
     }
 
+    public void checkTypeASTNode(String prestoSql, String hiveSql) {
+        Node prestoNode = sqlParser.createType(prestoSql, prestoParsingOptions);
+        System.out.println(prestoNode);
+
+        Node hiveNode = sqlParser.createType(hiveSql, hiveParsingOptions);
+        System.out.println(hiveNode);
+
+        Assert.assertEquals(hiveNode, prestoNode);
+    }
+
     public void checkASTNode(Node prestoNode, Node hiveNode) {
         System.out.println(prestoNode);
         System.out.println(hiveNode);

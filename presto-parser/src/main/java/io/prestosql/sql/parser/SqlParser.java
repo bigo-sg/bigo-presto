@@ -93,10 +93,22 @@ public class SqlParser
         return ex;
     }
 
+    public DataType createType(String expression, ParsingOptions parsingOptions)
+    {
+        DataType dataType = (DataType) invokeParser("type", expression,
+                SqlBaseParser::standaloneExpression, parsingOptions, "type");
+        return dataType;
+    }
+
+    public DataType createType(String expression)
+    {
+        return createType(expression, new ParsingOptions());
+    }
+
     public PathSpecification createPathSpecification(String expression)
     {
         PathSpecification plan = (PathSpecification) invokeParser("path specification",
-                expression, SqlBaseParser::standalonePathSpecification, new ParsingOptions(), "standalonePathSpecification");
+                expression, SqlBaseParser::standaloneType, new ParsingOptions(), "standalonePathSpecification");
         return plan;
     }
 
@@ -168,6 +180,8 @@ public class SqlParser
                 parseFunction = io.hivesql.sql.parser.SqlBaseParser::singleStatement;
             } else if (type.endsWith("standaloneExpression")) {
                 parseFunction = io.hivesql.sql.parser.SqlBaseParser::singleExpression;
+            } else if (type.endsWith("type")) {
+                parseFunction = io.hivesql.sql.parser.SqlBaseParser::singleDataType;
             } else {
                 parseFunction = io.hivesql.sql.parser.SqlBaseParser::singleStatement;
             }
@@ -190,6 +204,8 @@ public class SqlParser
                 parseFunction = SqlBaseParser::singleStatement;
             } else if (type.endsWith("standaloneExpression")) {
                 parseFunction = SqlBaseParser::standaloneExpression;
+            } else if (type.endsWith("type")) {
+                parseFunction = SqlBaseParser::standaloneType;
             } else {
                 parseFunction = SqlBaseParser::standalonePathSpecification;
             }
@@ -247,7 +263,67 @@ public class SqlParser
         }
     }
 
-    private static class PostProcessor
+    private Node invokeParser(String name, String sql, Function<SqlBaseParser, ParserRuleContext> parseFunction, ParsingOptions parsingOptions)
+    {
+        try {
+            SqlBaseLexer lexer = new SqlBaseLexer(new CaseInsensitiveStream(CharStreams.fromString(sql)));
+            CommonTokenStream tokenStream = new CommonTokenStream(lexer);
+            SqlBaseParser parser = new SqlBaseParser(tokenStream);
+
+            // Override the default error strategy to not attempt inserting or deleting a token.
+            // Otherwise, it messes up error reporting
+            parser.setErrorHandler(new DefaultErrorStrategy()
+            {
+                @Override
+                public Token recoverInline(Parser recognizer)
+                        throws RecognitionException
+                {
+                    if (nextTokensContext == null) {
+                        throw new InputMismatchException(recognizer);
+                    }
+                    else {
+                        throw new InputMismatchException(recognizer, nextTokensState, nextTokensContext);
+                    }
+                }
+            });
+
+            parser.addParseListener(new PostProcessor(Arrays.asList(parser.getRuleNames())));
+
+            lexer.removeErrorListeners();
+            lexer.addErrorListener(LEXER_ERROR_LISTENER);
+
+            parser.removeErrorListeners();
+
+            if (enhancedErrorHandlerEnabled) {
+                parser.addErrorListener(PARSER_ERROR_HANDLER);
+            }
+            else {
+                parser.addErrorListener(LEXER_ERROR_LISTENER);
+            }
+
+            ParserRuleContext tree;
+            try {
+                // first, try parsing with potentially faster SLL mode
+                parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+                tree = parseFunction.apply(parser);
+            }
+            catch (ParseCancellationException ex) {
+                // if we fail, parse with LL mode
+                tokenStream.reset(); // rewind input stream
+                parser.reset();
+
+                parser.getInterpreter().setPredictionMode(PredictionMode.LL);
+                tree = parseFunction.apply(parser);
+            }
+
+            return new AstBuilder(parsingOptions).visit(tree);
+        }
+        catch (StackOverflowError e) {
+            throw new ParsingException(name + " is too large (stack overflow while parsing)");
+        }
+    }
+
+    private class PostProcessor
             extends SqlBaseBaseListener
     {
         private final List<String> ruleNames;

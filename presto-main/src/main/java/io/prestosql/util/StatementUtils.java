@@ -15,6 +15,8 @@ package io.prestosql.util;
 
 import com.google.common.collect.ImmutableMap;
 import io.prestosql.spi.resourcegroups.QueryType;
+import io.prestosql.sql.parser.hive.AddManageResource;
+import io.prestosql.sql.parser.hive.CreateFunction;
 import io.prestosql.sql.parser.hive.SetHiveConfiguration;
 import io.prestosql.sql.tree.AddColumn;
 import io.prestosql.sql.tree.Analyze;
@@ -130,7 +132,12 @@ public final class StatementUtils
         builder.put(Prepare.class, QueryType.DATA_DEFINITION);
         builder.put(Deallocate.class, QueryType.DATA_DEFINITION);
         builder.put(SetPath.class, QueryType.DATA_DEFINITION);
+
+        // support hive dummy commands
         builder.put(SetHiveConfiguration.class, QueryType.DATA_DEFINITION);
+        builder.put(AddManageResource.class, QueryType.DATA_DEFINITION);
+        builder.put(CreateFunction.class, QueryType.DATA_DEFINITION);
+
         STATEMENT_QUERY_TYPES = builder.build();
     }
 

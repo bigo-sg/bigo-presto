@@ -63,7 +63,7 @@ public class DownloadRewriteTest {
     void testRewrite(String originalSQL, String expectedSQL, boolean enableDownloadRewrite) {
         Session session = getSession(enableDownloadRewrite);
 
-        Statement rewriteNode = rewrite.rewrite(session, null, sqlParser, null, createStatement(originalSQL), null, null, null);
+        Statement rewriteNode = rewrite.rewrite(session, null, sqlParser, null, createStatement(originalSQL), null, null, null, null);
 
         Assert.assertEquals(rewriteNode, createStatement(expectedSQL));
 

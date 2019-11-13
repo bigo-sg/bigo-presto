@@ -124,4 +124,36 @@ public class ParseErrorMessages extends SQLTester {
             Assert.assertTrue(e.getMessage().contains("Missing table alias"));
         }
     }
+
+    @Test
+    public void testCrossJoinUnnestInHiveMode()
+    {
+        String sql = "" +
+                "select  day,hour,count(distinct a.UID) as uv\n" +
+                "from\n" +
+                "(\n" +
+                "SELECT day,hour(rtime) as hour,uid1 as uid\n" +
+                "from vlog.like_online_user_uversion_stat_platform\n" +
+                "cross join unnest(online) as ont\n" +
+                "cross join unnest(ont.uids) as ut  (uid1)\n" +
+                "where day>='2019-08-13'\n" +
+                "and status=0\n" +
+                ") a\n" +
+                "join\n" +
+                "(\n" +
+                "  select UID\n" +
+                "  from vlog.user_countrycode\n" +
+                "  where countrycode='BD'\n" +
+                ")b\n" +
+                "on a.uid=b.uid\n" +
+                "group by day,hour" +
+                "";
+
+        try {
+            runHiveSQL(sql);
+            Assert.fail("sql: " + sql + " should throw exception");
+        }catch (ParsingException e) {
+            Assert.assertTrue(e.getMessage().contains("Don't support unnest"));
+        }
+    }
 }

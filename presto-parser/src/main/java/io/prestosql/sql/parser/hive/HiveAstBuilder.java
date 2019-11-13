@@ -54,7 +54,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return currentResult;
         }
 
-        throw new ParsingException("please check, how should we merge them? " +
+        throw new RuntimeException("please check, how should we merge them? " +
                 "most possible reason is executing a syntax that hive not support");
     }
 
@@ -133,10 +133,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             comment = colTypeContext.STRING().getText()
                     .substring(1, colTypeContext.STRING().getText().length() - 1);
         }
+        DataType dataType = (DataType) visit(colTypeContext.dataType());
         ColumnDefinition columnDefinition = new ColumnDefinition(
                 new Identifier(getLocation(colTypeContext),
                         colTypeContext.identifier().getText(), true),
-                type,
+                dataType,
                 true,
                 new ArrayList<>(),
                 Optional.of(comment));
@@ -355,10 +356,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     } else {
                         type = colTypeTransformSimple(type);
                     }
+                    DataType dataType = (DataType) visit(colTypeContext.dataType());
                     TableElement tableElement = new ColumnDefinition(
                             new Identifier(getLocation(colTypeContext),
                                     tryUnquote(colTypeContext.identifier().getText()), true),
-                            type,
+                            dataType,
                             true,
                             new ArrayList<>(),
                             colComment);
@@ -384,7 +386,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             }
 
             Query query = (Query)withQueryOrganization(term, singleInsertQueryContext.queryOrganization());
-                    QualifiedName target = getQualifiedName(ctx.createTableHeader().tableIdentifier());
+            QualifiedName target = getQualifiedName(ctx.createTableHeader().tableIdentifier());
             return new CreateTableAsSelect(
                     target,
                     query,
@@ -449,7 +451,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 false,
                 (Statement) visit(ctx.statement()),
                 new ArrayList<>()
-                );
+        );
     }
 
     @Override public Node visitDropTable(SqlBaseParser.DropTableContext ctx) {
@@ -501,7 +503,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     {
         return new ShowSchemas(
                 getLocation(ctx), Optional.empty(), getTextIfPresent(ctx.pattern)
-                        .map(HiveAstBuilder::unquote), Optional.empty());
+                .map(HiveAstBuilder::unquote), Optional.empty());
     }
     @Override public Node visitShowTables(SqlBaseParser.ShowTablesContext ctx)
     {
@@ -546,6 +548,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         return left;
+    }
+
+    @Override
+    public Node visitTableValuedFunction(SqlBaseParser.TableValuedFunctionContext ctx) {
+        Identifier identifier = (Identifier) visit(ctx.functionTable().identifier());
+
+        throw parseError("Don't support " + identifier.getValue(), ctx);
     }
 
     private Relation withJoinRelation(Relation left, SqlBaseParser.JoinRelationContext ctx) {
@@ -617,17 +626,20 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitNumericLiteral(SqlBaseParser.NumericLiteralContext ctx) {
         try {
+            if (ctx.getText().contains("E") || ctx.getText().contains("e")) {
+                return new DoubleLiteral(getLocation(ctx), ctx.getText());
+            }
             Number num = NumberFormat.getInstance().parse(ctx.getText());
             // need to make sure it keeps it's original value, e.g. 1.0 is double not integer.
             if (num instanceof Double || !num.toString().equals(ctx.getText())) {
-//                switch (parsingOptions.getDecimalLiteralTreatment()) {
-//                    case AS_DOUBLE:
+                switch (parsingOptions.getDecimalLiteralTreatment()) {
+                    case AS_DOUBLE:
                         return new DoubleLiteral(getLocation(ctx), ctx.getText());
-//                    case AS_DECIMAL:
-//                        return new DecimalLiteral(getLocation(ctx), ctx.getText());
-//                    case REJECT:
-//                        throw parseError("Unexpected decimal literal: " + ctx.getText(), ctx);
-//                }
+                    case AS_DECIMAL:
+                        return new DecimalLiteral(getLocation(ctx), ctx.getText());
+                    case REJECT:
+                        throw parseError("Unexpected decimal literal: " + ctx.getText(), ctx);
+                }
             } else if (num instanceof Integer || num instanceof Long) {
                 return new LongLiteral(getLocation(ctx), ctx.getText());
             }
@@ -638,7 +650,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             throw parseError("Can't parser number: " + ctx.getText(), ctx);
         }
 
-//        throw parseError("Can't parser number: " + ctx.getText(), ctx);
+        throw parseError("Can't parser number: " + ctx.getText(), ctx);
     }
 
     @Override
@@ -701,11 +713,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         List<Identifier> columnNames = visit(ctx.colName, Identifier.class);
         if (columnNames.size() > 0) {
-            if (!withOrdinality) {
-                return new AliasedRelation(getLocation(ctx), unnest, columnNames.get(0), null);
-            } else {
-                return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
-            }
+            return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), columnNames);
         } else {
             return new AliasedRelation(getLocation(ctx), unnest, (Identifier) visit(ctx.tblName), null);
         }
@@ -840,9 +848,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             }
 
             if (starExpression.getIdentifier().isPresent()) {
-                return new AllColumns(nodeLocation, getQualifiedName(starExpression.getIdentifier().get()));
+                return new AllColumns(nodeLocation,
+                        Optional.of(starExpression.getIdentifier().get()), ImmutableList.of());
             } else {
-                return new AllColumns(nodeLocation);
+                return new AllColumns(nodeLocation, Optional.empty(), ImmutableList.of());
             }
         } else {
             return new SingleColumn(nodeLocation, expression, identifier);
@@ -952,7 +961,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 getLocation(ctx),
                 ctx.TABLE() != null?ShowCreate.Type.TABLE: ShowCreate.Type.VIEW,
                 getQualifiedName(ctx.tableIdentifier())
-                );
+        );
     }
 
     @Override public Node visitDescribeTable(SqlBaseParser.DescribeTableContext ctx)
@@ -1162,18 +1171,18 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 } else {
                     return comparisonExpression;
                 }
-             case SqlBaseParser.RLIKE:
-                 Expression rLikePredicate = new RLikePredicate(
-                         getLocation(ctx),
-                         expression,
-                         (Expression) visit(ctx.pattern),
-                         Optional.empty());
+            case SqlBaseParser.RLIKE:
+                Expression rLikePredicate = new RLikePredicate(
+                        getLocation(ctx),
+                        expression,
+                        (Expression) visit(ctx.pattern),
+                        Optional.empty());
 
-                 if (ctx.NOT() != null) {
-                     return new NotExpression(getLocation(ctx), rLikePredicate);
-                 } else {
-                     return rLikePredicate;
-                 }
+                if (ctx.NOT() != null) {
+                    return new NotExpression(getLocation(ctx), rLikePredicate);
+                } else {
+                    return rLikePredicate;
+                }
             default:
                 throw parseError("Not supported type: " + ctx.kind.getText(), ctx);
         }
@@ -1228,7 +1237,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitCast(SqlBaseParser.CastContext ctx) {
-        return new Cast(getLocation(ctx), (Expression) visit(ctx.expression()), getType(ctx.dataType()), false);
+        DataType dataType = (DataType) visit(ctx.dataType());
+        return new Cast(getLocation(ctx), (Expression) visit(ctx.expression()), dataType, false);
     }
 
     // need to be implemented
@@ -1331,6 +1341,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Optional.empty(),//filter,
                     Optional.empty(),//orderBy,
                     distinct,
+                    Optional.empty(),
                     new ArrayList<>()
             );
         }
@@ -1344,6 +1355,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Optional.empty(),//filter,
                     Optional.empty(),//orderBy,
                     distinct,
+                    Optional.empty(),
                     Arrays.asList(row)
             );
         }
@@ -1354,8 +1366,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 Optional.empty(),//filter,
                 Optional.empty(),//orderBy,
                 distinct,
+                Optional.empty(),
                 expressions
-                );
+        );
     }
 
     @Override
@@ -1479,6 +1492,43 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 visitIfPresent(ctx.elseExpression, Expression.class));
     }
 
+    @Override public Node visitComplexDataType(SqlBaseParser.ComplexDataTypeContext ctx) {
+
+        List<DataType> dataTypes = visit(ctx.dataType(), DataType.class);
+        List<DataTypeParameter> typeParameters = new ArrayList<>();
+        dataTypes.stream().forEach(dataType -> typeParameters.add(new TypeParameter(dataType)));
+        DataType dataType = null;
+        if (ctx.ARRAY() != null) {
+            dataType = new GenericDataType(getLocation(ctx),
+                    new Identifier(getLocation(ctx), ctx.ARRAY().getText(), true),
+                    typeParameters);
+        } else if (ctx.MAP() != null) {
+            dataType = new GenericDataType(getLocation(ctx),
+                    new Identifier(getLocation(ctx), ctx.MAP().getText(), true),
+                    typeParameters);
+        } else if (ctx.STRUCT() != null) {
+            List<RowDataType.Field> fields = visit(ctx.complexColTypeList().complexColType(), RowDataType.Field.class);
+            dataType = new RowDataType(getLocation(ctx), fields);
+        } else if (ctx.NEQ() != null) {
+            throw parseError("where is the type?", ctx);
+        }
+        return dataType;
+    }
+
+    @Override public Node visitPrimitiveDataType(SqlBaseParser.PrimitiveDataTypeContext ctx) {
+        GenericDataType genericDataType = new GenericDataType(getLocation(ctx),
+                new Identifier(getLocation(ctx), ctx.identifier().getText(), true),
+                ImmutableList.of());
+        return genericDataType;
+    }
+
+    @Override public Node visitComplexColType(SqlBaseParser.ComplexColTypeContext ctx) {
+        RowDataType.Field field = new RowDataType.Field(getLocation(ctx),
+                Optional.of(new Identifier(getLocation(ctx.identifier()), ctx.identifier().getText(), true)),
+                (DataType)visit(ctx.dataType()));
+        return field;
+    }
+
     @Override
     public Node visitWhenClause(SqlBaseParser.WhenClauseContext ctx) {
         return new WhenClause(getLocation(ctx), (Expression) visit(ctx.condition), (Expression) visit(ctx.result));
@@ -1507,7 +1557,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitUnquotedIdentifier(SqlBaseParser.UnquotedIdentifierContext ctx) {
-        return new Identifier(getLocation(ctx), ctx.getText(), false);
+        return new Identifier(getLocation(ctx), ctx.getText(), true);
     }
 
     @Override
@@ -1647,7 +1697,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                         builder.append(",");
                     }
 
-                    builder.append(visit(complexColTypeContext.identifier()))
+                    Node node = visit(complexColTypeContext.identifier());
+                    builder.append(tryUnquote(node.toString()))
                             .append(" ")
                             .append(getType(complexColTypeContext.dataType()));
                 }
@@ -1742,7 +1793,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             for (String id: tmp) {
                 Identifier identifier =
                         new Identifier(getLocation(identifierContext),
-                                id, false);
+                                id, true);
                 identifiers.add(identifier);
             }
         }

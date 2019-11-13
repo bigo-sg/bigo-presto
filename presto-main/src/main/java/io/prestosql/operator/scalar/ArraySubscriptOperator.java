@@ -68,12 +68,6 @@ public class ArraySubscriptOperator
         return fcs.getSession().getSystemProperty(SystemSessionProperties.ENABLE_HIVE_SQL_SYNTAX, Boolean.class);
     }
 
-    private static boolean hiveEnabled(ConnectorSession session) {
-        FullConnectorSession fcs = (FullConnectorSession) session;
-
-        return fcs.getSession().getSystemProperty(SystemSessionProperties.ENABLE_HIVE_SQL_SYNTAX, Boolean.class);
-    }
-
     @Override
     public ScalarFunctionImplementation specialize(BoundVariables boundVariables, int arity, Metadata metadata)
     {

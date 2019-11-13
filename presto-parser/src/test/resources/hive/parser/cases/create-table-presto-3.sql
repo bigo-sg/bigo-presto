@@ -1,6 +1,6 @@
 CREATE TABLE tmp.test
 (
-  uid BIGINT,
-  items ARRAY(ROW(IDX BIGINT, EXTRA MAP(VARCHAR, VARCHAR), M INTEGER))
-  )
+  uid bigint,
+  items array(row(idx bigint, extra map(string, string), m int))
+)
 

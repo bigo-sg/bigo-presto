@@ -30,7 +30,7 @@ public class AddManageResourceTask
     @Override
     public String getName()
     {
-        return "ADD RESOURCE";
+        return "ADD MANAGE RESOURCE";
     }
 
     @Override

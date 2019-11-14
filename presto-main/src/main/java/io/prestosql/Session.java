@@ -75,7 +75,7 @@ public final class Session
     private final ResourceEstimates resourceEstimates;
     private final long startTime;
     private Map<String, String> systemProperties; // removed final to make it changeable. hack :(
-    private final Map<CatalogName, Map<String, String>> connectorProperties;
+    private Map<CatalogName, Map<String, String>> connectorProperties;
     private final Map<String, Map<String, String>> unprocessedCatalogProperties;
     private final SessionPropertyManager sessionPropertyManager;
     private final Map<String, String> preparedStatements;
@@ -266,6 +266,16 @@ public final class Session
     public Map<String, String> getConnectorProperties(CatalogName catalogName)
     {
         return connectorProperties.getOrDefault(catalogName, ImmutableMap.of());
+    }
+
+    public void setConnectorProperties(CatalogName catalogName, Map<String, String> connectorProperties)
+    {
+        ImmutableMap.Builder<CatalogName, Map<String, String>> catalogPropertiesBuilder = ImmutableMap.builder();
+        this.connectorProperties.entrySet().stream()
+                .map(entry -> Maps.immutableEntry(entry.getKey(), ImmutableMap.copyOf(entry.getValue())))
+                .forEach(catalogPropertiesBuilder::put);
+        catalogPropertiesBuilder.put(catalogName, connectorProperties);
+        this.connectorProperties = catalogPropertiesBuilder.build();
     }
 
     public Map<String, Map<String, String>> getUnprocessedCatalogProperties()

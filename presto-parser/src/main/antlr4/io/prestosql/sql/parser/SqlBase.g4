@@ -53,7 +53,7 @@ statement
          (COMMENT string)?
          (WITH properties)?                                            #createTable
     | DROP TABLE (IF EXISTS)? qualifiedName                            #dropTable
-    | INSERT INTO qualifiedName columnAliases? query                   #insertInto
+    | INSERT (INTO | OVERWRITE) qualifiedName columnAliases? query     #insertInto
     | DELETE FROM qualifiedName (WHERE booleanExpression)?             #delete
     | ALTER TABLE from=qualifiedName RENAME TO to=qualifiedName        #renameTable
     | COMMENT ON TABLE qualifiedName IS (string | NULL)                #commentTable
@@ -613,6 +613,7 @@ INCLUDING: 'INCLUDING';
 INNER: 'INNER';
 INPUT: 'INPUT';
 INSERT: 'INSERT';
+OVERWRITE: 'OVERWRITE';
 INTERSECT: 'INTERSECT';
 INTERVAL: 'INTERVAL';
 INTO: 'INTO';

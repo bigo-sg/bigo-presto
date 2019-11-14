@@ -112,6 +112,8 @@ import static io.prestosql.sql.relational.SpecialForm.Form.ROW_CONSTRUCTOR;
 import static io.prestosql.sql.relational.SpecialForm.Form.SWITCH;
 import static io.prestosql.sql.relational.SpecialForm.Form.WHEN;
 import static io.prestosql.type.JsonType.JSON;
+import static io.prestosql.type.LikePatternType.LIKE_PATTERN;
+import static io.prestosql.type.RLikePatternType.RLIKE_PATTERN;
 import static io.prestosql.util.DateTimeUtils.parseDayTimeInterval;
 import static io.prestosql.util.DateTimeUtils.parseTimeWithTimeZone;
 import static io.prestosql.util.DateTimeUtils.parseTimeWithoutTimeZone;
@@ -682,6 +684,58 @@ public final class SqlToRowExpressionTranslator
                     value,
                     min,
                     max);
+        }
+
+        @Override
+        protected RowExpression visitLikePredicate(LikePredicate node, Void context)
+        {
+            RowExpression value = process(node.getValue(), context);
+            RowExpression pattern = process(node.getPattern(), context);
+
+            if (node.getEscape().isPresent()) {
+                RowExpression escape = process(node.getEscape().get(), context);
+                return likeFunctionCall(value, new CallExpression(standardFunctionResolution.likePatternFunction(), LIKE_PATTERN, ImmutableList.of(pattern, escape)));
+            }
+
+            CallExpression patternCall = call(
+                    metadata.getCoercion(VARCHAR, LIKE_PATTERN),
+                    LIKE_PATTERN,
+                    pattern);
+            return likeFunctionCall(value, patternCall);
+        }
+
+        private RowExpression likeFunctionCall(RowExpression value, RowExpression pattern)
+        {
+            if (value.getType() instanceof VarcharType) {
+                return call(standardFunctionResolution.likeVarcharSignature(), BOOLEAN, value, pattern);
+            }
+
+            checkState(value.getType() instanceof CharType, "LIKE value type is neither VARCHAR or CHAR");
+            return call(standardFunctionResolution.likeCharFunction(value.getType()), BOOLEAN, value, pattern);
+        }
+
+        @Override
+        public RowExpression visitRLikePredicate(RLikePredicate node, Void context)
+        {
+            RowExpression value = process(node.getValue(), context);
+            RowExpression pattern = process(node.getPattern(), context);
+
+            if (node.getEscape().isPresent()) {
+                RowExpression escape = process(node.getEscape().get(), context);
+                return rLikeFunctionCall(value, call(metadata.getCoercion(VARCHAR, RLIKE_PATTERN), RLIKE_PATTERN, pattern));
+            }
+
+            return rLikeFunctionCall(value, call(metadata.getCoercion(VARCHAR, RLIKE_PATTERN), RLIKE_PATTERN, pattern));
+        }
+
+        private RowExpression rLikeFunctionCall(RowExpression value, RowExpression pattern)
+        {
+            if (value.getType() instanceof VarcharType) {
+                return call(standardFunctionResolution.rLikeVarcharSignature(), BOOLEAN, value, pattern);
+            }
+
+            checkState(value.getType() instanceof CharType, "RLIKE value type is neither VARCHAR or CHAR");
+            return call(standardFunctionResolution.rLikeCharFunction(value.getType()), BOOLEAN, value, pattern);
         }
 
         @Override

@@ -76,6 +76,7 @@ import static io.prestosql.type.JsonPathType.JSON_PATH;
 import static io.prestosql.type.JsonType.JSON;
 import static io.prestosql.type.LikePatternType.LIKE_PATTERN;
 import static io.prestosql.type.MapParametricType.MAP;
+import static io.prestosql.type.RLikePatternType.RLIKE_PATTERN;
 import static io.prestosql.type.RowParametricType.ROW;
 import static io.prestosql.type.UnknownType.UNKNOWN;
 import static io.prestosql.type.UuidType.UUID;
@@ -127,6 +128,7 @@ final class TypeRegistry
         addType(JONI_REGEXP);
         addType(new Re2JRegexpType(featuresConfig.getRe2JDfaStatesLimit(), featuresConfig.getRe2JDfaRetries()));
         addType(LIKE_PATTERN);
+        addType(RLIKE_PATTERN);
         addType(JSON_PATH);
         addType(COLOR);
         addType(JSON);

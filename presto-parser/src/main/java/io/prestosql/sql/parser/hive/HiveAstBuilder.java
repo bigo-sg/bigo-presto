@@ -68,7 +68,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitShowPartitions(SqlBaseParser.ShowPartitionsContext ctx) {
-        throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
+        throw parseError("Don't support show partitions at the moment, stay tuned ;)", ctx);
     }
 
     @Override
@@ -780,10 +780,23 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
     }
 
+    @Override public Node visitPartitionVal(SqlBaseParser.PartitionValContext ctx) {
+        if (ctx.constant() != null) {
+            String exp = tryUnquote(ctx.constant().getText());
+            String constant = ctx.identifier().getText().replace("\"\"", "");;
+            return new SingleColumn(getLocation(ctx),
+                    new StringLiteral(exp),
+                    Optional.of(new Identifier(constant, true)));
+        } else {
+            return new SingleColumn(getLocation(ctx),
+                    new Identifier(ctx.identifier().getText().replace("\"\"", ""), true), Optional.empty());
+        }
+    }
+
     @Override
     public Node visitSingleInsertQuery(SqlBaseParser.SingleInsertQueryContext ctx) {
 
-        QueryBody term = null;
+        QueryBody term;
         Object o = visit(ctx.queryTerm());
         if (o instanceof Query) {
             throw parseError("too many `()`out of query?, which syntax not supported by hive", ctx);
@@ -799,7 +812,37 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             QualifiedName target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
             return new Insert(target, Optional.empty(), query);
         } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteTableContext) {
-            throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
+            SqlBaseParser.InsertOverwriteTableContext insertOverwriteTableContext =
+                    (SqlBaseParser.InsertOverwriteTableContext) ctx.insertInto();
+            SqlBaseParser.PartitionSpecContext partitionSpecContext = insertOverwriteTableContext.partitionSpec();
+            QualifiedName target = getQualifiedName(((SqlBaseParser.InsertOverwriteTableContext) ctx.insertInto()).tableIdentifier());
+            if (partitionSpecContext != null) {
+                List<SingleColumn> singleColumns = visit(partitionSpecContext.partitionVal(), SingleColumn.class);
+                int dynamicPartitionCount = singleColumns.size();
+                if (singleColumns.size() > 0) {
+                    SingleColumn parent = singleColumns.get(0);
+                    if (parent.getAlias().isPresent()) {
+                        --dynamicPartitionCount;
+                    }
+                    for (int i = 1; i < singleColumns.size(); ++i) {
+                        SingleColumn singleColumn = singleColumns.get(i);
+                        if (singleColumn.getAlias().isPresent()) {
+                            --dynamicPartitionCount;
+                            if (!parent.getAlias().isPresent()) {
+                                throw parseError("Dynamic partition cannot be the parent of a static partition " + singleColumn.getAlias().get(), ctx);
+                            }
+                        }
+                        parent = singleColumn;
+                    }
+                    List<SelectItem> selectItems = ((QuerySpecification) query.getQueryBody()).getSelect().getSelectItems();
+                    for (int i = 0; i < singleColumns.size(); ++i) {
+                        if (singleColumns.get(i).getAlias().isPresent()) {
+                            selectItems.add(selectItems.size() - dynamicPartitionCount, singleColumns.get(i));
+                        }
+                    }
+                }
+            }
+            return new Insert(target, Optional.empty(), query, true);
         } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteDirContext) {
             throw parseError("Don't support insert overwrite dir at the moment, stay tuned ;)", ctx);
         } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteHiveDirContext) {

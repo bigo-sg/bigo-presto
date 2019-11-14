@@ -16,6 +16,7 @@ package io.prestosql.sql.planner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.prestosql.Session;
+import io.prestosql.connector.CatalogName;
 import io.prestosql.cost.CachingCostProvider;
 import io.prestosql.cost.CachingStatsProvider;
 import io.prestosql.cost.CostCalculator;
@@ -207,6 +208,13 @@ public class LogicalPlanner
             return createAnalyzePlan(analysis, (Analyze) statement);
         }
         else if (statement instanceof Insert) {
+            if (((Insert)statement).isOverwrite()) {
+                CatalogName catalogName = new CatalogName("hive");
+                Map<String, String> hiveProperties = session.getConnectorProperties(catalogName);
+                ImmutableMap newHiveProperties = ImmutableMap.builder().putAll(hiveProperties)
+                        .put("insert_existing_partitions_behavior", "OVERWRITE").build();
+                session.setConnectorProperties(catalogName, newHiveProperties);
+           }
             checkState(analysis.getInsert().isPresent(), "Insert handle is missing");
             return createInsertPlan(analysis, (Insert) statement);
         }

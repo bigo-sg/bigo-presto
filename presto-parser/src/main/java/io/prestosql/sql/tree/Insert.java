@@ -28,18 +28,30 @@ public final class Insert
     private final QualifiedName target;
     private final Query query;
     private final Optional<List<Identifier>> columns;
+    private final boolean overwrite;
 
     public Insert(QualifiedName target, Optional<List<Identifier>> columns, Query query)
     {
-        this(Optional.empty(), columns, target, query);
+        this(Optional.empty(), columns, target, query, false);
     }
 
-    private Insert(Optional<NodeLocation> location, Optional<List<Identifier>> columns, QualifiedName target, Query query)
+    public Insert(QualifiedName target, Optional<List<Identifier>> columns, Query query, boolean overwrite)
+    {
+        this(Optional.empty(), columns, target, query, overwrite);
+    }
+
+    private Insert(Optional<NodeLocation> location, Optional<List<Identifier>> columns,
+                   QualifiedName target, Query query, boolean overwrite)
     {
         super(location);
         this.target = requireNonNull(target, "target is null");
         this.columns = requireNonNull(columns, "columns is null");
         this.query = requireNonNull(query, "query is null");
+        this.overwrite = overwrite;
+    }
+
+    public boolean isOverwrite() {
+        return overwrite;
     }
 
     public QualifiedName getTarget()

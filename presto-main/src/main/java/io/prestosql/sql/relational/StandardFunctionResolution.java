@@ -27,6 +27,10 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.prestosql.spi.function.OperatorType.ADD;
+import static io.prestosql.spi.function.OperatorType.AMPERSAND;
+import static io.prestosql.spi.function.OperatorType.HAT;
+import static io.prestosql.spi.function.OperatorType.PIPE;
+import static io.prestosql.spi.function.OperatorType.TILDE;
 import static io.prestosql.spi.function.OperatorType.DIVIDE;
 import static io.prestosql.spi.function.OperatorType.EQUAL;
 import static io.prestosql.spi.function.OperatorType.GREATER_THAN;
@@ -104,6 +108,18 @@ public final class StandardFunctionResolution
                 break;
             case MODULUS:
                 operatorType = MODULUS;
+                break;
+            case AMPERSAND:
+                operatorType = AMPERSAND;
+                break;
+            case HAT:
+                operatorType = HAT;
+                break;
+            case PIPE:
+                operatorType = PIPE;
+                break;
+            case TILDE:
+                operatorType = TILDE;
                 break;
             default:
                 throw new IllegalStateException("Unknown arithmetic operator: " + operator);

@@ -42,7 +42,7 @@ public class Select
     {
         super(location);
         this.distinct = distinct;
-        this.selectItems = ImmutableList.copyOf(requireNonNull(selectItems, "selectItems"));
+        this.selectItems = requireNonNull(selectItems, "selectItems");
     }
 
     public boolean isDistinct()

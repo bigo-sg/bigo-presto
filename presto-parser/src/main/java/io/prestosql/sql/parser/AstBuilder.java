@@ -357,10 +357,18 @@ class AstBuilder
             columnAliases = Optional.of(visit(context.columnAliases().identifier(), Identifier.class));
         }
 
-        return new Insert(
-                getQualifiedName(context.qualifiedName()),
-                columnAliases,
-                (Query) visit(context.query()));
+        if (context.INTO() != null) {
+            return new Insert(
+                    getQualifiedName(context.qualifiedName()),
+                    columnAliases,
+                    (Query) visit(context.query()));
+        } else {
+            return new Insert(
+                    getQualifiedName(context.qualifiedName()),
+                    columnAliases,
+                    (Query) visit(context.query()),
+                    true);
+        }
     }
 
     @Override

@@ -113,8 +113,7 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.BOOLEAN)
-//    public static boolean castToBoolean(@SqlType("varchar(x)") Slice value)
-    public static boolean castToBoolean(@SqlType(StandardTypes.VARCHAR) Slice value)
+    public static boolean castToBoolean(@SqlType("varchar(x)") Slice value)
     {
         if (value.length() == 1) {
             byte character = toUpperCase(value.getByte(0));
@@ -157,8 +156,7 @@ public final class VarcharOperators
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.DOUBLE)
     @SqlNullable
-//    public static Double castToDouble(@SqlType("varchar(x)") Slice slice)
-    public static Double castToDouble(@SqlType(StandardTypes.VARCHAR) Slice slice)
+    public static Double castToDouble(@SqlType("varchar(x)") Slice slice)
     {
         try {
             return Double.parseDouble(slice.toStringUtf8());
@@ -172,8 +170,7 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.REAL)
-//    public static long castToFloat(@SqlType("varchar(x)") Slice slice)
-    public static long castToFloat(@SqlType(StandardTypes.VARCHAR) Slice slice)
+    public static long castToFloat(@SqlType("varchar(x)") Slice slice)
     {
         try {
             return Float.floatToIntBits(Float.parseFloat(slice.toStringUtf8()));
@@ -187,8 +184,7 @@ public final class VarcharOperators
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.BIGINT)
     @SqlNullable
-//    public static Long castToBigint(@SqlType("varchar(x)") Slice slice)
-    public static Long castToBigint(@SqlType(StandardTypes.VARCHAR) Slice slice)
+    public static Long castToBigint(@SqlType("varchar(x)") Slice slice)
     {
         try {
             return Long.parseLong(slice.toStringUtf8());
@@ -202,8 +198,7 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.INTEGER)
-//    public static long castToInteger(@SqlType("varchar(x)") Slice slice)
-    public static long castToInteger(@SqlType(StandardTypes.VARCHAR) Slice slice)
+    public static long castToInteger(@SqlType("varchar(x)") Slice slice)
     {
         try {
             return Integer.parseInt(slice.toStringUtf8());
@@ -216,8 +211,7 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.SMALLINT)
-//    public static long castToSmallint(@SqlType("varchar(x)") Slice slice)
-    public static long castToSmallint(@SqlType(StandardTypes.VARCHAR) Slice slice)
+    public static long castToSmallint(@SqlType("varchar(x)") Slice slice)
     {
         try {
             return Short.parseShort(slice.toStringUtf8());
@@ -230,8 +224,7 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.TINYINT)
-//    public static long castToTinyint(@SqlType("varchar(x)") Slice slice)
-    public static long castToTinyint(@SqlType(StandardTypes.VARCHAR) Slice slice)
+    public static long castToTinyint(@SqlType("varchar(x)") Slice slice)
     {
         try {
             return Byte.parseByte(slice.toStringUtf8());
@@ -244,8 +237,7 @@ public final class VarcharOperators
     @LiteralParameters("x")
     @ScalarOperator(CAST)
     @SqlType(StandardTypes.VARBINARY)
-//    public static Slice castToBinary(@SqlType("varchar(x)") Slice slice)
-    public static Slice castToBinary(@SqlType(StandardTypes.VARCHAR) Slice slice)
+    public static Slice castToBinary(@SqlType("varchar(x)") Slice slice)
     {
         return slice;
     }

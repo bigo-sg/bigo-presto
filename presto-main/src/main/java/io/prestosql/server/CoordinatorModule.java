@@ -44,10 +44,12 @@ import io.prestosql.dispatcher.QueuedStatementResource;
 import io.prestosql.event.QueryMonitor;
 import io.prestosql.event.QueryMonitorConfig;
 import io.prestosql.execution.AddColumnTask;
+import io.prestosql.execution.AddManageResourceTask;
 import io.prestosql.execution.CallTask;
 import io.prestosql.execution.ClusterSizeMonitor;
 import io.prestosql.execution.CommentTask;
 import io.prestosql.execution.CommitTask;
+import io.prestosql.execution.CreateFunctionTask;
 import io.prestosql.execution.CreateRoleTask;
 import io.prestosql.execution.CreateSchemaTask;
 import io.prestosql.execution.CreateTableTask;
@@ -115,6 +117,8 @@ import io.prestosql.spi.memory.ClusterMemoryPoolManager;
 import io.prestosql.spi.resourcegroups.QueryType;
 import io.prestosql.spi.security.SelectedRole;
 import io.prestosql.sql.analyzer.QueryExplainer;
+import io.prestosql.sql.parser.hive.AddManageResource;
+import io.prestosql.sql.parser.hive.CreateFunction;
 import io.prestosql.sql.parser.hive.SetHiveConfiguration;
 import io.prestosql.sql.planner.PlanFragmenter;
 import io.prestosql.sql.planner.PlanOptimizers;
@@ -355,8 +359,10 @@ public class CoordinatorModule
         bindDataDefinitionTask(binder, executionBinder, Deallocate.class, DeallocateTask.class);
         bindDataDefinitionTask(binder, executionBinder, SetPath.class, SetPathTask.class);
 
-        // add SetHiveConfiguration task
+        // add dummy hive tasks
         bindDataDefinitionTask(binder, executionBinder, SetHiveConfiguration.class, SetHiveConfigurationTask.class);
+        bindDataDefinitionTask(binder, executionBinder, AddManageResource.class, AddManageResourceTask.class);
+        bindDataDefinitionTask(binder, executionBinder, CreateFunction.class, CreateFunctionTask.class);
 
         MapBinder<String, ExecutionPolicy> executionPolicyBinder = newMapBinder(binder, String.class, ExecutionPolicy.class);
         executionPolicyBinder.addBinding("all-at-once").to(AllAtOnceExecutionPolicy.class);

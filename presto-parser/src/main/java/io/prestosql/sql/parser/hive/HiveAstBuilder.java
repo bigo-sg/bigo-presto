@@ -213,8 +213,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return super.visitConstantList(ctx);
     }
 
-    @Override public Node visitManageResource(SqlBaseParser.ManageResourceContext ctx) {
-        throw parseError("presto not support 'add jar' or 'add file' please delete 'add file/jar' and try again", ctx);
+    @Override
+    public Node visitManageResource(SqlBaseParser.ManageResourceContext ctx) {
+        if (ctx.LIST() != null) {
+            throw parseError("Don't support 'list resource' command", ctx);
+        } else {
+            return new AddManageResource(Optional.of(getLocation(ctx)));
+        }
     }
 
     @Override
@@ -409,7 +414,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return with;
     }
     @Override public Node visitCreateFunction(SqlBaseParser.CreateFunctionContext ctx) {
-        return new CreateTemporyFunction(Optional.of(getLocation(ctx)), ctx.qualifiedName().getText(), ctx.className.getText());
+        return new CreateFunction(Optional.of(getLocation(ctx)), ctx.qualifiedName().getText(), ctx.className.getText());
     }
 
     @Override

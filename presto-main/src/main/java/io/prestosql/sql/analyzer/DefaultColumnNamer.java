@@ -33,14 +33,16 @@ public class DefaultColumnNamer {
         }
 
         // make sure each column name is unique.
+        // Note: we only keeps the lowercase name in nameSet to avoid semantic analysis error
         Set<String> nameSet = new HashSet<>();
         int uniqueColumnNameIndex = 1;
         List<Field> outputFieldsWithUniqueName = new ArrayList<>();
+
         for(Field field : outputFieldsWithDefaultName) {
-            if (!nameSet.add(field.getName().get())) {
+            if (!nameSet.add(field.getName().get().toLowerCase())) {
                 String uniqueFieldName = field.getName().get() + UNIQUE_COLUMN_NAME_PREFIX + uniqueColumnNameIndex;
                 uniqueColumnNameIndex++;
-                nameSet.add(uniqueFieldName);
+                nameSet.add(uniqueFieldName.toLowerCase());
 
                 outputFieldsWithUniqueName.add(Field.newUnqualified(uniqueFieldName, field.getType()));
             } else {

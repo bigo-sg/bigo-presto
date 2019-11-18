@@ -70,7 +70,7 @@ public class DefaultColumnNamerTest {
     }
 
     @Test
-    public void testWithSameNameFieldMathchDefaultName() {
+    public void testWithSameNameFieldMatchDefaultName() {
         List<Field> fields = new ArrayList<>();
         Field f1 = createField(Optional.of("_col0"));
         Field f2 = createField(Optional.empty());
@@ -89,5 +89,24 @@ public class DefaultColumnNamerTest {
         Assert.assertEquals(ret.get(1).getName().get(), "_col0__1");
         Assert.assertEquals(ret.get(2).getName().get(), "_col0__2");
         Assert.assertEquals(ret.get(3).getName().get(), "_col1");
+    }
+
+    @Test
+    public void testWithSameNameFieldButDifferentCase() {
+        List<Field> fields = new ArrayList<>();
+        Field f1 = createField(Optional.of("uid"));
+        Field f2 = createField(Optional.of("Uid"));
+        Field f3 = createField(Optional.of("UID"));
+
+        fields.add(f1);
+        fields.add(f2);
+        fields.add(f3);
+
+        List<Field> ret = getDefaultNameIfNeeded(fields);
+
+        Assert.assertEquals(ret.size(), 3);
+        Assert.assertEquals(ret.get(0).getName().get(), "uid");
+        Assert.assertEquals(ret.get(1).getName().get(), "Uid__1");
+        Assert.assertEquals(ret.get(2).getName().get(), "UID__2");
     }
 }

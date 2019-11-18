@@ -38,12 +38,11 @@ public class TestBigoDateTimeFunctions {
     @Test
     public void testUnixTimestamp() {
         double uts = unixTimestamp(utf8Slice("2019-08-31 12:00:00"));
-        double n = (1.5672708E9 - 1567224000) / 3600;
         if (String.valueOf(uts).contains("E")) {
             BigDecimal bd1 = new BigDecimal(uts);
-            assertEquals(bd1.toPlainString(), "1563724800");
+            assertEquals(bd1.toPlainString(), "1567224000");
         } else {
-            assertEquals(String.valueOf(uts), "1563724800");
+            assertEquals(String.valueOf(uts), "1567224000");
         }
     }
 

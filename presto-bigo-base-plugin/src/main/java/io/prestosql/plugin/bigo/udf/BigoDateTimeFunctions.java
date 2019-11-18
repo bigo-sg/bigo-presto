@@ -83,6 +83,7 @@ public class BigoDateTimeFunctions {
     @SqlType(StandardTypes.BIGINT)
     public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice sliceTime) {
         SimpleDateFormat df = new SimpleDateFormat(dateFormat1);
+        df.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
         try {
             Date date = df.parse(sliceTime.toStringUtf8());
             return toUnixTime(date.getTime());
@@ -96,6 +97,7 @@ public class BigoDateTimeFunctions {
     @SqlType(StandardTypes.BIGINT)
     public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice sliceTime, @SqlType(StandardTypes.VARCHAR) Slice sliceFormat) {
         SimpleDateFormat df = new SimpleDateFormat(sliceFormat.toStringUtf8());
+        df.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
         try {
             Date date = df.parse(sliceTime.toStringUtf8());
             return toUnixTime(date.getTime());

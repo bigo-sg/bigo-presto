@@ -18,4 +18,12 @@ public class UnsupportedSQLs extends SQLTester {
         String sql = "LIST FILES";
         runHiveSQL(sql);
     }
+
+    @Test(expectedExceptions = ParsingException.class)
+    public void distinctOnThrowException()
+    {
+        String sql = "SELECT distinct on a from tb1";
+
+        runHiveSQL(sql);
+    }
 }

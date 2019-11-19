@@ -697,6 +697,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
+    public Node visitColumnReference(SqlBaseParser.ColumnReferenceContext ctx) {
+        return super.visitColumnReference(ctx);
+    }
+
+    @Override
+    public Node visitIdentifier(SqlBaseParser.IdentifierContext ctx) {
+        return super.visitIdentifier(ctx);
+    }
+
+    @Override
     public Node visitLateralView(SqlBaseParser.LateralViewContext ctx) {
         if (ctx.OUTER() != null) {
             throw parseError("Don't support Outer Lateral Views", ctx);
@@ -844,6 +854,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         NodeLocation nodeLocation = getLocation(ctx);
         Expression expression = (Expression)visit(ctx.expression());
         Optional<Identifier> identifier = visitIfPresent(ctx.identifier(), Identifier.class);
+
+        if (expression == null) {
+            throw parseError("Don't support this syntax", ctx);
+        }
 
         if (expression instanceof StarExpression) {
             StarExpression starExpression = (StarExpression) expression;

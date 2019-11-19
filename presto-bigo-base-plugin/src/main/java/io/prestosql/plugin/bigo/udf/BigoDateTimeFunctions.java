@@ -9,6 +9,7 @@ import io.prestosql.spi.function.SqlNullable;
 import io.prestosql.spi.function.SqlType;
 import io.prestosql.spi.type.StandardTypes;
 
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
@@ -82,6 +83,7 @@ public class BigoDateTimeFunctions {
     @SqlType(StandardTypes.BIGINT)
     public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice sliceTime) {
         SimpleDateFormat df = new SimpleDateFormat(dateFormat1);
+        df.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
         try {
             Date date = df.parse(sliceTime.toStringUtf8());
             return toUnixTime(date.getTime());
@@ -95,6 +97,7 @@ public class BigoDateTimeFunctions {
     @SqlType(StandardTypes.BIGINT)
     public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice sliceTime, @SqlType(StandardTypes.VARCHAR) Slice sliceFormat) {
         SimpleDateFormat df = new SimpleDateFormat(sliceFormat.toStringUtf8());
+        df.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
         try {
             Date date = df.parse(sliceTime.toStringUtf8());
             return toUnixTime(date.getTime());
@@ -443,24 +446,32 @@ public class BigoDateTimeFunctions {
     @ScalarFunction("add_months")
     @SqlType(StandardTypes.VARCHAR)
     public static Slice addMonthsTimeStamp(
-            ConnectorSession session,
             @SqlType(StandardTypes.TIMESTAMP) long startDate,
             @SqlType(StandardTypes.INTEGER) long monthsToAdd) {
-        Slice slice = timeStampToDate(session, startDate, dateFormat2);
+        SimpleDateFormat formatter = new SimpleDateFormat(dateFormat2);
 
-        return addMonths(slice, monthsToAdd);
+        Calendar calendar = Calendar.getInstance();
+        Timestamp ts = new Timestamp(startDate);
+        calendar.setTimeInMillis(ts.getTime());
+        calendar.add(Calendar.MONTH, (int) monthsToAdd);
+
+        return utf8Slice(formatter.format(calendar.getTime()));
     }
 
     @Description("Returns the date that is monthsToAdd after start_date.")
     @ScalarFunction("add_months")
     @SqlType(StandardTypes.VARCHAR)
     public static Slice addMonthsTimeStampWithZone(
-            ConnectorSession session,
             @SqlType(StandardTypes.TIMESTAMP_WITH_TIME_ZONE) long startDate,
             @SqlType(StandardTypes.INTEGER) long monthsToAdd) {
-        Slice slice = timeStampToDate(session, startDate, dateFormat2);
+        SimpleDateFormat formatter = new SimpleDateFormat(dateFormat2);
 
-        return addMonths(slice, monthsToAdd);
+        Calendar calendar = Calendar.getInstance();
+        Timestamp ts = new Timestamp(startDate);
+        calendar.setTimeInMillis(ts.getTime());
+        calendar.add(Calendar.MONTH, (int) monthsToAdd);
+
+        return utf8Slice(formatter.format(calendar.getTime()));
     }
 
     private static Slice timeStampToDate(ConnectorSession session, long timestamp, String pattern) {
@@ -526,25 +537,33 @@ public class BigoDateTimeFunctions {
     @ScalarFunction("add_months")
     @SqlType(StandardTypes.VARCHAR)
     public static Slice addMonthsTimeStamp(
-            ConnectorSession session,
             @SqlType(StandardTypes.TIMESTAMP) long startDate,
             @SqlType(StandardTypes.INTEGER) long monthsToAdd,
             @SqlType(StandardTypes.VARCHAR) Slice pattern) {
-        Slice slice = timeStampToDate(session, startDate, pattern.toStringUtf8());
+        SimpleDateFormat formatter = new SimpleDateFormat(pattern.toStringUtf8());
 
-        return addMonths(slice, monthsToAdd);
+        Calendar calendar = Calendar.getInstance();
+        Timestamp ts = new Timestamp(startDate);
+        calendar.setTimeInMillis(ts.getTime());
+        calendar.add(Calendar.MONTH, (int) monthsToAdd);
+
+        return utf8Slice(formatter.format(calendar.getTime()));
     }
 
     @Description("Returns the date that is monthsToAdd after start_date.")
     @ScalarFunction("add_months")
     @SqlType(StandardTypes.VARCHAR)
     public static Slice addMonthsTimeStampWithZone(
-            ConnectorSession session,
             @SqlType(StandardTypes.TIMESTAMP_WITH_TIME_ZONE) long startDate,
             @SqlType(StandardTypes.INTEGER) long monthsToAdd,
             @SqlType(StandardTypes.VARCHAR) Slice pattern) {
-        Slice slice = timeStampToDate(session, startDate, pattern.toStringUtf8());
+        SimpleDateFormat formatter = new SimpleDateFormat(pattern.toStringUtf8());
 
-        return addMonths(slice, monthsToAdd);
+        Calendar calendar = Calendar.getInstance();
+        Timestamp ts = new Timestamp(startDate);
+        calendar.setTimeInMillis(ts.getTime());
+        calendar.add(Calendar.MONTH, (int) monthsToAdd);
+
+        return utf8Slice(formatter.format(calendar.getTime()));
     }
 }

@@ -345,4 +345,52 @@ public class BasicSQLs extends SQLTester {
         checkASTNode(prestoSql, hiveSql);
     }
 
+    @Test
+    public void testMultiParentheses()
+    {
+        String prestoSql = "((((select 1))))";
+        String hiveSql = "((((select 1))))";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testMultiParentheses1()
+    {
+        String prestoSql = "select 1";
+        String hiveSql = "select 1";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testMultiParentheses2()
+    {
+        String prestoSql = "(select 1)";
+        String hiveSql = "(select 1)";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testInsertMultiParentheses()
+    {
+        String prestoSql = "insert into  t (select 1 as m)";
+        String hiveSql = "insert into  t (select 1 as m)";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testInsertMultiParentheses2()
+    {
+        String prestoSql = "insert into  t ((select 1 as m))";
+        String hiveSql = "insert into  t ((select 1 as m))";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
+    public void testInsertMultiParentheses1()
+    {
+        String prestoSql = "insert into  t select 1 as m";
+        String hiveSql = "insert into  t select 1 as m";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
 }

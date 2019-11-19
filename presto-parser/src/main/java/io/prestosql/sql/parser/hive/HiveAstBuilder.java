@@ -780,9 +780,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public Node visitSingleInsertQuery(SqlBaseParser.SingleInsertQueryContext ctx) {
 
         QueryBody term;
+        SqlBaseParser.InsertIntoContext insertIntoContext = ctx.insertInto();
         Object o = visit(ctx.queryTerm());
         if (o instanceof Query) {
-            throw parseError("too many `()`out of query?, which syntax not supported by hive", ctx);
+            if (insertIntoContext == null) {
+                return withQueryOrganization(new TableSubquery(getLocation(ctx), (Query) o), ctx.queryOrganization());
+            } else {
+                term = new TableSubquery(getLocation(ctx), (Query) o);
+            }
         } else {
             term = (QueryBody) o;
         }

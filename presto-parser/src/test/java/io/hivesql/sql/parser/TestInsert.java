@@ -11,6 +11,11 @@ public class TestInsert extends SQLTester {
     }
 
     @Test
+    public void insertIntoSelect1() {
+        checkASTNodeFromFile("hive/parser/cases/insert-into-select-hive1.sql");
+    }
+
+    @Test
     public void insertOverwriteSelect() {
         checkASTNodeFromFile("hive/parser/cases/insert-overwrite-select-presto.sql",
                 "hive/parser/cases/insert-overwrite-select-hive.sql");

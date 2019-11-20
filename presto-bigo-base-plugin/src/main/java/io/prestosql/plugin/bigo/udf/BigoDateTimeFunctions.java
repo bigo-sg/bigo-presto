@@ -1,23 +1,9 @@
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package io.prestosql.plugin.bigo.udf;
 
 import io.airlift.slice.Slice;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.function.Description;
-import io.prestosql.spi.function.LiteralParameters;
 import io.prestosql.spi.function.ScalarFunction;
 import io.prestosql.spi.function.SqlNullable;
 import io.prestosql.spi.function.SqlType;
@@ -35,22 +21,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import io.airlift.log.Logger;
-import org.joda.time.DateTimeField;
 import org.joda.time.DateTimeZone;
 import org.joda.time.chrono.ISOChronology;
-import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.ISODateTimeFormat;
 
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.prestosql.plugin.bigo.util.DateTimeZoneIndexUtil.getChronology;
-import static io.prestosql.plugin.bigo.util.DateTimeZoneIndexUtil.unpackChronology;
-import static io.prestosql.plugin.bigo.util.QuarterOfYearDateTimeField.QUARTER_OF_YEAR;
 import static io.prestosql.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
-import static io.prestosql.spi.type.DateTimeEncoding.unpackMillisUtc;
-import static io.prestosql.spi.type.DateTimeEncoding.updateMillisUtc;
-import static java.util.Locale.ENGLISH;
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class BigoDateTimeFunctions {
     private static final Logger LOG = Logger.get(BigoDateTimeFunctions.class);
@@ -58,7 +35,6 @@ public class BigoDateTimeFunctions {
     private static final String dateFormat2 = "yyyy-MM-dd";
     private static final String dateFormat3 = "HH:mm:ss";
     private static final ISOChronology CHRONOLOGY = ISOChronology.getInstance(DateTimeZone.forTimeZone(TimeZone.getTimeZone("Asia/Shanghai")));
-    private static final ISOChronology UTC_CHRONOLOGY = ISOChronology.getInstanceUTC();
 
     @Description("Returns the date that is num_days after start_date.")
     @ScalarFunction("date_add")
@@ -589,164 +565,5 @@ public class BigoDateTimeFunctions {
         calendar.add(Calendar.MONTH, (int) monthsToAdd);
 
         return utf8Slice(formatter.format(calendar.getTime()));
-    }
-
-
-    @Description("truncate to the specified precision in the session timezone")
-    @ScalarFunction("trunc")
-    @LiteralParameters("x")
-    @SqlType(StandardTypes.DATE)
-    public static long truncateDate(@SqlType(StandardTypes.DATE) long date, @SqlType("varchar(x)") Slice unit)
-    {
-        long millis = getDateField(CHRONOLOGY, unit).roundFloor(DAYS.toMillis(date));
-        return MILLISECONDS.toDays(millis);
-    }
-
-    @Description("truncate to the specified precision in the session timezone")
-    @ScalarFunction("trunc")
-    @LiteralParameters("x")
-    @SqlType(StandardTypes.TIME)
-    public static long truncateTime(ConnectorSession session, @SqlType(StandardTypes.TIME) long time, @SqlType("varchar(x)") Slice unit)
-    {
-        if (session.isLegacyTimestamp()) {
-            return getTimeField(getChronology(session.getTimeZoneKey()), unit).roundFloor(time);
-        }
-        else {
-            return getTimeField(CHRONOLOGY, unit).roundFloor(time);
-        }
-    }
-
-    @Description("truncate to the specified precision")
-    @ScalarFunction("trunc")
-    @LiteralParameters("x")
-    @SqlType(StandardTypes.TIME_WITH_TIME_ZONE)
-    public static long truncateTimeWithTimeZone(@SqlType(StandardTypes.TIME_WITH_TIME_ZONE) long timeWithTimeZone, @SqlType("varchar(x)") Slice unit)
-    {
-        long millis = getTimeField(unpackChronology(timeWithTimeZone), unit).roundFloor(unpackMillisUtc(timeWithTimeZone));
-        return updateMillisUtc(millis, timeWithTimeZone);
-    }
-
-    @Description("truncate to the specified precision in the session timezone")
-    @ScalarFunction("trunc")
-    @LiteralParameters("x")
-    @SqlType(StandardTypes.TIMESTAMP)
-    public static long truncateTimestamp(ConnectorSession session, @SqlType(StandardTypes.TIMESTAMP) long timestamp, @SqlType("varchar(x)") Slice unit)
-    {
-        if (session.isLegacyTimestamp()) {
-            return getTimestampField(getChronology(session.getTimeZoneKey()), unit).roundFloor(timestamp);
-        }
-        else {
-            return getTimestampField(CHRONOLOGY, unit).roundFloor(timestamp);
-        }
-    }
-
-    @Description("truncate to the specified precision")
-    @ScalarFunction("trunc")
-    @LiteralParameters("x")
-    @SqlType(StandardTypes.TIMESTAMP_WITH_TIME_ZONE)
-    public static long truncateTimestampWithTimezone( @SqlType(StandardTypes.TIMESTAMP_WITH_TIME_ZONE) long timestampWithTimeZone, @SqlType("varchar(x)") Slice unit)
-    {
-        long millis = getTimestampField(unpackChronology(timestampWithTimeZone), unit).roundFloor(unpackMillisUtc(timestampWithTimeZone));
-        return updateMillisUtc(millis, timestampWithTimeZone);
-    }
-
-    @ScalarFunction("trunc")
-    @LiteralParameters("x")
-    @SqlType(StandardTypes.VARCHAR)
-    @SqlNullable
-    public static Slice truncateVarchar(ConnectorSession connectorSession, @SqlType(StandardTypes.VARCHAR) Slice slice, @SqlType(StandardTypes.VARCHAR) Slice unit)
-    {
-        SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
-        SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat2);
-        formatter1.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
-        formatter2.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
-
-        Calendar calendar = Calendar.getInstance();
-        try {
-            calendar.setTime(formatter1.parse(slice.toStringUtf8()));
-        } catch (ParseException e) {
-            try {
-                calendar.setTime(formatter2.parse(slice.toStringUtf8()));
-            } catch (ParseException ex) {
-                return null;
-            }
-        }
-        return formatDatetime(truncateTimestamp(connectorSession, calendar.getTimeInMillis(), unit));
-    }
-
-    private static DateTimeField getDateField(ISOChronology chronology, Slice unit)
-    {
-        String unitString = unit.toStringUtf8().toLowerCase(ENGLISH);
-        switch (unitString) {
-            case "day":
-                return chronology.dayOfMonth();
-            case "week":
-                return chronology.weekOfWeekyear();
-            case "month":
-                return chronology.monthOfYear();
-            case "quarter":
-                return QUARTER_OF_YEAR.getField(chronology);
-            case "year":
-                return chronology.year();
-        }
-        throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "'" + unitString + "' is not a valid DATE field");
-    }
-
-    private static DateTimeField getTimeField(ISOChronology chronology, Slice unit)
-    {
-        String unitString = unit.toStringUtf8().toLowerCase(ENGLISH);
-        switch (unitString) {
-            case "millisecond":
-                return chronology.millisOfSecond();
-            case "second":
-                return chronology.secondOfMinute();
-            case "minute":
-                return chronology.minuteOfHour();
-            case "hour":
-                return chronology.hourOfDay();
-        }
-        throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "'" + unitString + "' is not a valid Time field");
-    }
-
-    private static DateTimeField getTimestampField(ISOChronology chronology, Slice unit)
-    {
-        String unitString = unit.toStringUtf8().toLowerCase(ENGLISH);
-        switch (unitString) {
-            case "millisecond":
-                return chronology.millisOfSecond();
-            case "second":
-                return chronology.secondOfMinute();
-            case "minute":
-                return chronology.minuteOfHour();
-            case "hour":
-                return chronology.hourOfDay();
-            case "day":
-                return chronology.dayOfMonth();
-            case "week":
-                return chronology.weekOfWeekyear();
-            case "month":
-            case "mon":
-            case "mm":
-                return chronology.monthOfYear();
-            case "quarter":
-                return QUARTER_OF_YEAR.getField(chronology);
-            case "year":
-            case "yyyy":
-            case "yy":
-                return chronology.year();
-        }
-        throw new PrestoException(INVALID_FUNCTION_ARGUMENT, "'" + unitString + "' is not a valid Timestamp field");
-    }
-
-    private static Slice formatDatetime(long timestamp)
-    {
-        try {
-            return utf8Slice(DateTimeFormat.forPattern(BigoDateTimeFunctions.dateFormat2)
-                    .withChronology(CHRONOLOGY)
-                    .print(timestamp));
-        }
-        catch (IllegalArgumentException e) {
-            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, e);
-        }
     }
 }

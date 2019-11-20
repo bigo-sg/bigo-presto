@@ -1,29 +1,9 @@
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package io.prestosql.plugin.bigo.udf;
 
-import io.airlift.slice.Slice;
 import io.prestosql.spi.PrestoException;
-import io.prestosql.spi.connector.ConnectorSession;
-import io.prestosql.spi.security.Identity;
-import io.prestosql.spi.type.TimeZoneKey;
-import io.prestosql.testing.TestingSession;
-import org.locationtech.jts.util.Assert;
 import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
-
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.prestosql.plugin.bigo.udf.BigoDateTimeFunctions.unixTimestamp;
 import static org.testng.Assert.*;
@@ -160,65 +140,5 @@ public class TestBigoDateTimeFunctions {
         assertEquals(BigoDateTimeFunctions.addMonths(utf8Slice("2019-08-01"), 2, utf8Slice("yyyy-MM-dd")).toStringUtf8(), "2019-10-01");
         assertEquals(BigoDateTimeFunctions.addMonths(utf8Slice("2019-08-31 14:15:16"), 1, utf8Slice("yyyy-MM-dd HH:mm:ss")).toStringUtf8(), "2019-09-30 14:15:16");
         assertEquals(BigoDateTimeFunctions.addMonthsDate(18139, 1).toStringUtf8(), "2019-09-30");
-    }
-
-    @Test
-    public void testTruncateTime()
-    {
-        ConnectorSession connectorSession = TestingSession.testSessionBuilder()
-                .setIdentity(Identity.ofUser("test"))
-                .setCatalog("hive")
-                .setSchema("default")
-                .setTimeZoneKey(TimeZoneKey.getTimeZoneKey("Asia/Shanghai"))
-                .build()
-                .toConnectorSession();
-
-        long res1 = BigoDateTimeFunctions.truncateTimestamp(connectorSession, 1574050394000L, utf8Slice("second"));
-        long res2 = BigoDateTimeFunctions.truncateTimestamp(connectorSession, 1574050394000L, utf8Slice("minute"));
-        long res3 = BigoDateTimeFunctions.truncateTimestamp(connectorSession, 1574050394000L, utf8Slice("hour"));
-        long res4 = BigoDateTimeFunctions.truncateTimestamp(connectorSession, 1574050394000L, utf8Slice("day"));
-        long res5 = BigoDateTimeFunctions.truncateTimestamp(connectorSession, 1574050394000L, utf8Slice("week"));
-        long res6 = BigoDateTimeFunctions.truncateTimestamp(connectorSession, 1574050394000L, utf8Slice("month"));
-        long res7 = BigoDateTimeFunctions.truncateTimestamp(connectorSession, 1574050394000L, utf8Slice("quarter"));
-        long res8 = BigoDateTimeFunctions.truncateTimestamp(connectorSession, 1574050394000L, utf8Slice("year"));
-
-        Assert.equals(res1, 1574050394000L);
-        Assert.equals(res2, 1574050380000L);
-        Assert.equals(res3, 1574049600000L);
-        Assert.equals(res4, 1574006400000L);
-        Assert.equals(res5, 1574006400000L);
-        Assert.equals(res6, 1572537600000L);
-        Assert.equals(res7, 1569859200000L);
-        Assert.equals(res8, 1546272000000L);
-    }
-
-    @Test
-    public void testTruncateVarchar()
-    {
-        ConnectorSession connectorSession = TestingSession.testSessionBuilder()
-                .setIdentity(Identity.ofUser("test"))
-                .setCatalog("hive")
-                .setSchema("default")
-                .setTimeZoneKey(TimeZoneKey.getTimeZoneKey("Asia/Shanghai"))
-                .build()
-                .toConnectorSession();
-
-        Slice res1 = BigoDateTimeFunctions.truncateVarchar(connectorSession, utf8Slice("2019-11-18 12:13:14"), utf8Slice("month"));
-        Slice res2 = BigoDateTimeFunctions.truncateVarchar(connectorSession, utf8Slice("2019-11-18 12:13:14"), utf8Slice("year"));
-        Slice res3 = BigoDateTimeFunctions.truncateVarchar(connectorSession, utf8Slice("2019-11-18"), utf8Slice("month"));
-        Slice res4 = BigoDateTimeFunctions.truncateVarchar(connectorSession, utf8Slice("2019-11-18"), utf8Slice("mon"));
-        Slice res5 = BigoDateTimeFunctions.truncateVarchar(connectorSession, utf8Slice("2019-11-18"), utf8Slice("mm"));
-        Slice res6 = BigoDateTimeFunctions.truncateVarchar(connectorSession, utf8Slice("2019-11-18"), utf8Slice("year"));
-        Slice res7 = BigoDateTimeFunctions.truncateVarchar(connectorSession, utf8Slice("2019-11-18"), utf8Slice("yyyy"));
-        Slice res8 = BigoDateTimeFunctions.truncateVarchar(connectorSession, utf8Slice("2019-11-18"), utf8Slice("yy"));
-
-        Assert.equals(res1, utf8Slice("2019-11-01"));
-        Assert.equals(res2, utf8Slice("2019-01-01"));
-        Assert.equals(res3, utf8Slice("2019-11-01"));
-        Assert.equals(res4, utf8Slice("2019-11-01"));
-        Assert.equals(res5, utf8Slice("2019-11-01"));
-        Assert.equals(res6, utf8Slice("2019-01-01"));
-        Assert.equals(res7, utf8Slice("2019-01-01"));
-        Assert.equals(res8, utf8Slice("2019-01-01"));
     }
 }

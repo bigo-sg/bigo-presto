@@ -250,8 +250,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         // get store format
         if (ctx.rowFormat() != null && ctx.rowFormat(0) != null) {
             SqlBaseParser.RowFormatContext rowFormatContext = ctx.rowFormat(0);
-            String format = ((SqlBaseParser.RowFormatSerdeContext) rowFormatContext).name.getText();
             if (rowFormatContext instanceof SqlBaseParser.RowFormatSerdeContext) {
+                String format = ((SqlBaseParser.RowFormatSerdeContext) rowFormatContext).name.getText();
                 if (format.contains("org.apache.hive.hcatalog.data.JsonSerDe")
                         || format.contains("org.openx.data.jsonserde.JsonSerDe")) {
                     Property property = new Property(new Identifier("format", false),
@@ -269,6 +269,24 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Property property = new Property(new Identifier("format", false),
                             new StringLiteral("ORC"));
                     properties.add(property);
+                }
+            } else if (rowFormatContext instanceof SqlBaseParser.RowFormatDelimitedContext) {
+                SqlBaseParser.RowFormatDelimitedContext rowFormatDelimitedContext =
+                        ((SqlBaseParser.RowFormatDelimitedContext) rowFormatContext);
+                if (rowFormatDelimitedContext.DELIMITED() != null) {
+                    Property formatProperty = new Property(new Identifier("format", false),
+                            new StringLiteral("TEXTFILE"));
+                    properties.add(formatProperty);
+                    if (rowFormatDelimitedContext.FIELDS() != null) {
+                        Property property = new Property(new Identifier("textfile_field_separator", false),
+                                new StringLiteral(unquote(rowFormatDelimitedContext.fieldsTerminatedBy.getText())));
+                        properties.add(property);
+                    }
+                    if (rowFormatDelimitedContext.ESCAPED() != null) {
+                        Property property = new Property(new Identifier("textfile_field_separator_escape", false),
+                                new StringLiteral(unquote(rowFormatDelimitedContext.escapedBy.getText())));
+                        properties.add(property);
+                    }
                 }
             }
         } else if (ctx.createFileFormat() != null && ctx.createFileFormat(0) != null) {
@@ -766,7 +784,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override public Node visitPartitionVal(SqlBaseParser.PartitionValContext ctx) {
         if (ctx.constant() != null) {
             String exp = tryUnquote(ctx.constant().getText());
-            String constant = ctx.identifier().getText().replace("\"\"", "");;
+            String constant = ctx.identifier().getText().replace("\"\"", "");
             return new SingleColumn(getLocation(ctx),
                     new StringLiteral(exp),
                     Optional.of(new Identifier(constant, true)));
@@ -1841,7 +1859,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         for (SqlBaseParser.IdentifierContext identifierContext: context.identifier()) {
             Identifier identifier =
                     new Identifier(getLocation(identifierContext),
-                            identifierContext.getText(), false);
+                            identifierContext.getText(), true);
             identifiers.add(identifier);
             visit(identifierContext);
         }

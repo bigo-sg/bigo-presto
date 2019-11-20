@@ -15,7 +15,9 @@ package io.prestosql.sql.planner;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.airlift.log.Logger;
 import io.prestosql.Session;
+import io.prestosql.connector.CatalogName;
 import io.prestosql.cost.CachingCostProvider;
 import io.prestosql.cost.CachingStatsProvider;
 import io.prestosql.cost.CostCalculator;
@@ -118,6 +120,7 @@ public class LogicalPlanner
     private final StatsCalculator statsCalculator;
     private final CostCalculator costCalculator;
     private final WarningCollector warningCollector;
+    private static final Logger LOG = Logger.get(LogicalPlanner.class);
 
     public LogicalPlanner(
             Session session,
@@ -207,6 +210,14 @@ public class LogicalPlanner
             return createAnalyzePlan(analysis, (Analyze) statement);
         }
         else if (statement instanceof Insert) {
+            if (((Insert)statement).isOverwrite()) {
+                String catalog = session.getCatalog().get();
+                CatalogName catalogName = new CatalogName(catalog);
+                Map<String, String> hiveProperties = session.getConnectorProperties(catalogName);
+                ImmutableMap newHiveProperties = ImmutableMap.builder().putAll(hiveProperties)
+                        .put("insert_existing_partitions_behavior", "OVERWRITE").build();
+                session.setConnectorProperties(catalogName, newHiveProperties);
+           }
             checkState(analysis.getInsert().isPresent(), "Insert handle is missing");
             return createInsertPlan(analysis, (Insert) statement);
         }

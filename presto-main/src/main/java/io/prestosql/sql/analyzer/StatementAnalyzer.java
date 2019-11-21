@@ -397,21 +397,19 @@ class StatementAnalyzer
                     insertColumns.stream().map(columnHandles::get).collect(toImmutableList()),
                     newTableLayout));
 
-            List<Type> tableTypes = insertColumns.stream()
-                    .map(insertColumn -> tableMetadata.getColumn(insertColumn).getType())
-                    .collect(toImmutableList());
-
-            List<Type> queryTypes = queryScope.getRelationType().getVisibleFields().stream()
-                    .map(Field::getType)
-                    .collect(toImmutableList());
-
-            if (!typesMatchForInsert(tableTypes, queryTypes)) {
-                throw semanticException(TYPE_MISMATCH,
-                        insert,
-                        "Insert query has mismatched column types: Table: [%s], Query: [%s]",
-                        Joiner.on(", ").join(tableTypes),
-                        Joiner.on(", ").join(queryTypes));
-            }
+//            List<Type> tableTypes = insertColumns.stream()
+//                    .map(insertColumn -> tableMetadata.getColumn(insertColumn).getType())
+//                    .collect(toImmutableList());
+//
+//            List<Type> queryTypes = queryScope.getRelationType().getVisibleFields().stream()
+//                    .map(Field::getType)
+//                    .collect(toImmutableList());
+//
+//            if (!typesMatchForInsert(tableTypes, queryTypes)) {
+//                throw semanticException(TYPE_MISMATCH, insert, "Insert query has mismatched column types: " +
+//                        "Table: [" + Joiner.on(", ").join(tableTypes) + "], " +
+//                        "Query: [" + Joiner.on(", ").join(queryTypes) + "]");
+//            }
 
             return createAndAssignScope(insert, scope, Field.newUnqualified("rows", BIGINT));
         }

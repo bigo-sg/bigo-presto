@@ -16,6 +16,9 @@ public class UnHexFunction {
     @SqlNullable
     public static Slice hexToBinary(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
+        if (slice == null) {
+            return null;
+        }
         return utf8Slice(evaluateUnhex(slice.toStringUtf8()));
     }
 

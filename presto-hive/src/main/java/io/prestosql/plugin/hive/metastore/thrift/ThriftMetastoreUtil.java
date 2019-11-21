@@ -66,6 +66,7 @@ import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.StringColumnStatsData;
 import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.parquet.format.JsonType;
 
 import javax.annotation.Nullable;
 
@@ -968,6 +969,9 @@ public final class ThriftMetastoreUtil
             return ImmutableSet.of(NUMBER_OF_NON_NULL_VALUES, TOTAL_SIZE_IN_BYTES, MAX_VALUE_SIZE_IN_BYTES);
         }
         if (type instanceof ArrayType || type instanceof RowType || type instanceof MapType) {
+            return ImmutableSet.of();
+        }
+        if (type instanceof JsonType) {
             return ImmutableSet.of();
         }
         // Throwing here to make sure this method is updated when a new type is added in Hive connector

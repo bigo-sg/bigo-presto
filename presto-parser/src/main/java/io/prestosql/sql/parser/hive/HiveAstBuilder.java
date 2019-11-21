@@ -68,7 +68,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitShowPartitions(SqlBaseParser.ShowPartitionsContext ctx) {
-        throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
+        throw parseError("Don't support show partitions at the moment, stay tuned ;)", ctx);
     }
 
     @Override
@@ -250,8 +250,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         // get store format
         if (ctx.rowFormat() != null && ctx.rowFormat(0) != null) {
             SqlBaseParser.RowFormatContext rowFormatContext = ctx.rowFormat(0);
-            String format = ((SqlBaseParser.RowFormatSerdeContext) rowFormatContext).name.getText();
             if (rowFormatContext instanceof SqlBaseParser.RowFormatSerdeContext) {
+                String format = ((SqlBaseParser.RowFormatSerdeContext) rowFormatContext).name.getText();
                 if (format.contains("org.apache.hive.hcatalog.data.JsonSerDe")
                         || format.contains("org.openx.data.jsonserde.JsonSerDe")) {
                     Property property = new Property(new Identifier("format", false),
@@ -269,6 +269,24 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Property property = new Property(new Identifier("format", false),
                             new StringLiteral("ORC"));
                     properties.add(property);
+                }
+            } else if (rowFormatContext instanceof SqlBaseParser.RowFormatDelimitedContext) {
+                SqlBaseParser.RowFormatDelimitedContext rowFormatDelimitedContext =
+                        ((SqlBaseParser.RowFormatDelimitedContext) rowFormatContext);
+                if (rowFormatDelimitedContext.DELIMITED() != null) {
+                    Property formatProperty = new Property(new Identifier("format", false),
+                            new StringLiteral("TEXTFILE"));
+                    properties.add(formatProperty);
+                    if (rowFormatDelimitedContext.FIELDS() != null) {
+                        Property property = new Property(new Identifier("textfile_field_separator", false),
+                                new StringLiteral(unquote(rowFormatDelimitedContext.fieldsTerminatedBy.getText())));
+                        properties.add(property);
+                    }
+                    if (rowFormatDelimitedContext.ESCAPED() != null) {
+                        Property property = new Property(new Identifier("textfile_field_separator_escape", false),
+                                new StringLiteral(unquote(rowFormatDelimitedContext.escapedBy.getText())));
+                        properties.add(property);
+                    }
                 }
             }
         } else if (ctx.createFileFormat() != null && ctx.createFileFormat(0) != null) {
@@ -697,6 +715,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     }
 
     @Override
+    public Node visitColumnReference(SqlBaseParser.ColumnReferenceContext ctx) {
+        return super.visitColumnReference(ctx);
+    }
+
+    @Override
+    public Node visitIdentifier(SqlBaseParser.IdentifierContext ctx) {
+        return super.visitIdentifier(ctx);
+    }
+
+    @Override
     public Node visitLateralView(SqlBaseParser.LateralViewContext ctx) {
         if (ctx.OUTER() != null) {
             throw parseError("Don't support Outer Lateral Views", ctx);
@@ -785,13 +813,31 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
     }
 
+    @Override public Node visitPartitionVal(SqlBaseParser.PartitionValContext ctx) {
+        if (ctx.constant() != null) {
+            String exp = tryUnquote(ctx.constant().getText());
+            String constant = ctx.identifier().getText().replace("\"\"", "");
+            return new SingleColumn(getLocation(ctx),
+                    new StringLiteral(exp),
+                    Optional.of(new Identifier(constant, true)));
+        } else {
+            return new SingleColumn(getLocation(ctx),
+                    new Identifier(ctx.identifier().getText().replace("\"\"", ""), true), Optional.empty());
+        }
+    }
+
     @Override
     public Node visitSingleInsertQuery(SqlBaseParser.SingleInsertQueryContext ctx) {
 
-        QueryBody term = null;
+        QueryBody term;
+        SqlBaseParser.InsertIntoContext insertIntoContext = ctx.insertInto();
         Object o = visit(ctx.queryTerm());
         if (o instanceof Query) {
-            throw parseError("too many `()`out of query?, which syntax not supported by hive", ctx);
+            if (insertIntoContext == null) {
+                return withQueryOrganization(new TableSubquery(getLocation(ctx), (Query) o), ctx.queryOrganization());
+            } else {
+                term = new TableSubquery(getLocation(ctx), (Query) o);
+            }
         } else {
             term = (QueryBody) o;
         }
@@ -804,7 +850,37 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             QualifiedName target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
             return new Insert(target, Optional.empty(), query);
         } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteTableContext) {
-            throw parseError("Don't support insert overwrite at the moment, stay tuned ;)", ctx);
+            SqlBaseParser.InsertOverwriteTableContext insertOverwriteTableContext =
+                    (SqlBaseParser.InsertOverwriteTableContext) ctx.insertInto();
+            SqlBaseParser.PartitionSpecContext partitionSpecContext = insertOverwriteTableContext.partitionSpec();
+            QualifiedName target = getQualifiedName(((SqlBaseParser.InsertOverwriteTableContext) ctx.insertInto()).tableIdentifier());
+            if (partitionSpecContext != null) {
+                List<SingleColumn> singleColumns = visit(partitionSpecContext.partitionVal(), SingleColumn.class);
+                int dynamicPartitionCount = singleColumns.size();
+                if (singleColumns.size() > 0) {
+                    SingleColumn parent = singleColumns.get(0);
+                    if (parent.getAlias().isPresent()) {
+                        --dynamicPartitionCount;
+                    }
+                    for (int i = 1; i < singleColumns.size(); ++i) {
+                        SingleColumn singleColumn = singleColumns.get(i);
+                        if (singleColumn.getAlias().isPresent()) {
+                            --dynamicPartitionCount;
+                            if (!parent.getAlias().isPresent()) {
+                                throw parseError("Dynamic partition cannot be the parent of a static partition " + singleColumn.getAlias().get(), ctx);
+                            }
+                        }
+                        parent = singleColumn;
+                    }
+                    List<SelectItem> selectItems = ((QuerySpecification) query.getQueryBody()).getSelect().getSelectItems();
+                    for (int i = 0; i < singleColumns.size(); ++i) {
+                        if (singleColumns.get(i).getAlias().isPresent()) {
+                            selectItems.add(selectItems.size() - dynamicPartitionCount, singleColumns.get(i));
+                        }
+                    }
+                }
+            }
+            return new Insert(target, Optional.empty(), query, true);
         } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteDirContext) {
             throw parseError("Don't support insert overwrite dir at the moment, stay tuned ;)", ctx);
         } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteHiveDirContext) {
@@ -844,6 +920,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         NodeLocation nodeLocation = getLocation(ctx);
         Expression expression = (Expression)visit(ctx.expression());
         Optional<Identifier> identifier = visitIfPresent(ctx.identifier(), Identifier.class);
+
+        if (expression == null) {
+            throw parseError("Don't support this syntax", ctx);
+        }
 
         if (expression instanceof StarExpression) {
             StarExpression starExpression = (StarExpression) expression;
@@ -1811,7 +1891,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         for (SqlBaseParser.IdentifierContext identifierContext: context.identifier()) {
             Identifier identifier =
                     new Identifier(getLocation(identifierContext),
-                            identifierContext.getText(), false);
+                            identifierContext.getText(), true);
             identifiers.add(identifier);
             visit(identifierContext);
         }

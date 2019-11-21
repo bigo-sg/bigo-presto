@@ -105,6 +105,13 @@ public class TestCreateTableDatabases extends SQLTester {
     }
 
     @Test
+    public void createTable5() {
+
+        checkASTNodeFromFile("hive/parser/cases/create-table-presto-5.sql",
+                "hive/parser/cases/create-table-hive-5.sql");
+    }
+
+    @Test
     public void testDropTable() {
         String hiveSql = "drop table if exists test";
         checkASTNode(hiveSql);

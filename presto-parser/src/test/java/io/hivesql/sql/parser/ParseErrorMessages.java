@@ -33,31 +33,6 @@ public class ParseErrorMessages extends SQLTester {
     }
 
     @Test
-    public void testInsertOverwrite()
-    {
-        String sql = "" +
-                "INSERT OVERWRITE TABLE algo.indigo_user_preference_by_day PARTITION (day='2019-08-20', category='label_v2') \n" +
-                "SELECT uid, SUM(clicked) as click, SUM(IF(stay_time>15, 15, stay_time)) as stay_time,  SUM(IF(play_second>45, 45, play_second)) as play_second, \n" +
-                "SUM(IF(complete_count>5, 5, complete_count)) as complete_count, SUM(download) as download, SUM(contact) as contact, SUM(story) as story, COUNT(1) as impression, \n" +
-                "NULL, NULL, NULL, NULL, NULL, NULL, coalesce(get_json_object(substr(regexp_replace(tag, '\\\\\\\"', '\\\"'), 2, length(regexp_replace(tag, '\\\\\\\"', '\\\"'))-2), '$.bucket_priority'), '0'), NULL\n" +
-                "FROM\n" +
-                "(     \n" +
-                "        SELECT *          \n" +
-                "        FROM algo.indigo_rec_show_event_orc t1         \n" +
-                "        WHERE  abflags_v3!='' and day='2019-08-20' and dispatch_id is not null and dispatch_id != ''    \n" +
-                ") u \n" +
-                "GROUP BY day, uid, label_v2\n" +
-                "HAVING play_second > 20";
-
-        try {
-            runHiveSQL(sql);
-            Assert.fail("sql: " + sql + " should throw exception");
-        }catch (ParsingException e) {
-            Assert.assertTrue(e.getMessage().contains("Don't support"));
-        }
-    }
-
-    @Test
     public void testShowPartitions()
     {
         String sql = "Show Partitions mytable";

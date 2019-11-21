@@ -24,4 +24,9 @@ public class TestOnlineBadCases extends SQLTester {
         checkASTNodeFromFile("hive/parser/cases/online-case-03.sql", "hive/parser/cases/online-case-02.sql");
     }
 
+    @Test
+    public void testCase06() {
+        runHiveSQLFromFile("hive/parser/cases/online-case-06.sql");
+    }
+
 }

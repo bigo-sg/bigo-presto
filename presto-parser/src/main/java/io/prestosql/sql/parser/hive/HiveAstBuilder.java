@@ -1086,6 +1086,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitQuerySpecification(SqlBaseParser.QuerySpecificationContext ctx) {
+        if (ctx.kind == null) {
+            throw parseError("Missing Select Statement", ctx);
+        }
+
         if (ctx.kind.getType()  == SqlBaseParser.SELECT) {
             SqlBaseParser.NamedExpressionSeqContext namedExpressionSeqContext = ctx.namedExpressionSeq();
             List<SqlBaseParser.NamedExpressionContext> namedExpressionContexts =

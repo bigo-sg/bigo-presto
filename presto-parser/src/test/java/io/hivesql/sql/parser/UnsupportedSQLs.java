@@ -26,4 +26,12 @@ public class UnsupportedSQLs extends SQLTester {
 
         runHiveSQL(sql);
     }
+
+    @Test(expectedExceptions = ParsingException.class)
+    public void missingSelectStatementShouldThrowException()
+    {
+        String sql = "from tb1 where a > 10";
+
+        runHiveSQL(sql);
+    }
 }

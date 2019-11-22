@@ -15,7 +15,9 @@ package io.prestosql.execution.resourcegroups;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import io.airlift.log.Logger;
 import io.airlift.stats.CounterStat;
+import io.prestosql.dispatcher.LocalDispatchQuery;
 import io.prestosql.execution.ManagedQueryExecution;
 import io.prestosql.execution.resourcegroups.WeightedFairQueue.Usage;
 import io.prestosql.server.QueryStateInfo;
@@ -77,6 +79,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class InternalResourceGroup
         implements ResourceGroup
 {
+    private static final Logger log = Logger.get(InternalResourceGroup.class);
+
     public static final int DEFAULT_WEIGHT = 1;
 
     private final InternalResourceGroup root;
@@ -657,6 +661,13 @@ public class InternalResourceGroup
     {
         checkState(Thread.holdsLock(root), "Must hold lock to start a query");
         synchronized (root) {
+            log.info("pengg: runningQueries.put: " + query.toString());
+
+            if (query instanceof LocalDispatchQuery) {
+                LocalDispatchQuery test = (LocalDispatchQuery) query;
+                log.info("pengg: query: " + test.getQueryId().toString());
+            }
+
             runningQueries.put(query, new ResourceUsage(0, 0));
             InternalResourceGroup group = this;
             while (group.parent.isPresent()) {
@@ -794,6 +805,7 @@ public class InternalResourceGroup
         checkState(Thread.holdsLock(root), "Must hold lock to find next query");
         synchronized (root) {
             if (!canRunMore()) {
+                log.info("pengg: internalStartNext: !canRunMore()");
                 return false;
             }
             ManagedQueryExecution query = queuedQueries.poll();
@@ -805,6 +817,7 @@ public class InternalResourceGroup
             // Remove even if the sub group still has queued queries, so that it goes to the back of the queue
             InternalResourceGroup subGroup = eligibleSubGroups.poll();
             if (subGroup == null) {
+                log.info("pengg: internalStartNext: subGroup == null");
                 return false;
             }
             boolean started = subGroup.internalStartNext();
@@ -969,10 +982,12 @@ public class InternalResourceGroup
 
         public synchronized void updateGroupsAndProcessQueuedQueries()
         {
+            log.info("pengg: updateGroupsAndProcessQueuedQueries");
             updateResourceUsageAndGetDelta();
 
             while (internalStartNext()) {
                 // start all the queries we can
+
             }
         }
 

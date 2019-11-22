@@ -661,7 +661,7 @@ public class InternalResourceGroup
     {
         checkState(Thread.holdsLock(root), "Must hold lock to start a query");
         synchronized (root) {
-            log.info("pengg: runningQueries.put: " + query.toString());
+            log.info("pengg: runningQueries.put: " + query.toString() + " ResourceGroupId: " + id.toString());
 
             if (query instanceof LocalDispatchQuery) {
                 LocalDispatchQuery test = (LocalDispatchQuery) query;
@@ -805,7 +805,7 @@ public class InternalResourceGroup
         checkState(Thread.holdsLock(root), "Must hold lock to find next query");
         synchronized (root) {
             if (!canRunMore()) {
-                log.info("pengg: internalStartNext: !canRunMore()");
+                log.info("pengg: internalStartNext: !canRunMore()" + " ResourceGroupId: " + id.toString());
                 return false;
             }
             ManagedQueryExecution query = queuedQueries.poll();
@@ -817,7 +817,7 @@ public class InternalResourceGroup
             // Remove even if the sub group still has queued queries, so that it goes to the back of the queue
             InternalResourceGroup subGroup = eligibleSubGroups.poll();
             if (subGroup == null) {
-                log.info("pengg: internalStartNext: subGroup == null");
+                log.info("pengg: internalStartNext: subGroup == null" + " ResourceGroupId: " + id.toString());
                 return false;
             }
             boolean started = subGroup.internalStartNext();
@@ -911,6 +911,7 @@ public class InternalResourceGroup
             long memoryUsageBytes = cachedResourceUsage.getMemoryUsageBytes();
 
             if ((cpuUsageMillis >= hardCpuLimitMillis) || (memoryUsageBytes > softMemoryLimitBytes)) {
+                log.info("pengg: canRunMore: (cpuUsageMillis >= hardCpuLimitMillis) || (memoryUsageBytes > softMemoryLimitBytes)" + " ResourceGroupId: " + id.toString());
                 return false;
             }
 
@@ -925,7 +926,15 @@ public class InternalResourceGroup
                 // Always allow at least one running query
                 hardConcurrencyLimit = Math.max(1, hardConcurrencyLimit);
             }
-            return runningQueries.size() + descendantRunningQueries < hardConcurrencyLimit;
+
+            boolean ret = runningQueries.size() + descendantRunningQueries < hardConcurrencyLimit;
+            if (!ret) {
+                log.info("pengg: canRunMore: runningQueries.size():" + runningQueries.size()
+                        + "descendantRunningQueries: " + descendantRunningQueries
+                        + " hardConcurrencyLimit: " + hardConcurrencyLimit + " ResourceGroupId: " + id.toString());
+            }
+
+            return ret;
         }
     }
 

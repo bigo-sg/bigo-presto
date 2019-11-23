@@ -912,6 +912,7 @@ public class InternalResourceGroup
 
             if ((cpuUsageMillis >= hardCpuLimitMillis) || (memoryUsageBytes > softMemoryLimitBytes)) {
                 log.info("pengg: canRunMore: (cpuUsageMillis >= hardCpuLimitMillis) || (memoryUsageBytes > softMemoryLimitBytes)" + " ResourceGroupId: " + id.toString());
+                log.info("pengg: cpuUsageMillis: " + cpuUsageMillis + " hardCpuLimitMillis: " + hardCpuLimitMillis + " memoryUsageBytes: " + memoryUsageBytes + " softMemoryLimitBytes: " + softMemoryLimitBytes);
                 return false;
             }
 

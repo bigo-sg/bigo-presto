@@ -810,6 +810,7 @@ public class InternalResourceGroup
             }
             ManagedQueryExecution query = queuedQueries.poll();
             if (query != null) {
+                log.info("candy: query != null starting query:" + query.toString() + ", queuedQueries size:" + queuedQueries.size());
                 startInBackground(query);
                 return true;
             }
@@ -911,7 +912,9 @@ public class InternalResourceGroup
             long memoryUsageBytes = cachedResourceUsage.getMemoryUsageBytes();
 
             if ((cpuUsageMillis >= hardCpuLimitMillis) || (memoryUsageBytes > softMemoryLimitBytes)) {
-                log.info("pengg: canRunMore: (cpuUsageMillis >= hardCpuLimitMillis) || (memoryUsageBytes > softMemoryLimitBytes)" + " ResourceGroupId: " + id.toString());
+                log.info("pengg: canRunMore: (cpuUsageMillis >= hardCpuLimitMillis) || (memoryUsageBytes > softMemoryLimitBytes)" + " ResourceGroupId: " + id.toString()
+                + "cpuUsageMillis:" + cpuUsageMillis + ",hardCpuLimitMillis:" + hardCpuLimitMillis +
+                ",memoryUsageBytes:" + memoryUsageBytes + ",softMemoryLimitBytes:" + softMemoryLimitBytes);
                 return false;
             }
 

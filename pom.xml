@@ -82,10 +82,10 @@
         <module>presto-array</module>
         <module>presto-jmx</module>
         <module>presto-record-decoder</module>
-        <module>presto-kafka</module>
+        <!--<module>presto-kafka</module>-->
         <module>presto-kinesis</module>
-        <module>presto-redis</module>
-        <module>presto-clickhouse</module>
+        <!--<module>presto-redis</module>-->
+        <!--<module>presto-clickhouse</module>-->
         <module>presto-accumulo</module>
         <module>presto-cassandra</module>
         <module>presto-blackhole</module>
@@ -98,20 +98,20 @@
         <module>presto-teradata-functions</module>
         <module>presto-example-http</module>
         <module>presto-local-file</module>
-        <module>presto-tpch</module>
+        <!--<module>presto-tpch</module>-->
         <module>presto-tpcds</module>
         <module>presto-raptor-legacy</module>
         <module>presto-base-jdbc</module>
-        <module>presto-mysql</module>
-        <module>presto-phoenix</module>
-        <module>presto-postgresql</module>
+        <!--<module>presto-mysql</module>-->
+        <!--<module>presto-phoenix</module>-->
+        <!--<module>presto-postgresql</module>-->
         <module>presto-redshift</module>
-        <module>presto-sqlserver</module>
-        <module>presto-mongodb</module>
-        <module>presto-client</module>
+        <!--<module>presto-sqlserver</module>-->
+        <!--<module>presto-mongodb</module>-->
+        <!--<module>presto-client</module>-->
         <module>presto-parser</module>
         <module>presto-main</module>
-        <module>presto-ml</module>
+        <!--<module>presto-ml</module>-->
         <module>presto-geospatial</module>
         <module>presto-geospatial-toolkit</module>
         <module>presto-benchmark</module>
@@ -129,7 +129,7 @@
         <module>presto-plugin-toolkit</module>
         <module>presto-resource-group-managers</module>
         <module>presto-password-authenticators</module>
-        <module>presto-ranger-systemaccesscontrol</module>
+        <!--<module>presto-ranger-systemaccesscontrol</module>-->
         <module>presto-bigo-base-plugin</module>
         <module>presto-session-property-managers</module>
         <module>presto-benchto-benchmarks</module>
@@ -139,10 +139,10 @@
         <module>presto-matching</module>
         <module>presto-memory-context</module>
         <module>presto-proxy</module>
-        <module>presto-kudu</module>
-        <module>presto-elasticsearch</module>
+        <!--<module>presto-kudu</module>-->
+        <!--<module>presto-elasticsearch</module>-->
         <module>presto-iceberg</module>
-        <module>presto-google-sheets</module>
+        <!--<module>presto-google-sheets</module>-->
         <module>presto-ranger-plugin-shim</module>
     </modules>
 

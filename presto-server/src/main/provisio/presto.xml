@@ -38,11 +38,11 @@
         </artifact>
     </artifactSet>
 
-    <artifactSet to="plugin/ranger-systemaccesscontrol">
-        <artifact id="${project.groupId}:presto-ranger-systemaccesscontrol:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/ranger-systemaccesscontrol">-->
+        <!--<artifact id="${project.groupId}:presto-ranger-systemaccesscontrol:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
     <artifactSet to="plugin/presto-ranger-plugin-shim">
         <artifact id="${project.groupId}:presto-ranger-plugin-shim:zip:${project.version}">
@@ -104,17 +104,17 @@
         </artifact>
     </artifactSet>
 
-    <artifactSet to="plugin/kafka">
-        <artifact id="${project.groupId}:presto-kafka:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/kafka">-->
+        <!--<artifact id="${project.groupId}:presto-kafka:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
-    <artifactSet to="plugin/kudu">
-        <artifact id="${project.groupId}:presto-kudu:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/kudu">-->
+        <!--<artifact id="${project.groupId}:presto-kudu:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
     <artifactSet to="plugin/atop">
         <artifact id="${project.groupId}:presto-atop:zip:${project.version}">
@@ -122,11 +122,11 @@
         </artifact>
     </artifactSet>
 
-    <artifactSet to="plugin/ml">
-        <artifact id="${project.groupId}:presto-ml:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/ml">-->
+        <!--<artifact id="${project.groupId}:presto-ml:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
     <artifactSet to="plugin/geospatial">
         <artifact id="${project.groupId}:presto-geospatial:zip:${project.version}">
@@ -134,23 +134,23 @@
         </artifact>
     </artifactSet>
 
-    <artifactSet to="plugin/mysql">
-        <artifact id="${project.groupId}:presto-mysql:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/mysql">-->
+        <!--<artifact id="${project.groupId}:presto-mysql:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
-    <artifactSet to="plugin/phoenix">
-        <artifact id="${project.groupId}:presto-phoenix:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/phoenix">-->
+        <!--<artifact id="${project.groupId}:presto-phoenix:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
-    <artifactSet to="plugin/postgresql">
-        <artifact id="${project.groupId}:presto-postgresql:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/postgresql">-->
+        <!--<artifact id="${project.groupId}:presto-postgresql:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
     <artifactSet to="plugin/redshift">
         <artifact id="${project.groupId}:presto-redshift:zip:${project.version}">
@@ -158,11 +158,11 @@
         </artifact>
     </artifactSet>
 
-    <artifactSet to="plugin/sqlserver">
-        <artifact id="${project.groupId}:presto-sqlserver:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/sqlserver">-->
+        <!--<artifact id="${project.groupId}:presto-sqlserver:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
     <artifactSet to="plugin/raptor">
         <artifact id="${project.groupId}:presto-raptor-legacy:zip:${project.version}">
@@ -170,23 +170,23 @@
         </artifact>
     </artifactSet>
 
-    <artifactSet to="plugin/redis">
-        <artifact id="${project.groupId}:presto-redis:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/redis">-->
+        <!--<artifact id="${project.groupId}:presto-redis:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
-    <artifactSet to="plugin/clickhouse">
-        <artifact id="${project.groupId}:presto-clickhouse:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/clickhouse">-->
+        <!--<artifact id="${project.groupId}:presto-clickhouse:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
-    <artifactSet to="plugin/tpch">
-        <artifact id="${project.groupId}:presto-tpch:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/tpch">-->
+        <!--<artifact id="${project.groupId}:presto-tpch:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
     <artifactSet to="plugin/tpcds">
         <artifact id="${project.groupId}:presto-tpcds:zip:${project.version}">
@@ -200,11 +200,11 @@
         </artifact>
     </artifactSet>
 
-    <artifactSet to="plugin/mongodb">
-        <artifact id="${project.groupId}:presto-mongodb:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/mongodb">-->
+        <!--<artifact id="${project.groupId}:presto-mongodb:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
     <artifactSet to="plugin/localfile">
         <artifact id="${project.groupId}:presto-local-file:zip:${project.version}">
@@ -224,17 +224,17 @@
         </artifact>
     </artifactSet>
 
-    <artifactSet to="plugin/presto-elasticsearch">
-        <artifact id="${project.groupId}:presto-elasticsearch:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/presto-elasticsearch">-->
+        <!--<artifact id="${project.groupId}:presto-elasticsearch:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
-    <artifactSet to="plugin/google-sheets">
-        <artifact id="${project.groupId}:presto-google-sheets:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/google-sheets">-->
+        <!--<artifact id="${project.groupId}:presto-google-sheets:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
     <artifactSet to="plugin/presto-kinesis">
         <artifact id="${project.groupId}:presto-kinesis:zip:${project.version}">

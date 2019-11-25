@@ -1,9 +1,38 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.prestosql.sql.analyzer;
 
-import io.prestosql.spi.type.*;
+import io.prestosql.spi.type.BigintType;
+import io.prestosql.spi.type.BooleanType;
+import io.prestosql.spi.type.DateType;
+import io.prestosql.spi.type.DecimalType;
+import io.prestosql.spi.type.DoubleType;
+import io.prestosql.spi.type.IntegerType;
+import io.prestosql.spi.type.SmallintType;
+import io.prestosql.spi.type.TimestampType;
+import io.prestosql.spi.type.TinyintType;
+import io.prestosql.spi.type.Type;
+import io.prestosql.spi.type.VarcharType;
 import org.testng.annotations.Test;
 
-public class TestTypeConversion {
+import static io.prestosql.spi.StandardErrorCode.COLUMN_NOT_FOUND;
+import static io.prestosql.spi.StandardErrorCode.EXPRESSION_NOT_IN_DISTINCT;
+import static io.prestosql.spi.StandardErrorCode.FUNCTION_NOT_AGGREGATE;
+import static io.prestosql.spi.StandardErrorCode.TYPE_MISMATCH;
+
+@Test(singleThreaded = true)
+public class TestTypeConversion extends AbstractTestTypeConversion {
     private static final TypeConversion tc = new TypeConversion();
     private static final Type booleanType = BooleanType.BOOLEAN;
     private static final Type tinyType = TinyintType.TINYINT;
@@ -62,5 +91,16 @@ public class TestTypeConversion {
         assert (tc.stringAndValueType(intType, intType) == null);
         assert (tc.stringAndValueType(null, intType) == null);
         assert (tc.stringAndValueType(null, varcharType) == null);
+    }
+
+    @Test
+    public void testComparisonForBoolean()
+    {
+        analyzeHive("select 1=true");
+        analyzeHive("select 1!=false");
+        analyzeHive("select 0>true");
+        analyzeHive("select 0<true");
+        analyzeHive("select 1>=false");
+        analyzeHive("select 1<false");
     }
 }

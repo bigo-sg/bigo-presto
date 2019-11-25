@@ -205,6 +205,17 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitAliasedRelation(SqlBaseParser.AliasedRelationContext ctx) {
+        if (ctx.relation() != null) {
+            Relation relation = (Relation) visit(ctx.relation());
+
+            Identifier alias = null;
+            if (ctx.tableAlias() != null) {
+                alias = (Identifier) visit(ctx.tableAlias());
+            }
+
+            return new AliasedRelation(getLocation(ctx), relation, alias, null);
+        }
+
         return super.visitAliasedRelation(ctx);
     }
 

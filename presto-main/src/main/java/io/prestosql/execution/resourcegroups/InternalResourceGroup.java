@@ -994,7 +994,7 @@ public class InternalResourceGroup
 
         public synchronized void updateGroupsAndProcessQueuedQueries()
         {
-            log.info("pengg: updateGroupsAndProcessQueuedQueries");
+            //log.info("pengg: updateGroupsAndProcessQueuedQueries");
             updateResourceUsageAndGetDelta();
 
             while (internalStartNext()) {

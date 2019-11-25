@@ -189,7 +189,7 @@ public final class InternalResourceGroupManager<C>
 
     private void refreshAndStartQueries()
     {
-        log.info("pengg: refreshAndStartQueries");
+        //log.info("pengg: refreshAndStartQueries");
 
         long nanoTime = System.nanoTime();
         long elapsedSeconds = NANOSECONDS.toSeconds(nanoTime - lastCpuQuotaGenerationNanos.get());

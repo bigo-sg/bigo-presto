@@ -34,4 +34,12 @@ public class UnsupportedSQLs extends SQLTester {
 
         runHiveSQL(sql);
     }
+
+    @Test(expectedExceptions = ParsingException.class)
+    public void loadDataShouldThrowException()
+    {
+        String sql = "load data inpath '/directory-path/file.csv' into tbl";
+
+        runHiveSQL(sql);
+    }
 }

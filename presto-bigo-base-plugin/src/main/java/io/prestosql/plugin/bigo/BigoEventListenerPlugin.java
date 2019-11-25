@@ -40,6 +40,7 @@ import io.prestosql.plugin.bigo.udf.ShaFunction;
 import io.prestosql.plugin.bigo.udf.ShiftLeftFunction;
 import io.prestosql.plugin.bigo.udf.ShiftRightFunction;
 import io.prestosql.plugin.bigo.udf.ShiftRightUnsignedFunction;
+import io.prestosql.plugin.bigo.udf.SubstringIndexFunction;
 import io.prestosql.plugin.bigo.udf.UnBase64;
 import io.prestosql.plugin.bigo.udf.UnHexFunction;
 import io.prestosql.spi.Plugin;
@@ -91,6 +92,7 @@ public class BigoEventListenerPlugin
                 .add(ConcatWsFunction.class)
                 .add(BigoIsAVFeature.class)
                 .add(UnBase64.class)
+                .add(SubstringIndexFunction.class)
                 .build();
     }
 }

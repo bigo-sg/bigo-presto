@@ -507,6 +507,19 @@ public class ExpressionAnalyzer
                 if (leftType == null || rightType == null) {
                     return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
                 }
+
+                List<String>  canConvert2Boolean= Arrays.asList(StandardTypes.TINYINT, StandardTypes.SMALLINT,
+                        StandardTypes.INTEGER, StandardTypes.BIGINT, StandardTypes.DOUBLE, StandardTypes.DECIMAL);
+
+                if (leftType.getTypeSignature().getBase().equals(StandardTypes.BOOLEAN)
+                        && canConvert2Boolean.contains(rightType.getTypeSignature().getBase())) {
+                    node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(rightType)));
+                }
+                else if (canConvert2Boolean.contains(leftType.getTypeSignature().getBase())
+                        && rightType.getTypeSignature().getBase().equals(StandardTypes.BOOLEAN)){
+                    node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(leftType)));
+                }
+
                 if (tc.stringAndValueType(leftType, rightType) == leftType) {
                     if (rightType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
                         node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(BigintType.BIGINT)));

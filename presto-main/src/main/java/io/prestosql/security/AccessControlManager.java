@@ -835,7 +835,7 @@ public class AccessControlManager
         @Override
         public void checkCanSetSystemSessionProperty(SystemSecurityContext context, String propertyName)
         {
-            throw new PrestoException(SERVER_STARTING_UP, "Presto server is still initializing");
+//            throw new PrestoException(SERVER_STARTING_UP, "Presto server is still initializing");
         }
 
         @Override

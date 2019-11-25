@@ -89,7 +89,7 @@ public final class Announcer
             // announce immediately, if discovery is running
             ListenableFuture<Duration> announce = announce(System.nanoTime(), new Duration(0, SECONDS));
             try {
-                announce.get(30, SECONDS);
+                announce.get(15, SECONDS);
             }
             catch (Exception ignored) {
             }
@@ -155,8 +155,8 @@ public final class Announcer
                 errorBackOff.success();
 
                 // wait 80% of the suggested delay
-                expectedDelay = new Duration(expectedDelay.toMillis() * 0.8, MILLISECONDS);
-                log.debug("Service announcement succeeded after %s. Next request will happen within %s", Duration.nanosSince(requestStart), expectedDelay);
+                expectedDelay = new Duration(expectedDelay.toMillis() * 0.5, MILLISECONDS);
+                log.info("pengg: Service announcement succeeded after %s. Next request will happen within %s", Duration.nanosSince(requestStart), expectedDelay);
 
                 scheduleNextAnnouncement(expectedDelay);
             }

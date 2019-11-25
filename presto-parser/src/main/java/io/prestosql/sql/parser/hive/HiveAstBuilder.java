@@ -150,6 +150,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return new RenameTable(getLocation(ctx), getQualifiedName(ctx.from), getQualifiedName(ctx.to));
     }
 
+    @Override
+    public Node visitLoadData(SqlBaseParser.LoadDataContext ctx) {
+        throw parseError("Presto do NOT support load data syntax, please using hive", ctx);
+    }
+
     @Override public Node visitTableProperty(SqlBaseParser.TablePropertyContext ctx)
     {
         Expression value = null;

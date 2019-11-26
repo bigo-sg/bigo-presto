@@ -29,7 +29,6 @@ import static io.prestosql.plugin.bigo.udf.BigoDateTimeFunctions.unixTimestamp;
 import static org.testng.Assert.*;
 
 public class TestBigoDateTimeFunctions {
-
     @Test
     public void testDateAdd() {
         String output = BigoDateTimeFunctions.dateAdd(utf8Slice("2019-01-01"), 10).toStringUtf8();
@@ -220,5 +219,22 @@ public class TestBigoDateTimeFunctions {
         Assert.equals(res6, utf8Slice("2019-01-01"));
         Assert.equals(res7, utf8Slice("2019-01-01"));
         Assert.equals(res8, utf8Slice("2019-01-01"));
+    }
+
+    @Test
+    public void testDateFormat()
+    {
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("Y")).toStringUtf8(), "2019");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("y")).toStringUtf8(), "2019");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("M")).toStringUtf8(), "11");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("d")).toStringUtf8(), "22");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("H")).toStringUtf8(), "12");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("m")).toStringUtf8(), "13");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("s")).toStringUtf8(), "14");
+
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("Y")).toStringUtf8(), "2019");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("y")).toStringUtf8(), "2019");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("M")).toStringUtf8(), "11");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("d")).toStringUtf8(), "22");
     }
 }

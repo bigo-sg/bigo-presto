@@ -214,6 +214,9 @@ public class ExpressionAnalyzer
             StandardTypes.INTEGER, StandardTypes.BIGINT, StandardTypes.DECIMAL);
     private static final Logger LOG = Logger.get(ExpressionAnalyzer.class);
 
+    private static final List<String>  canConvertBooleanList = Arrays.asList(StandardTypes.TINYINT, StandardTypes.SMALLINT,
+            StandardTypes.INTEGER, StandardTypes.BIGINT, StandardTypes.DOUBLE, StandardTypes.DECIMAL);
+
     public ExpressionAnalyzer(
             Metadata metadata,
             AccessControl accessControl,
@@ -519,14 +522,11 @@ public class ExpressionAnalyzer
                     return getOperator(context, node, operatorType, node.getLeft(), node.getRight());
                 }
 
-                List<String>  canConvert2Boolean= Arrays.asList(StandardTypes.TINYINT, StandardTypes.SMALLINT,
-                        StandardTypes.INTEGER, StandardTypes.BIGINT, StandardTypes.DOUBLE, StandardTypes.DECIMAL);
-
                 if (leftType.getTypeSignature().getBase().equals(StandardTypes.BOOLEAN)
-                        && canConvert2Boolean.contains(rightType.getTypeSignature().getBase())) {
+                        && canConvertBooleanList.contains(rightType.getTypeSignature().getBase())) {
                     node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(rightType)));
                 }
-                else if (canConvert2Boolean.contains(leftType.getTypeSignature().getBase())
+                else if (canConvertBooleanList.contains(leftType.getTypeSignature().getBase())
                         && rightType.getTypeSignature().getBase().equals(StandardTypes.BOOLEAN)){
                     node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(leftType)));
                 }

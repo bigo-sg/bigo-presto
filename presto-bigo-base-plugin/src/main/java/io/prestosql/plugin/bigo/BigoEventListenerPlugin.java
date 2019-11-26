@@ -32,6 +32,7 @@ import io.prestosql.plugin.bigo.udf.ConcatWsFunction;
 import io.prestosql.plugin.bigo.udf.DecodeFunction;
 import io.prestosql.plugin.bigo.udf.EncodeFunction;
 import io.prestosql.plugin.bigo.udf.HexFunction;
+import io.prestosql.plugin.bigo.udf.IsNullFunction;
 import io.prestosql.plugin.bigo.udf.MD5Function;
 import io.prestosql.plugin.bigo.udf.MapSizeFunction;
 import io.prestosql.plugin.bigo.udf.PosModFunction;
@@ -93,6 +94,7 @@ public class BigoEventListenerPlugin
                 .add(BigoIsAVFeature.class)
                 .add(UnBase64.class)
                 .add(SubstringIndexFunction.class)
+                .add(IsNullFunction.class)
                 .build();
     }
 }

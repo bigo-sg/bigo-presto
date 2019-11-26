@@ -57,7 +57,8 @@ public class BigoDateTimeFunctions {
     private static final String dateFormat1 = "yyyy-MM-dd HH:mm:ss";
     private static final String dateFormat2 = "yyyy-MM-dd";
     private static final String dateFormat3 = "HH:mm:ss";
-    private static final ISOChronology CHRONOLOGY = ISOChronology.getInstance(DateTimeZone.forTimeZone(TimeZone.getTimeZone("Asia/Shanghai")));
+    private static final String TIME_ZONE_LOCAL = "Asia/Shanghai";
+    private static final ISOChronology CHRONOLOGY = ISOChronology.getInstance(DateTimeZone.forTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL)));
     private static final ISOChronology UTC_CHRONOLOGY = ISOChronology.getInstanceUTC();
 
     @Description("Returns the date that is num_days after start_date.")
@@ -107,7 +108,7 @@ public class BigoDateTimeFunctions {
     @SqlType(StandardTypes.BIGINT)
     public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice sliceTime) {
         SimpleDateFormat df = new SimpleDateFormat(dateFormat1);
-        df.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+        df.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
         try {
             Date date = df.parse(sliceTime.toStringUtf8());
             return toUnixTime(date.getTime());
@@ -121,7 +122,7 @@ public class BigoDateTimeFunctions {
     @SqlType(StandardTypes.BIGINT)
     public static long unixTimestamp(@SqlType(StandardTypes.VARCHAR) Slice sliceTime, @SqlType(StandardTypes.VARCHAR) Slice sliceFormat) {
         SimpleDateFormat df = new SimpleDateFormat(sliceFormat.toStringUtf8());
-        df.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+        df.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
         try {
             Date date = df.parse(sliceTime.toStringUtf8());
             return toUnixTime(date.getTime());
@@ -658,8 +659,8 @@ public class BigoDateTimeFunctions {
     {
         SimpleDateFormat formatter1 = new SimpleDateFormat(dateFormat1);
         SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat2);
-        formatter1.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
-        formatter2.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+        formatter1.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
+        formatter2.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
 
         Calendar calendar = Calendar.getInstance();
         try {
@@ -748,5 +749,65 @@ public class BigoDateTimeFunctions {
         catch (IllegalArgumentException e) {
             throw new PrestoException(INVALID_FUNCTION_ARGUMENT, e);
         }
+    }
+
+    @ScalarFunction("date_format")
+    @SqlType(StandardTypes.VARCHAR)
+    @SqlNullable
+    public static Slice dateFormat(
+            @SqlType(StandardTypes.VARCHAR) Slice slice,
+            @SqlType(StandardTypes.VARCHAR) Slice format) {
+        if (slice == null || format == null) {
+            return null;
+        }
+
+        SimpleDateFormat df1 = new SimpleDateFormat(dateFormat1);
+        SimpleDateFormat df2 = new SimpleDateFormat(dateFormat2);
+        df1.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
+        df2.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
+
+        String str = format.toStringUtf8();
+        int res;
+        try {
+            Date date = df1.parse(slice.toStringUtf8());
+            calendar.setTime(date);
+        } catch (Exception e) {
+            try {
+                Date date = df2.parse(slice.toStringUtf8());
+                calendar.setTime(date);
+            } catch (ParseException ex) {
+                return null;
+            }
+        }
+
+        switch(str) {
+            case "y":
+            case "Y":
+                res = calendar.get(Calendar.YEAR);
+                break;
+            case "M":
+                res = calendar.get(Calendar.MONTH) + 1;
+                break;
+            case "d":
+                res = calendar.get(Calendar.DAY_OF_MONTH);
+                break;
+            case "H":
+            case "h":
+                res = calendar.get(Calendar.HOUR_OF_DAY);
+                break;
+            case "m":
+                res = calendar.get(Calendar.MINUTE);
+                break;
+            case "s":
+                res = calendar.get(Calendar.SECOND);
+                break;
+            default :
+                res = -1;
+        }
+
+        return utf8Slice(String.valueOf(res));
     }
 }

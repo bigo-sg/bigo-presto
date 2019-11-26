@@ -97,6 +97,14 @@ public class BigoTypeConversionFunctions {
         return (long)(int)n;
     }
 
+    @Description("Returns the int value.")
+    @ScalarFunction("int")
+    @SqlType(StandardTypes.BIGINT)
+    public static long intFunctionBoolean(@SqlType(StandardTypes.BOOLEAN) boolean b)
+    {
+        return b ? 1 : 0;
+    }
+
     // convert to double
     @Description("Returns the double value.")
     @ScalarFunction("double")
@@ -190,6 +198,14 @@ public class BigoTypeConversionFunctions {
     public static Double doubleFunction(@SqlType(StandardTypes.DOUBLE) double n)
     {
         return n;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("double")
+    @SqlType(StandardTypes.DOUBLE)
+    public static double doubleFunctionBoolean(@SqlType(StandardTypes.BOOLEAN) boolean b)
+    {
+        return b ? 1.0 : 0;
     }
 
     // convert to string.
@@ -400,5 +416,13 @@ public class BigoTypeConversionFunctions {
     public static Long bigintFunctionBigint(@SqlType(StandardTypes.BIGINT) long value)
     {
         return value;
+    }
+
+    @Description("Returns the int value.")
+    @ScalarFunction("bigint")
+    @SqlType(StandardTypes.BIGINT)
+    public static long bigintFunctionBoolean(@SqlType(StandardTypes.BOOLEAN) boolean b)
+    {
+        return b ? 1 : 0;
     }
 }

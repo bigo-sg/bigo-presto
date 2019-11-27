@@ -202,10 +202,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         Identifier tableAlias = (Identifier) visit(ctx.tableAlias());
         if (tableAlias == null) {
-            throw parseError("Missing table alias", ctx);
+            return child;
+        } else {
+            return new AliasedRelation(getLocation(ctx), child, tableAlias, null);
         }
-
-        return new AliasedRelation(getLocation(ctx), child, tableAlias, null);
     }
 
     @Override
@@ -213,12 +213,12 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         if (ctx.relation() != null) {
             Relation relation = (Relation) visit(ctx.relation());
 
-            Identifier alias = null;
-            if (ctx.tableAlias() != null) {
-                alias = (Identifier) visit(ctx.tableAlias());
+            Identifier tableAlias = (Identifier) visit(ctx.tableAlias());
+            if (tableAlias == null) {
+                return relation;
+            } else {
+                return new AliasedRelation(getLocation(ctx), relation, tableAlias, null);
             }
-
-            return new AliasedRelation(getLocation(ctx), relation, alias, null);
         }
 
         return super.visitAliasedRelation(ctx);

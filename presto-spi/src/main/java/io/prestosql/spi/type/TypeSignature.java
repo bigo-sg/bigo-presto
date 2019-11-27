@@ -104,9 +104,31 @@ public class TypeSignature
         }
 
         StringBuilder typeName = new StringBuilder(base);
-        typeName.append("(").append(json ? parameters.get(0).jsonValue() : parameters.get(0).toString());
+        if (!base.equals(StandardTypes.ROW)) {
+            typeName.append("(").append(json ? parameters.get(0).jsonValue() : parameters.get(0).toString());
+        } else {
+            String parameterString = parameters.get(0).toString();
+            int firstSpace = parameterString.indexOf(' ');
+            if (firstSpace != -1) {
+                String name = "\"" + parameterString.substring(0, firstSpace) + "\" " + parameterString.substring(firstSpace + 1);
+                typeName.append("(").append(json ? parameters.get(0).jsonValue() : name);
+            } else {
+                typeName.append("(").append(json ? parameters.get(0).jsonValue() : parameters.get(0).toString());
+            }
+        }
         for (int i = 1; i < parameters.size(); i++) {
-            typeName.append(",").append(json ? parameters.get(i).jsonValue() : parameters.get(i).toString());
+            if (!base.equals(StandardTypes.ROW)) {
+                typeName.append(",").append(json ? parameters.get(i).jsonValue() : parameters.get(i).toString());
+            } else {
+                String parameterString = parameters.get(i).toString();
+                int firstSpace = parameterString.indexOf(' ');
+                if (firstSpace != -1) {
+                    String name = "\"" + parameterString.substring(0, firstSpace) + "\" " + parameterString.substring(firstSpace + 1);
+                    typeName.append(",").append(json ? parameters.get(i).jsonValue() : name);
+                } else {
+                    typeName.append(",").append(json ? parameters.get(i).jsonValue() : parameters.get(i).toString());
+                }
+            }
         }
         typeName.append(")");
         return typeName.toString();

@@ -21,6 +21,7 @@ import io.prestosql.spi.function.LiteralParameters;
 import io.prestosql.spi.function.ScalarFunction;
 import io.prestosql.spi.function.SqlNullable;
 import io.prestosql.spi.function.SqlType;
+import io.prestosql.spi.function.TypeParameter;
 import io.prestosql.spi.type.StandardTypes;
 
 import java.sql.Timestamp;
@@ -766,11 +767,42 @@ public class BigoDateTimeFunctions {
         df1.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
         df2.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
+        SimpleDateFormat fm = new SimpleDateFormat(format.toStringUtf8());
+        fm.setTimeZone(TimeZone.getTimeZone(TIME_ZONE_LOCAL));
 
-        String str = format.toStringUtf8();
-        int res;
+        Date date;
+        try {
+            date = df1.parse(slice.toStringUtf8());
+        } catch (Exception e) {
+            try {
+                date = df2.parse(slice.toStringUtf8());
+            } catch (ParseException ex) {
+                return null;
+            }
+        }
+
+        return utf8Slice(fm.format(date));
+    }
+
+    @ScalarFunction("to_utc_timestamp")
+    @SqlType(StandardTypes.VARCHAR)
+    @SqlNullable
+    public static Slice toUTCTimestamp(
+            @SqlType(StandardTypes.VARCHAR) Slice slice,
+            @SqlType(StandardTypes.VARCHAR) Slice timezone) {
+        if (slice == null || timezone == null) {
+            return null;
+        }
+        SimpleDateFormat df1 = new SimpleDateFormat(dateFormat1);
+        SimpleDateFormat df2 = new SimpleDateFormat(dateFormat2);
+        df1.setTimeZone(TimeZone.getTimeZone(timezone.toStringUtf8()));
+        df2.setTimeZone(TimeZone.getTimeZone(timezone.toStringUtf8()));
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
+        SimpleDateFormat formatter = new SimpleDateFormat(dateFormat1);
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+
         try {
             Date date = df1.parse(slice.toStringUtf8());
             calendar.setTime(date);
@@ -782,32 +814,52 @@ public class BigoDateTimeFunctions {
                 return null;
             }
         }
+        return utf8Slice(formatter.format(calendar.getTime()));
+    }
 
-        switch(str) {
-            case "y":
-            case "Y":
-                res = calendar.get(Calendar.YEAR);
-                break;
-            case "M":
-                res = calendar.get(Calendar.MONTH) + 1;
-                break;
-            case "d":
-                res = calendar.get(Calendar.DAY_OF_MONTH);
-                break;
-            case "H":
-            case "h":
-                res = calendar.get(Calendar.HOUR_OF_DAY);
-                break;
-            case "m":
-                res = calendar.get(Calendar.MINUTE);
-                break;
-            case "s":
-                res = calendar.get(Calendar.SECOND);
-                break;
-            default :
-                res = -1;
+    @ScalarFunction("to_utc_timestamp")
+    @SqlType(StandardTypes.VARCHAR)
+    @TypeParameter("T")
+    @SqlNullable
+    public static Slice toUTCTimestampLong(
+            @SqlType("T") long timestamp,
+            @SqlType(StandardTypes.VARCHAR) Slice timezone) {
+        if (timezone == null) {
+            return null;
         }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
+        SimpleDateFormat formatter = new SimpleDateFormat(dateFormat1);
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        return utf8Slice(String.valueOf(res));
+        try {
+            calendar.setTimeInMillis(timestamp);
+        } catch (Exception e) {
+            return null;
+        }
+        return utf8Slice(formatter.format(calendar.getTime()));
+    }
+
+    @ScalarFunction("to_utc_timestamp")
+    @SqlType(StandardTypes.VARCHAR)
+    @TypeParameter("T")
+    @SqlNullable
+    public static Slice toUTCTimestampDouble(
+            @SqlType("T") double timestamp,
+            @SqlType(StandardTypes.VARCHAR) Slice timezone) {
+        if (timezone == null) {
+            return null;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
+        SimpleDateFormat formatter = new SimpleDateFormat(dateFormat1);
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        try {
+            calendar.setTimeInMillis((long)timestamp*1000);
+        } catch (Exception e) {
+            return null;
+        }
+        return utf8Slice(formatter.format(calendar.getTime()));
     }
 }

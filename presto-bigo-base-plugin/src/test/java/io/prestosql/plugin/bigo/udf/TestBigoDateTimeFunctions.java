@@ -26,7 +26,8 @@ import java.math.BigDecimal;
 
 import static io.airlift.slice.Slices.utf8Slice;
 import static io.prestosql.plugin.bigo.udf.BigoDateTimeFunctions.unixTimestamp;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 public class TestBigoDateTimeFunctions {
     @Test
@@ -224,6 +225,10 @@ public class TestBigoDateTimeFunctions {
     @Test
     public void testDateFormat()
     {
+        assertNull(BigoDateTimeFunctions.dateFormat(null,null));
+        assertNull(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"),null));
+        assertNull(BigoDateTimeFunctions.dateFormat(null, utf8Slice("test")));
+
         assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("Y")).toStringUtf8(), "2019");
         assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("y")).toStringUtf8(), "2019");
         assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("M")).toStringUtf8(), "11");
@@ -231,10 +236,34 @@ public class TestBigoDateTimeFunctions {
         assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("H")).toStringUtf8(), "12");
         assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("m")).toStringUtf8(), "13");
         assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("s")).toStringUtf8(), "14");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("YYYY")).toStringUtf8(), "2019");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("YYYYMM")).toStringUtf8(), "201911");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("YYYYMMdd")).toStringUtf8(), "20191122");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22 12:13:14"), utf8Slice("YYYY-MM-dd")).toStringUtf8(), "2019-11-22");
 
         assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("Y")).toStringUtf8(), "2019");
         assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("y")).toStringUtf8(), "2019");
         assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("M")).toStringUtf8(), "11");
         assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("d")).toStringUtf8(), "22");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("YYYY")).toStringUtf8(), "2019");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("YYYYMM")).toStringUtf8(), "201911");
+        assertEquals(BigoDateTimeFunctions.dateFormat(utf8Slice("2019-11-22"), utf8Slice("YYYYMMdd")).toStringUtf8(), "20191122");
+    }
+
+    @Test
+    public void testToUTCTimestamp()
+    {
+        assertNull(BigoDateTimeFunctions.toUTCTimestamp(null,null));
+        assertNull(BigoDateTimeFunctions.toUTCTimestamp(utf8Slice("1970-01-30"),null));
+        assertNull(BigoDateTimeFunctions.toUTCTimestamp(null, utf8Slice("PST")));
+
+        assertEquals(BigoDateTimeFunctions.toUTCTimestamp(utf8Slice("1970-01-30 16:00:00"), utf8Slice("PST")), utf8Slice("1970-01-31 00:00:00"));
+        assertEquals(BigoDateTimeFunctions.toUTCTimestamp(utf8Slice("1970-01-31 16:00:00"), utf8Slice("PST")), utf8Slice("1970-02-01 00:00:00"));
+
+        assertEquals(BigoDateTimeFunctions.toUTCTimestamp(utf8Slice("1970-01-30"), utf8Slice("PST")), utf8Slice("1970-01-30 08:00:00"));
+        assertEquals(BigoDateTimeFunctions.toUTCTimestamp(utf8Slice("1970-01-30 16:00:00"), utf8Slice("test")), utf8Slice("1970-01-30 16:00:00"));
+
+        assertEquals(BigoDateTimeFunctions.toUTCTimestampLong(2592000000L, utf8Slice("PST")).toStringUtf8(), "1970-01-31 00:00:00");
+        assertEquals(BigoDateTimeFunctions.toUTCTimestampDouble(2592000.0, utf8Slice("PST")).toStringUtf8(), "1970-01-31 00:00:00");
     }
 }

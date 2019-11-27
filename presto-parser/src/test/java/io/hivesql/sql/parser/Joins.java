@@ -121,8 +121,22 @@ public class Joins extends SQLTester {
                 "FROM\n" +
                 "  (SELECT qq\n" +
                 "   FROM d.b\n" +
-                "   WHERE app_install_day='2019-11-21') t1\n" +
+                "   WHERE cc='2019-11-21') t1\n" +
                 "LEFT JOIN (e.a) t3 ON t1.qq=t3.qq";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testJoinsAliasedRelationWithoutAlias()
+    {
+        String sql = "" +
+                "SELECT *\n" +
+                "FROM   (SELECT ccc\n" +
+                "        FROM   ta1 \n" +
+                "       ) \n" +
+                "WHERE  ccc IN (SELECT ff \n" +
+                "                       FROM ta2 where c1 > 10) ";
 
         checkASTNode(sql);
     }

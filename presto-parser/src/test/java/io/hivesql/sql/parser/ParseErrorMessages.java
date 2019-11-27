@@ -60,46 +60,6 @@ public class ParseErrorMessages extends SQLTester {
         }
     }
 
-
-    @Test
-    public void testMissingTableAlias()
-    {
-        String sql = "" +
-                "select\n" +
-                "t3.uid,t3.hdid,t3.os,t3.os_version,t3.model,t3.resolution,t3.client_version,t3.sdk_version,t3.isp,t3.net,t3.appsflyer_id,t3.day\n" +
-                ",t4.gender,t4.birthday\n" +
-                "from\n" +
-                "(\n" +
-                "  select uid,hdid,os,os_version,model,resolution,client_version,sdk_version,isp,net,appsflyer_id,day\n" +
-                "  from\n" +
-                "  (\n" +
-                "    select uid,hdid,os,os_version,model,resolution,client_version,sdk_version,isp,net,appsflyer_id,day\n" +
-                "    --,row_number()over (partition by uid order by day desc) as rank_over\n" +
-                "    from like_dw_com.dwd_like_com_dim_snapshot_user_device\n" +
-                "    where country = 'IN'\n" +
-                " -- 这个就是最近的一天的值\n" +
-                " and day = '2019-08-12'\n" +
-                "  )\n" +
-                "  --where rank_over=1\n" +
-                ") t3\n" +
-                "join\n" +
-                "(\n" +
-                "  SELECT t1.uid,t1.gender,t1.birthday\n" +
-                "  from like_dw_com.dwd_like_com_dim_uid_basic_info t1\n" +
-                "  join tmp.guoyanyan_0813_only_push t2\n" +
-                "  on t1.uid = t2.uid\n" +
-                ") t4\n" +
-                "on t3.uid = t4.uid" +
-                "";
-
-        try {
-            runHiveSQL(sql);
-            Assert.fail("sql: " + sql + " should throw exception");
-        }catch (ParsingException e) {
-            Assert.assertTrue(e.getMessage().contains("Missing table alias"));
-        }
-    }
-
     @Test
     public void testCrossJoinUnnestInHiveMode()
     {

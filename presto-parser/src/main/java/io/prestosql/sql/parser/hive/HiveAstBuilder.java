@@ -888,10 +888,21 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                         }
                         parent = singleColumn;
                     }
-                    List<SelectItem> selectItems = ((QuerySpecification) query.getQueryBody()).getSelect().getSelectItems();
-                    for (int i = 0; i < singleColumns.size(); ++i) {
-                        if (singleColumns.get(i).getAlias().isPresent()) {
-                            selectItems.add(selectItems.size() - dynamicPartitionCount, singleColumns.get(i));
+                    List<QuerySpecification> querySpecifications = new ArrayList<>();
+                    if (query.getQueryBody() instanceof Union) {
+                        Union union = (Union) query.getQueryBody();
+                        for (Relation relation: union.getRelations()) {
+                            querySpecifications.add((QuerySpecification) relation);
+                        }
+                    } else if (query.getQueryBody() instanceof QuerySpecification) {
+                        querySpecifications.add((QuerySpecification) query.getQueryBody());
+                    }
+                    for (QuerySpecification querySpecification: querySpecifications) {
+                        List<SelectItem> selectItems = querySpecification.getSelect().getSelectItems();
+                        for (int i = 0; i < singleColumns.size(); ++i) {
+                            if (singleColumns.get(i).getAlias().isPresent()) {
+                                selectItems.add(selectItems.size() - dynamicPartitionCount, singleColumns.get(i));
+                            }
                         }
                     }
                 }

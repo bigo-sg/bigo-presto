@@ -7,6 +7,8 @@ import sg.bigo.ranger.PrestoAccessType;
 import sg.bigo.ranger.RangerUtils;
 import sg.bigo.utils.FileUtils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -247,6 +249,12 @@ public class TestRangerUtils {
         List<String> g1 = new ArrayList<>();
         g1.add("unit_group");
         Assert.assertEquals(g, g1);
+    }
+
+    @Test
+    public void testEncodeUser() throws UnsupportedEncodingException {
+        Assert.assertEquals(URLEncoder.encode("Erwin Lai", "UTF-8"), "Erwin+Lai");
+        Assert.assertEquals(URLEncoder.encode("test", "UTF-8"), "test");
     }
 
     public String getResourceContent(String path) {

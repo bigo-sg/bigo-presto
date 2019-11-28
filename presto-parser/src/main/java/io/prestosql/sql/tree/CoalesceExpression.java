@@ -25,7 +25,7 @@ import static java.util.Objects.requireNonNull;
 public class CoalesceExpression
         extends Expression
 {
-    private List<Expression> operands;
+    private final List<Expression> operands;
 
     public CoalesceExpression(Expression first, Expression second, Expression... additional)
     {
@@ -57,10 +57,6 @@ public class CoalesceExpression
     public List<Expression> getOperands()
     {
         return operands;
-    }
-
-    public void setOperands(List<Expression> operands) {
-        this.operands = operands;
     }
 
     @Override

@@ -732,26 +732,8 @@ public class ExpressionAnalyzer
         @Override
         protected Type visitCoalesceExpression(CoalesceExpression node, StackableAstVisitorContext<Context> context)
         {
-            if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
-                List<Expression> concatArgList = new ArrayList<>();
-                Set<String> typeSet = newKeySet();
-
-                for (Expression expression : node.getOperands()) {
-                    Type expressionType = process(expression, context);
-                    typeSet.add(expressionType.getTypeSignature().getBase());
-                }
-
-                if (typeSet.size() > 1) {
-                    for (Expression expression : node.getOperands()) {
-                        concatArgList.add(new Cast(expression, TypeSignatureTranslator.toSqlType(VarcharType.VARCHAR)));
-                    }
-                    if (concatArgList.size() > 0) {
-                        node.setOperands(concatArgList);
-                    }
-                }
-            }
-
             Type type = coerceToSingleType(context, "All COALESCE operands must be the same type: %s", node.getOperands());
+
             return setExpressionType(node, type);
         }
 
@@ -1090,9 +1072,9 @@ public class ExpressionAnalyzer
             if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
                 String funcName = node.getName().toString();
                 // implicit type conversion for these function.
-                List<String> funcNameList1 = Arrays.asList("sum", "avg");
+                List<String> funcList = Arrays.asList("sum", "avg");
                 List<Expression> argList = new ArrayList<>();
-                if (funcNameList1.contains(funcName) && node.getArguments().size() > 0) {
+                if (funcList.contains(funcName) && node.getArguments().size() > 0) {
                     Type argType = process(node.getArguments().get(0), context);
                     if (argType.getTypeSignature().getBase().equals(StandardTypes.VARCHAR)) {
                         for (Expression expression : node.getArguments()) {
@@ -1117,7 +1099,8 @@ public class ExpressionAnalyzer
                     }
                     TypeConversion tc = new TypeConversion();
 
-                    if (typeSet.size() > 1 || (typeSet.size() == 1 && tc.isValueType(argType))) {
+                    if (typeSet.size() > 1
+                            || (typeSet.size() == 1 && tc.isValueType(argType))) {
                         for (Expression expression : node.getArguments()) {
                             concatArgList.add(new Cast(expression, TypeSignatureTranslator.toSqlType(VarcharType.VARCHAR)));
                         }

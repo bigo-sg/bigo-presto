@@ -37,4 +37,8 @@ public class TestOnlineBadCases extends SQLTester {
     public void testCase08() {
         runHiveSQLFromFile("hive/parser/cases/online-case-08.sql");
     }
+    @Test
+    public void testCase09() {
+        runHiveSQLFromFile("hive/parser/cases/online-case-09.sql");
+    }
 }

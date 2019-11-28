@@ -60,6 +60,14 @@ public class BasicSQLs extends SQLTester {
     @Test
     public void testSelectAllFrom()
     {
+        String sql = "SELECT * from tb1";
+
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSelectAllFrom1()
+    {
         String sql = "SELECT a, * from tb1";
 
         checkASTNode(sql);

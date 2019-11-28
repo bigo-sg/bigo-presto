@@ -659,7 +659,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitValueExpressionDefault(SqlBaseParser.ValueExpressionDefaultContext ctx) {
-        return super.visitValueExpressionDefault(ctx);
+         return super.visitValueExpressionDefault(ctx);
     }
 
     @Override
@@ -939,7 +939,18 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitStar(SqlBaseParser.StarContext ctx) {
-        return new StarExpression(getLocation(ctx), visitIfPresent(ctx.qualifiedName(), Identifier.class));
+        List<Identifier> identifiers = new ArrayList<>();
+        if (ctx.qualifiedName() != null) {
+
+            ctx.qualifiedName().identifier().stream().forEach(new Consumer<SqlBaseParser.IdentifierContext>() {
+                @Override
+                public void accept(SqlBaseParser.IdentifierContext identifierContext) {
+                    new Identifier(tryUnquote(identifierContext.getText()));
+                }
+            });
+            identifiers = visit(ctx.qualifiedName().identifier(), Identifier.class);
+        }
+        return new StarExpression(getLocation(ctx), identifiers);
     }
 
     @Override
@@ -959,9 +970,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 throw parseError("todo", ctx);
             }
 
-            if (starExpression.getIdentifier().isPresent()) {
+            if (starExpression.getIdentifiers().size() == 2) {
+                DereferenceExpression dereferenceExpression =
+                        new DereferenceExpression(starExpression.getIdentifiers().get(0),
+                                starExpression.getIdentifiers().get(1));
                 return new AllColumns(nodeLocation,
-                        Optional.of(starExpression.getIdentifier().get()), ImmutableList.of());
+                        Optional.of(dereferenceExpression), ImmutableList.of());
+            } else if (starExpression.getIdentifiers().size() == 1) {
+                return new AllColumns(nodeLocation,
+                        Optional.of(starExpression.getIdentifiers().get(0)), ImmutableList.of());
             } else {
                 return new AllColumns(nodeLocation, Optional.empty(), ImmutableList.of());
             }

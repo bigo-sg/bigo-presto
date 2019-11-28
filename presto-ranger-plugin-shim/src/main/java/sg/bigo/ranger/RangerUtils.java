@@ -158,7 +158,7 @@ public class RangerUtils {
         try {
             url = hostPrefix + "/service/xusers/users/userName/" + URLEncoder.encode(userName, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            log.warn("encode username failed for " + userName);
+            log.warn("encode username failed for " + userName, e);
             return new ArrayList<>();
         }
         String userInfo = getRangerData(url);

@@ -12,8 +12,11 @@ public abstract class SQLTester {
     private static ParsingOptions prestoParsingOptions = new ParsingOptions(ParsingOptions.DecimalLiteralTreatment.AS_DECIMAL);
 
     protected Node useHiveParser(String sql) {
-        return sqlParser.createStatement(sql, hiveParsingOptions);
+        Node node = sqlParser.createStatement(sql, hiveParsingOptions);
+        System.out.println(node);
+        return node;
     }
+
     protected Node usePrestoParser(String sql) {
         return sqlParser.createStatement(sql, prestoParsingOptions);
     }

@@ -23,6 +23,7 @@ import io.prestosql.sql.tree.ComparisonExpression;
 
 import static io.prestosql.spi.function.OperatorType.ADD;
 import static io.prestosql.spi.function.OperatorType.AMPERSAND;
+import static io.prestosql.spi.function.OperatorType.DIV;
 import static io.prestosql.spi.function.OperatorType.HAT;
 import static io.prestosql.spi.function.OperatorType.PIPE;
 import static io.prestosql.spi.function.OperatorType.TILDE;
@@ -78,6 +79,9 @@ public final class StandardFunctionResolution
                 break;
             case TILDE:
                 operatorType = TILDE;
+                break;
+            case DIV:
+                operatorType = DIV;
                 break;
             default:
                 throw new IllegalStateException("Unknown arithmetic operator: " + operator);

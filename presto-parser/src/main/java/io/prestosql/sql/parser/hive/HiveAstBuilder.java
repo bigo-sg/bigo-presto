@@ -122,12 +122,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         SqlBaseParser.ColTypeContext colTypeContext = ctx.colTypeList().colType(0);
-        String type = colTypeContext.dataType().getText();
-        if (type.contains("<") && type.contains(">")) {
-            type = colTypeTransformComplex(type);
-        } else {
-            type = colTypeTransformSimple(type);
-        }
         String comment = "";
         if (colTypeContext.COMMENT() != null) {
             comment = colTypeContext.STRING().getText()
@@ -356,12 +350,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Optional colComment = Optional.empty();
                     if (colTypeContext.COMMENT() != null) {
                         colComment = Optional.of(unquote(colTypeContext.COMMENT().getText()));
-                    }
-                    String type = colTypeContext.dataType().getText();
-                    if (type.contains("<") && type.contains(">")) {
-                        type = colTypeTransformComplex(type);
-                    } else {
-                        type = colTypeTransformSimple(type);
                     }
                     DataType dataType = (DataType) visit(colTypeContext.dataType());
                     TableElement tableElement = new ColumnDefinition(
@@ -1879,11 +1867,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         throw new IllegalArgumentException("Unsupported operator: " + token.getText());
     }
 
-    private QualifiedName getQualifiedName(Identifier identifier)
-    {
-        return QualifiedName.of(ImmutableList.of(identifier));
-    }
-
     private QualifiedName getQualifiedName(SqlBaseParser.TableIdentifierContext context)
     {
         List<Identifier> identifiers = new ArrayList<>();
@@ -1997,35 +1980,4 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 replace("\"", "").
                 replace("`", "");
     }
-
-    public static String colTypeTransformSimple(String hiveColType) {
-        return hiveColType
-                .toUpperCase()
-                .replace("INT", "INTEGER")
-                .replace("BIGINTEGER", "BIGINT")
-                .replace("FLOAT", "REAL")
-                .replace("STRING", "VARCHAR");
-    }
-
-    public static String colTypeTransformComplex(String hiveColType) {
-        return hiveColType
-                .toUpperCase()
-                .replaceAll("( )*STRUCT( )*<( )*", "ROW(")
-                .replaceAll("( )*MAP( )*<( )*", "MAP(")
-                .replaceAll("( )*ARRAY( )*<( )*", "ARRAY(")
-                .replaceAll("( )*>( )*", ")")
-                .replaceAll("( )*:( )*STRING( )*", " VARCHAR")
-                .replaceAll("( )*STRING( )*\\)", "VARCHAR)")
-                .replaceAll("\\(( )*STRING( )*", "(VARCHAR")
-                .replaceAll("( )*:( )*INT( )*", " INTEGER")
-                .replaceAll("\\(( )*INT( )*", "(INTEGER")
-                .replaceAll("INT( )*\\)", "INTEGER)")
-                .replace("BIGINTEGER", "BIGINT")
-                .replaceAll("( )*:( )*FLOAT( )*", " REAL")
-                .replaceAll("\\(( )*FLOAT( )*", "(REAL")
-                .replaceAll("FLOAT( )*\\)", "REAL)")
-                .replaceAll("`", "\"")
-                .replaceAll(":",  " ");
-    }
-
 }

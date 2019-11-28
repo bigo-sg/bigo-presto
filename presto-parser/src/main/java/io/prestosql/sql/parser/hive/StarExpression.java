@@ -11,45 +11,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.prestosql.sql.tree;
+package io.prestosql.sql.parser.hive;
 
+import io.prestosql.sql.tree.Expression;
+import io.prestosql.sql.tree.Identifier;
+import io.prestosql.sql.tree.Node;
+import io.prestosql.sql.tree.NodeLocation;
+
+import java.util.List;
 import java.util.Optional;
 
-public class NullLiteral
-    extends Literal
-{
-    public NullLiteral()
-    {
-        super(Optional.empty());
-    }
+public class StarExpression extends Expression {
+    private List<Identifier> identifiers;
 
-    public NullLiteral(NodeLocation location)
-    {
+    public StarExpression(NodeLocation location, List<Identifier> identifiers) {
         super(Optional.of(location));
+        this.identifiers = identifiers;
+    }
+
+    public List<Identifier> getIdentifiers() {
+        return identifiers;
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context)
-    {
-        return visitor.visitNullLiteral(this, context);
+    public List<? extends Node> getChildren() {
+        return null;
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return 0;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return true;
     }
 }

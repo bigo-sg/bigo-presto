@@ -25,7 +25,7 @@ import javax.inject.Singleton;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
-import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
+import com.google.inject.Scopes;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.prestosql.plugin.hive.metastore.cache.CachingHiveMetastore.cachingHiveMetastore;
@@ -39,9 +39,9 @@ public class CachingHiveMetastoreModule
     public void configure(Binder binder)
     {
         configBinder(binder).bindConfig(CachingHiveMetastoreConfig.class);
-        newOptionalBinder(binder, HiveMetastoreDecorator.class);
+        binder.bind(HiveMetastore.class).to(BigoCachingHiveMetastore.class).in(Scopes.SINGLETON);
         newExporter(binder).export(HiveMetastore.class)
-                .as(generator -> generator.generatedNameOf(CachingHiveMetastore.class));
+                .as(generator -> generator.generatedNameOf(BigoCachingHiveMetastore.class));
     }
 
     @Provides

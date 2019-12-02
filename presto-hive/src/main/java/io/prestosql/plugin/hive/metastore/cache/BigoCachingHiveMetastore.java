@@ -79,7 +79,9 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Hive Metastore Cache
+ * Bigo Hive Metastore Cache
+ *
+ * Only refresh partitionNamesCache & partitionFilterCache
  */
 @ThreadSafe
 public class BigoCachingHiveMetastore
@@ -140,22 +142,22 @@ public class BigoCachingHiveMetastore
         this.delegate = requireNonNull(delegate, "delegate is null");
         requireNonNull(executor, "executor is null");
 
-        databaseNamesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        databaseNamesCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadAllDatabases), executor));
 
-        databaseCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        databaseCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadDatabase), executor));
 
-        tableNamesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        tableNamesCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadAllTables), executor));
 
-        tablesWithParameterCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        tablesWithParameterCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadTablesMatchingParameter), executor));
 
-        tableStatisticsCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        tableStatisticsCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadTableColumnStatistics), executor));
 
-        partitionStatisticsCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        partitionStatisticsCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(new CacheLoader<WithIdentity<HivePartitionName>, PartitionStatistics>()
                 {
                     @Override
@@ -171,10 +173,10 @@ public class BigoCachingHiveMetastore
                     }
                 }, executor));
 
-        tableCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        tableCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadTable), executor));
 
-        viewNamesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        viewNamesCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadAllViews), executor));
 
         partitionNamesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
@@ -183,7 +185,7 @@ public class BigoCachingHiveMetastore
         partitionFilterCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadPartitionNamesByParts), executor));
 
-        partitionCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        partitionCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(new CacheLoader<WithIdentity<HivePartitionName>, Optional<Partition>>()
                 {
                     @Override
@@ -199,13 +201,13 @@ public class BigoCachingHiveMetastore
                     }
                 }, executor));
 
-        tablePrivilegesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        tablePrivilegesCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(key -> loadTablePrivileges(key.getDatabase(), key.getTable(), key.getOwner(), key.getPrincipal())), executor));
 
-        rolesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        rolesCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadRoles), executor));
 
-        roleGrantsCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        roleGrantsCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadRoleGrants), executor));
     }
 

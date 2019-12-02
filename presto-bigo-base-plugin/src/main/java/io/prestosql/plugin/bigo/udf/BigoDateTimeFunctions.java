@@ -842,10 +842,9 @@ public class BigoDateTimeFunctions {
 
     @ScalarFunction("to_utc_timestamp")
     @SqlType(StandardTypes.VARCHAR)
-    @TypeParameter("T")
     @SqlNullable
     public static Slice toUTCTimestampDouble(
-            @SqlType("T") double timestamp,
+            @SqlType(StandardTypes.DOUBLE) double timestamp,
             @SqlType(StandardTypes.VARCHAR) Slice timezone) {
         if (timezone == null) {
             return null;

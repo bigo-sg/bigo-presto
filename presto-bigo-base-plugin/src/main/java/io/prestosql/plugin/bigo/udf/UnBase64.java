@@ -15,16 +15,13 @@ package io.prestosql.plugin.bigo.udf;
 
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
-import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.function.Description;
 import io.prestosql.spi.function.LiteralParameters;
 import io.prestosql.spi.function.ScalarFunction;
 import io.prestosql.spi.function.SqlType;
 import io.prestosql.spi.type.StandardTypes;
 
-import java.util.Base64;
-
-import static io.prestosql.spi.StandardErrorCode.INVALID_FUNCTION_ARGUMENT;
+import org.apache.commons.codec.binary.Base64;
 
 public class UnBase64 {
     @Description("decode base64 encoded binary data")
@@ -36,9 +33,9 @@ public class UnBase64 {
             return null;
         }
         try {
-            return Slices.wrappedBuffer(Base64.getDecoder().decode(slice.getBytes()));
+            return Slices.wrappedBuffer(Base64.decodeBase64(slice.getBytes()));
         } catch (IllegalArgumentException e) {
-            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, e);
+            return slice;
         }
     }
 
@@ -50,9 +47,9 @@ public class UnBase64 {
             return null;
         }
         try {
-            return Slices.wrappedBuffer(Base64.getDecoder().decode(slice.getBytes()));
+            return Slices.wrappedBuffer(Base64.decodeBase64(slice.getBytes()));
         } catch (IllegalArgumentException e) {
-            throw new PrestoException(INVALID_FUNCTION_ARGUMENT, e);
+            return slice;
         }
     }
 }

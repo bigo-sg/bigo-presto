@@ -122,8 +122,8 @@ public final class TypeValidator
                     verifyTypeSignature(entry.getKey(), expectedType.getTypeSignature(), types.get(Symbol.from(symbolReference)).getTypeSignature());
                     continue;
                 }
-                Type actualType = typeAnalyzer.getType(session, types, entry.getValue());
-                verifyTypeSignature(entry.getKey(), expectedType.getTypeSignature(), actualType.getTypeSignature());
+//                Type actualType = typeAnalyzer.getType(session, types, entry.getValue());
+//                verifyTypeSignature(entry.getKey(), expectedType.getTypeSignature(), actualType.getTypeSignature());
             }
 
             return null;

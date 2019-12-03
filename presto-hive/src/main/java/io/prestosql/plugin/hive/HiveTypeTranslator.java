@@ -26,6 +26,8 @@ import org.apache.hadoop.hive.common.type.HiveVarchar;
 import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 
+import java.util.Optional;
+
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.prestosql.plugin.hive.HiveType.HIVE_BINARY;
 import static io.prestosql.plugin.hive.HiveType.HIVE_BOOLEAN;
@@ -88,6 +90,9 @@ public class HiveTypeTranslator
         }
         if (type instanceof VarcharType) {
             VarcharType varcharType = (VarcharType) type;
+            if (varcharType.getLength().isPresent() && varcharType.getLength().equals(Optional.of(0))) {
+                varcharType = VarcharType.createVarcharType(1);
+            }
             if (varcharType.isUnbounded()) {
                 return HIVE_STRING.getTypeInfo();
             }

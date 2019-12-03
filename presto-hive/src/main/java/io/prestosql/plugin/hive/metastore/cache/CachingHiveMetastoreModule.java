@@ -37,9 +37,9 @@ public class CachingHiveMetastoreModule
     public void configure(Binder binder)
     {
         configBinder(binder).bindConfig(CachingHiveMetastoreConfig.class);
-        binder.bind(HiveMetastore.class).to(CachingHiveMetastore.class).in(Scopes.SINGLETON);
+        binder.bind(HiveMetastore.class).to(BigoCachingHiveMetastore.class).in(Scopes.SINGLETON);
         newExporter(binder).export(HiveMetastore.class)
-                .as(generator -> generator.generatedNameOf(CachingHiveMetastore.class));
+                .as(generator -> generator.generatedNameOf(BigoCachingHiveMetastore.class));
     }
 
     @Provides

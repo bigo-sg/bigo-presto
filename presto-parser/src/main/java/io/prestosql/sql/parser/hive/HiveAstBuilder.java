@@ -150,6 +150,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         return new RenameTable(getLocation(ctx), getQualifiedName(ctx.from), getQualifiedName(ctx.to));
     }
 
+    @Override
+    public Node visitLoadData(SqlBaseParser.LoadDataContext ctx) {
+        throw parseError("Presto do NOT support load data syntax, please using hive", ctx);
+    }
+
     @Override public Node visitTableProperty(SqlBaseParser.TablePropertyContext ctx)
     {
         Expression value = null;
@@ -197,14 +202,25 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         Identifier tableAlias = (Identifier) visit(ctx.tableAlias());
         if (tableAlias == null) {
-            throw parseError("Missing table alias", ctx);
+            return child;
+        } else {
+            return new AliasedRelation(getLocation(ctx), child, tableAlias, null);
         }
-
-        return new AliasedRelation(getLocation(ctx), child, tableAlias, null);
     }
 
     @Override
     public Node visitAliasedRelation(SqlBaseParser.AliasedRelationContext ctx) {
+        if (ctx.relation() != null) {
+            Relation relation = (Relation) visit(ctx.relation());
+
+            Identifier tableAlias = (Identifier) visit(ctx.tableAlias());
+            if (tableAlias == null) {
+                return relation;
+            } else {
+                return new AliasedRelation(getLocation(ctx), relation, tableAlias, null);
+            }
+        }
+
         return super.visitAliasedRelation(ctx);
     }
 
@@ -1118,6 +1134,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitQuerySpecification(SqlBaseParser.QuerySpecificationContext ctx) {
+        if (ctx.kind == null) {
+            throw parseError("Missing Select Statement", ctx);
+        }
+
         if (ctx.kind.getType()  == SqlBaseParser.SELECT) {
             SqlBaseParser.NamedExpressionSeqContext namedExpressionSeqContext = ctx.namedExpressionSeq();
             List<SqlBaseParser.NamedExpressionContext> namedExpressionContexts =

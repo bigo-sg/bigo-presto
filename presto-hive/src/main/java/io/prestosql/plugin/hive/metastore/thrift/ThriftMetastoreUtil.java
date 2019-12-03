@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.Shorts;
+import io.airlift.log.Logger;
 import io.prestosql.plugin.hive.HiveBasicStatistics;
 import io.prestosql.plugin.hive.HiveBucketProperty;
 import io.prestosql.plugin.hive.HiveType;
@@ -66,6 +67,7 @@ import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.StringColumnStatsData;
 import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.parquet.format.JsonType;
 
 import javax.annotation.Nullable;
 
@@ -145,6 +147,8 @@ import static org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Cate
 
 public final class ThriftMetastoreUtil
 {
+    private static final Logger log = Logger.get(ThriftMetastoreUtil.class);
+
     private static final String PUBLIC_ROLE_NAME = "public";
     private static final String ADMIN_ROLE_NAME = "admin";
     private static final String NUM_FILES = "numFiles";
@@ -980,8 +984,12 @@ public final class ThriftMetastoreUtil
         if (type instanceof ArrayType || type instanceof RowType || type instanceof MapType) {
             return ImmutableSet.of();
         }
+
+        log.warn("Unsupported type: " + type);
+
+        return ImmutableSet.of();
         // Throwing here to make sure this method is updated when a new type is added in Hive connector
-        throw new IllegalArgumentException("Unsupported type: " + type);
+        //throw new IllegalArgumentException("Unsupported type: " + type);
     }
 
     private static boolean isNumericType(Type type)

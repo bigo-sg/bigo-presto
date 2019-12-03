@@ -26,4 +26,28 @@ public class UnsupportedSQLs extends SQLTester {
 
         runHiveSQL(sql);
     }
+
+    @Test(expectedExceptions = ParsingException.class)
+    public void missingSelectStatementShouldThrowException()
+    {
+        String sql = "from tb1 where a > 10";
+
+        runHiveSQL(sql);
+    }
+
+    @Test(expectedExceptions = ParsingException.class)
+    public void loadDataShouldThrowException()
+    {
+        String sql = "load data inpath '/directory-path/file.csv' into tbl";
+
+        runHiveSQL(sql);
+    }
+
+    @Test(expectedExceptions = ParsingException.class)
+    public void syntaxErrorSQLShouldThrowExceptionNotOOM()
+    {
+        String sql = "SELECT * FROM b.aa day between '2019-11-01' and '2019-11-24'";
+
+        runHiveSQL(sql);
+    }
 }

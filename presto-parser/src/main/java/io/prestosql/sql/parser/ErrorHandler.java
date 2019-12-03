@@ -205,7 +205,12 @@ class ErrorHandler
             Deque<ATNState> activeStates = new ArrayDeque<>();
             activeStates.add(from);
 
-            while (!activeStates.isEmpty()) {
+            int iterationCount = 0;
+
+            // make sure this is not a infinity loop.
+            while (!activeStates.isEmpty() && iterationCount < 500) {
+                iterationCount++;
+
                 ATNState current = activeStates.pop();
 
                 if (current.stateNumber == target.stateNumber) {

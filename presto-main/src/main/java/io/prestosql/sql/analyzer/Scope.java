@@ -46,7 +46,8 @@ public class Scope
     private final Optional<Scope> parent;
     private final boolean queryBoundary;
     private final RelationId relationId;
-    private final RelationType relation;
+    private RelationType relation;
+
     private final Map<String, WithQuery> namedQueries;
 
     public static Scope create()
@@ -103,6 +104,10 @@ public class Scope
     public RelationType getRelationType()
     {
         return relation;
+    }
+
+    public void setRelationType(RelationType relation) {
+        this.relation = relation;
     }
 
     /**

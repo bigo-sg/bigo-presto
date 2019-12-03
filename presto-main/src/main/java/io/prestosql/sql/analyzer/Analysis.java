@@ -120,7 +120,12 @@ public class Analysis
 
     private final Map<NodeRef<Table>, TableHandle> tables = new LinkedHashMap<>();
 
-    private final Map<NodeRef<Expression>, Type> types = new LinkedHashMap<>();
+    private Map<NodeRef<Expression>, Type> types = new LinkedHashMap<>();
+
+    public void setTypes(Map<NodeRef<Expression>, Type> types) {
+        this.types = types;
+    }
+
     private final Map<NodeRef<Expression>, Type> coercions = new LinkedHashMap<>();
     private final Set<NodeRef<Expression>> typeOnlyCoercions = new LinkedHashSet<>();
     private final Map<NodeRef<Relation>, List<Type>> relationCoercions = new LinkedHashMap<>();

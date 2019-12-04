@@ -15,6 +15,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -152,7 +154,13 @@ public class RangerUtils {
     }
 
     public static List<String> getGroupsFromRemote(String userName) {
-        String url = hostPrefix + "/service/xusers/users/userName/" + userName;
+        String url = null;
+        try {
+            url = hostPrefix + "/service/xusers/users/userName/" + URLEncoder.encode(userName, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            log.warn("encode username failed for " + userName, e);
+            return new ArrayList<>();
+        }
         String userInfo = getRangerData(url);
         if (userInfo == null) {
             return new ArrayList<>();

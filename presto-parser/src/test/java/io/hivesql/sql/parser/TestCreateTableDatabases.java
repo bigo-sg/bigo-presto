@@ -62,36 +62,6 @@ public class TestCreateTableDatabases extends SQLTester {
     }
 
     @Test
-    public void transTypeSimple() {
-        String input = "string";
-        String expect = "VARCHAR";
-        String result = HiveAstBuilder.colTypeTransformSimple(input);
-        System.out.println(result);
-        Assert.assertEquals(result, expect);
-        input = "int";
-        expect = "INTEGER";
-        result = HiveAstBuilder.colTypeTransformSimple(input);
-        Assert.assertEquals(result, expect);
-        input = "bigint";
-        expect = "BIGINT";
-        result = HiveAstBuilder.colTypeTransformSimple(input);
-        Assert.assertEquals(result, expect);
-        input = "float";
-        expect = "REAL";
-        result = HiveAstBuilder.colTypeTransformSimple(input);
-        Assert.assertEquals(result, expect);
-    }
-
-    @Test
-    public void testTypeComplex() {
-        String input = "array< struct <idx:bigint,extra:map<string,string>>, x:float, `table`:string>";
-        String expect = "ARRAY(ROW(IDX BIGINT,EXTRA MAP(VARCHAR,VARCHAR)), X REAL, \"TABLE\" VARCHAR)";
-        String result = HiveAstBuilder.colTypeTransformComplex(input);
-        System.out.println(result);
-        Assert.assertEquals(result, expect);
-    }
-
-    @Test
     public void createTable3() {
 
         checkASTNodeFromFile("hive/parser/cases/create-table-presto-3.sql",

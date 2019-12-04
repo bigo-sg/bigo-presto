@@ -20,6 +20,8 @@ public class TestBigoTypeConversionFunctions {
         long r6 = BigoTypeConversionFunctions.intFunctionInt(-9223372036854775808L);
         long r7 = BigoTypeConversionFunctions.intFunctionInt(2147483647);
         long r8 = BigoTypeConversionFunctions.intFunctionInt(-2147483648);
+        long r9 = BigoTypeConversionFunctions.intFunctionBoolean(true);
+        long r10 = BigoTypeConversionFunctions.intFunctionBoolean(false);
 
         assertEquals(r1, 1);
         assertEquals(r2, 1);
@@ -30,12 +32,18 @@ public class TestBigoTypeConversionFunctions {
         assertEquals(r6, 0);
         assertEquals(r7, 2147483647);
         assertEquals(r8, -2147483648);
+        assertEquals(r9, 1);
+        assertEquals(r10, 0);
     }
 
     @Test
     private void testBigint(){
         assertEquals(BigoTypeConversionFunctions.bigintFunctionBigint(100L).longValue(), 100L);
         assertNull(BigoTypeConversionFunctions.bigintFunctionSlice(utf8Slice("")));
+        long r1 = BigoTypeConversionFunctions.bigintFunctionBoolean(true);
+        long r2 = BigoTypeConversionFunctions.bigintFunctionBoolean(false);
+        assertEquals(r1, 1);
+        assertEquals(r2, 0);
     }
 
     @Test
@@ -49,6 +57,8 @@ public class TestBigoTypeConversionFunctions {
         double r5 = BigoTypeConversionFunctions.doubleFunctionInt(9223372036854775807L);
         double r6 = BigoTypeConversionFunctions.doubleFunctionInt(-9223372036854775808L);
         double r7 = BigoTypeConversionFunctions.doubleFunction(1e100);
+        double r8 = BigoTypeConversionFunctions.doubleFunctionBoolean(true);
+        double r9 = BigoTypeConversionFunctions.doubleFunctionBoolean(false);
 
         assertEquals(r1, 12.3);
         assertEquals(r2, 12.0);
@@ -57,6 +67,8 @@ public class TestBigoTypeConversionFunctions {
         assertEquals(r5, 9.223372036854776E18);
         assertEquals(r6, -9.223372036854776E18);
         assertEquals(r7, 1.0E100);
+        assertEquals(r8, 1.0);
+        assertEquals(r9, 0.0);
     }
 
     @Test

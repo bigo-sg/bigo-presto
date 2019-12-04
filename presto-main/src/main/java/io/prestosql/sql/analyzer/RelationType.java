@@ -33,7 +33,8 @@ import static java.util.Objects.requireNonNull;
 @Immutable
 public class RelationType
 {
-    private final List<Field> visibleFields;
+    private List<Field> visibleFields;
+
     private final List<Field> allFields;
 
     private final Map<Field, Integer> fieldIndexes;
@@ -89,6 +90,10 @@ public class RelationType
     public Collection<Field> getVisibleFields()
     {
         return visibleFields;
+    }
+
+    public void setVisibleFields(List<Field> visibleFields) {
+        this.visibleFields = visibleFields;
     }
 
     public int getVisibleFieldCount()

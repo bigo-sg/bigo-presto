@@ -28,6 +28,9 @@ public class HexFunction {
     @SqlNullable
     public static Slice stringToHex(@SqlType(StandardTypes.VARCHAR) Slice slice)
     {
+        if (slice == null) {
+            return null;
+        }
         return utf8Slice(evaluate(slice.toStringUtf8()));
     }
 

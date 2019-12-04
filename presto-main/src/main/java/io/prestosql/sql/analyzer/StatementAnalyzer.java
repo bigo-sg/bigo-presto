@@ -50,8 +50,10 @@ import io.prestosql.spi.security.Identity;
 import io.prestosql.spi.type.ArrayType;
 import io.prestosql.spi.type.MapType;
 import io.prestosql.spi.type.RowType;
+import io.prestosql.spi.type.StandardTypes;
 import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeNotFoundException;
+import io.prestosql.spi.type.VarcharType;
 import io.prestosql.sql.analyzer.Analysis.SelectExpression;
 import io.prestosql.sql.analyzer.Scope.AsteriskedIdentifierChainBasis;
 import io.prestosql.sql.parser.ParsingException;
@@ -151,6 +153,7 @@ import io.prestosql.type.TypeCoercion;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -372,18 +375,20 @@ class StatementAnalyzer
                     insertColumns.stream().map(columnHandles::get).collect(toImmutableList()),
                     newTableLayout));
 
-            List<Type> tableTypes = insertColumns.stream()
-                    .map(insertColumn -> tableMetadata.getColumn(insertColumn).getType())
-                    .collect(toImmutableList());
+            if (!SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                List<Type> tableTypes = insertColumns.stream()
+                        .map(insertColumn -> tableMetadata.getColumn(insertColumn).getType())
+                        .collect(toImmutableList());
 
-            List<Type> queryTypes = queryScope.getRelationType().getVisibleFields().stream()
-                    .map(Field::getType)
-                    .collect(toImmutableList());
+                List<Type> queryTypes = queryScope.getRelationType().getVisibleFields().stream()
+                        .map(Field::getType)
+                        .collect(toImmutableList());
 
-            if (!typesMatchForInsert(tableTypes, queryTypes)) {
-                throw semanticException(TYPE_MISMATCH, insert, "Insert query has mismatched column types: " +
-                        "Table: [" + Joiner.on(", ").join(tableTypes) + "], " +
-                        "Query: [" + Joiner.on(", ").join(queryTypes) + "]");
+                if (!typesMatchForInsert(tableTypes, queryTypes)) {
+                    throw semanticException(TYPE_MISMATCH, insert, "Insert query has mismatched column types: " +
+                            "Table: [" + Joiner.on(", ").join(tableTypes) + "], " +
+                            "Query: [" + Joiner.on(", ").join(queryTypes) + "]");
+                }
             }
 
             return createAndAssignScope(insert, scope, Field.newUnqualified("rows", BIGINT));
@@ -505,6 +510,17 @@ class StatementAnalyzer
             // analyze the query that creates the table
             Scope queryScope = process(node.getQuery(), scope);
 
+            RelationType relationType = queryScope.getRelationType();
+            List<Field> newFields = new ArrayList<>();
+            for (Field field : queryScope.getRelationType().getVisibleFields()) {
+                if (field.getType().getTypeSignature().getBase().equals("json")) {
+                    field.setType(VARCHAR);
+                }
+                newFields.add(field);
+            }
+            relationType.setVisibleFields(newFields);
+            queryScope.setRelationType(relationType);
+
             ImmutableList.Builder<ColumnMetadata> columns = ImmutableList.builder();
 
             // analyze target table columns and column aliases
@@ -516,14 +532,16 @@ class StatementAnalyzer
                     if (field.getType().equals(UNKNOWN)) {
                         throw semanticException(COLUMN_TYPE_UNKNOWN, node, "Column type is unknown at position %s", queryScope.getRelationType().indexOf(field) + 1);
                     }
-                    columns.add(new ColumnMetadata(node.getColumnAliases().get().get(aliasPosition).getValue(), field.getType()));
+                    columns.add(new ColumnMetadata(node.getColumnAliases().get().get(aliasPosition).getValue(),
+                            field.getType().getTypeSignature().getBase().equals("json") ? VARCHAR : field.getType()));
                     aliasPosition++;
                 }
             }
             else {
                 validateColumns(node, queryScope.getRelationType());
                 columns.addAll(queryScope.getRelationType().getVisibleFields().stream()
-                        .map(field -> new ColumnMetadata(field.getName().get(), field.getType()))
+                        .map(field -> new ColumnMetadata(field.getName().get(),
+                                field.getType().getTypeSignature().getBase().equals("json") ? VARCHAR : field.getType()))
                         .collect(toImmutableList()));
             }
 
@@ -538,6 +556,17 @@ class StatementAnalyzer
                     session,
                     metadata,
                     analysis.getParameters());
+
+            Map<NodeRef<Expression>, Type> types = new LinkedHashMap<>();
+
+            for (NodeRef<Expression> exp : analysis.getTypes().keySet()) {
+                if (!analysis.getTypes().get(exp).getTypeSignature().getBase().equals("json")) {
+                    types.put(exp, analysis.getTypes().get(exp));
+                } else {
+                    types.put(exp, VARCHAR);
+                }
+            }
+            analysis.setTypes(types);
 
             ConnectorTableMetadata tableMetadata = new ConnectorTableMetadata(targetTable.asSchemaTableName(), columns.build(), properties, node.getComment());
 

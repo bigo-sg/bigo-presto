@@ -27,7 +27,7 @@ public class Field
     private final Optional<String> originColumnName;
     private final Optional<QualifiedName> relationAlias;
     private final Optional<String> name;
-    private final Type type;
+    private Type type;
     private final boolean hidden;
     private final boolean aliased;
 
@@ -106,6 +106,10 @@ public class Field
     public Type getType()
     {
         return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 
     public boolean isHidden()

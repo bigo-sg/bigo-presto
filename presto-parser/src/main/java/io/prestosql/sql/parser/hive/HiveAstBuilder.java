@@ -589,7 +589,22 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             throw parseError("Don't support joinType: " + ctx.joinType().getText(), ctx);
         }
         else if (ctx.joinType().SEMI() != null) {
-            throw parseError("Don't support joinType: " + ctx.joinType().getText(), ctx);
+            Node node = visit(ctx.joinCriteria().booleanExpression());
+            if (!(node instanceof ComparisonExpression)) {
+                throw parseError("Don't support joinType: " + ctx.joinType().getText(), ctx);
+            }
+            ComparisonExpression comparisonExpression = (ComparisonExpression)node;
+            Expression expression = comparisonExpression.getLeft();
+            SingleColumn singleColumn = new SingleColumn(comparisonExpression.getRight());
+            Select select = new Select(false, ImmutableList.of(singleColumn));
+            Relation relation = (Relation) visit(ctx.right);
+            QuerySpecification querySpecification = new QuerySpecification(select, Optional.of(relation),
+                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                    Optional.empty());
+            Query query = new Query(Optional.empty(), querySpecification, Optional.empty(), Optional.empty(), Optional.empty());
+            SubqueryExpression subqueryExpression = new SubqueryExpression(query);
+            InPredicate inPredicate = new InPredicate(expression, subqueryExpression);
+            return new LeftSemiJoin(Optional.empty(), left, inPredicate);
         }
 
         Relation right = (Relation) visit(ctx.right);
@@ -1170,11 +1185,27 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
             Optional<Relation> from = visitIfPresent(ctx.fromClause(), Relation.class);
 
+            Optional<Expression> where = visitIfPresent(ctx.where, Expression.class);
+            if (from.isPresent()) {
+                Relation relation = from.get();
+                if (relation instanceof LeftSemiJoin) {
+                    LeftSemiJoin leftSemiJoin = (LeftSemiJoin)relation;
+                    from = Optional.of(leftSemiJoin.getLeft());
+                    if (!where.isPresent()) {
+                        where = Optional.of(leftSemiJoin.getInPredicate());
+                    } else {
+                        where = Optional.of(
+                                new LogicalBinaryExpression(LogicalBinaryExpression.Operator.AND,
+                                        leftSemiJoin.getInPredicate(),
+                                        where.get()));
+                    }
+                }
+            }
             return new QuerySpecification(
                     nodeLocation,
                     select,
                     from,
-                    visitIfPresent(ctx.where, Expression.class),
+                    where,
                     visitIfPresent(ctx.aggregation(), GroupBy.class),
                     visitIfPresent(ctx.having, Expression.class),
                     Optional.empty(),

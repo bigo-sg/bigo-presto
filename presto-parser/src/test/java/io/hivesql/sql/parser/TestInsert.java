@@ -16,6 +16,13 @@ public class TestInsert extends SQLTester {
     }
 
     @Test
+    public void insertIntoSelect2() {
+        String prestoSql = "insert overwrite t select a from t1 union select b from t2";
+        String hiveSql = "insert overwrite table t select a from t1 union select b from t2";
+        checkASTNode(prestoSql, hiveSql);
+    }
+
+    @Test
     public void insertOverwriteSelect() {
         checkASTNodeFromFile("hive/parser/cases/insert-overwrite-select-presto.sql",
                 "hive/parser/cases/insert-overwrite-select-hive.sql");

@@ -122,12 +122,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         SqlBaseParser.ColTypeContext colTypeContext = ctx.colTypeList().colType(0);
-        String type = colTypeContext.dataType().getText();
-        if (type.contains("<") && type.contains(">")) {
-            type = colTypeTransformComplex(type);
-        } else {
-            type = colTypeTransformSimple(type);
-        }
         String comment = "";
         if (colTypeContext.COMMENT() != null) {
             comment = colTypeContext.STRING().getText()
@@ -389,12 +383,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     if (colTypeContext.COMMENT() != null) {
                         colComment = Optional.of(unquote(colTypeContext.COMMENT().getText()));
                     }
-                    String type = colTypeContext.dataType().getText();
-                    if (type.contains("<") && type.contains(">")) {
-                        type = colTypeTransformComplex(type);
-                    } else {
-                        type = colTypeTransformSimple(type);
-                    }
                     DataType dataType = (DataType) visit(colTypeContext.dataType());
                     TableElement tableElement = new ColumnDefinition(
                             new Identifier(getLocation(colTypeContext),
@@ -601,7 +589,22 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             throw parseError("Don't support joinType: " + ctx.joinType().getText(), ctx);
         }
         else if (ctx.joinType().SEMI() != null) {
-            throw parseError("Don't support joinType: " + ctx.joinType().getText(), ctx);
+            Node node = visit(ctx.joinCriteria().booleanExpression());
+            if (!(node instanceof ComparisonExpression)) {
+                throw parseError("Don't support joinType: " + ctx.joinType().getText(), ctx);
+            }
+            ComparisonExpression comparisonExpression = (ComparisonExpression)node;
+            Expression expression = comparisonExpression.getLeft();
+            SingleColumn singleColumn = new SingleColumn(comparisonExpression.getRight());
+            Select select = new Select(false, ImmutableList.of(singleColumn));
+            Relation relation = (Relation) visit(ctx.right);
+            QuerySpecification querySpecification = new QuerySpecification(select, Optional.of(relation),
+                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                    Optional.empty());
+            Query query = new Query(Optional.empty(), querySpecification, Optional.empty(), Optional.empty(), Optional.empty());
+            SubqueryExpression subqueryExpression = new SubqueryExpression(query);
+            InPredicate inPredicate = new InPredicate(expression, subqueryExpression);
+            return new LeftSemiJoin(Optional.empty(), left, inPredicate);
         }
 
         Relation right = (Relation) visit(ctx.right);
@@ -659,7 +662,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitValueExpressionDefault(SqlBaseParser.ValueExpressionDefaultContext ctx) {
-        return super.visitValueExpressionDefault(ctx);
+         return super.visitValueExpressionDefault(ctx);
     }
 
     @Override
@@ -888,10 +891,21 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                         }
                         parent = singleColumn;
                     }
-                    List<SelectItem> selectItems = ((QuerySpecification) query.getQueryBody()).getSelect().getSelectItems();
-                    for (int i = 0; i < singleColumns.size(); ++i) {
-                        if (singleColumns.get(i).getAlias().isPresent()) {
-                            selectItems.add(selectItems.size() - dynamicPartitionCount, singleColumns.get(i));
+                    List<QuerySpecification> querySpecifications = new ArrayList<>();
+                    if (query.getQueryBody() instanceof Union) {
+                        Union union = (Union) query.getQueryBody();
+                        for (Relation relation: union.getRelations()) {
+                            querySpecifications.add((QuerySpecification) relation);
+                        }
+                    } else if (query.getQueryBody() instanceof QuerySpecification) {
+                        querySpecifications.add((QuerySpecification) query.getQueryBody());
+                    }
+                    for (QuerySpecification querySpecification: querySpecifications) {
+                        List<SelectItem> selectItems = querySpecification.getSelect().getSelectItems();
+                        for (int i = 0; i < singleColumns.size(); ++i) {
+                            if (singleColumns.get(i).getAlias().isPresent()) {
+                                selectItems.add(selectItems.size() - dynamicPartitionCount, singleColumns.get(i));
+                            }
                         }
                     }
                 }
@@ -928,7 +942,18 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitStar(SqlBaseParser.StarContext ctx) {
-        return new StarExpression(getLocation(ctx), visitIfPresent(ctx.qualifiedName(), Identifier.class));
+        List<Identifier> identifiers = new ArrayList<>();
+        if (ctx.qualifiedName() != null) {
+
+            ctx.qualifiedName().identifier().stream().forEach(new Consumer<SqlBaseParser.IdentifierContext>() {
+                @Override
+                public void accept(SqlBaseParser.IdentifierContext identifierContext) {
+                    new Identifier(tryUnquote(identifierContext.getText()));
+                }
+            });
+            identifiers = visit(ctx.qualifiedName().identifier(), Identifier.class);
+        }
+        return new StarExpression(getLocation(ctx), identifiers);
     }
 
     @Override
@@ -948,9 +973,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 throw parseError("todo", ctx);
             }
 
-            if (starExpression.getIdentifier().isPresent()) {
+            if (starExpression.getIdentifiers().size() == 2) {
+                DereferenceExpression dereferenceExpression =
+                        new DereferenceExpression(starExpression.getIdentifiers().get(0),
+                                starExpression.getIdentifiers().get(1));
                 return new AllColumns(nodeLocation,
-                        Optional.of(starExpression.getIdentifier().get()), ImmutableList.of());
+                        Optional.of(dereferenceExpression), ImmutableList.of());
+            } else if (starExpression.getIdentifiers().size() == 1) {
+                return new AllColumns(nodeLocation,
+                        Optional.of(starExpression.getIdentifiers().get(0)), ImmutableList.of());
             } else {
                 return new AllColumns(nodeLocation, Optional.empty(), ImmutableList.of());
             }
@@ -1154,11 +1185,27 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
             Optional<Relation> from = visitIfPresent(ctx.fromClause(), Relation.class);
 
+            Optional<Expression> where = visitIfPresent(ctx.where, Expression.class);
+            if (from.isPresent()) {
+                Relation relation = from.get();
+                if (relation instanceof LeftSemiJoin) {
+                    LeftSemiJoin leftSemiJoin = (LeftSemiJoin)relation;
+                    from = Optional.of(leftSemiJoin.getLeft());
+                    if (!where.isPresent()) {
+                        where = Optional.of(leftSemiJoin.getInPredicate());
+                    } else {
+                        where = Optional.of(
+                                new LogicalBinaryExpression(LogicalBinaryExpression.Operator.AND,
+                                        leftSemiJoin.getInPredicate(),
+                                        where.get()));
+                    }
+                }
+            }
             return new QuerySpecification(
                     nodeLocation,
                     select,
                     from,
-                    visitIfPresent(ctx.where, Expression.class),
+                    where,
                     visitIfPresent(ctx.aggregation(), GroupBy.class),
                     visitIfPresent(ctx.having, Expression.class),
                     Optional.empty(),
@@ -1883,11 +1930,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         throw new IllegalArgumentException("Unsupported operator: " + token.getText());
     }
 
-    private QualifiedName getQualifiedName(Identifier identifier)
-    {
-        return QualifiedName.of(ImmutableList.of(identifier));
-    }
-
     private QualifiedName getQualifiedName(SqlBaseParser.TableIdentifierContext context)
     {
         List<Identifier> identifiers = new ArrayList<>();
@@ -2001,35 +2043,4 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 replace("\"", "").
                 replace("`", "");
     }
-
-    public static String colTypeTransformSimple(String hiveColType) {
-        return hiveColType
-                .toUpperCase()
-                .replace("INT", "INTEGER")
-                .replace("BIGINTEGER", "BIGINT")
-                .replace("FLOAT", "REAL")
-                .replace("STRING", "VARCHAR");
-    }
-
-    public static String colTypeTransformComplex(String hiveColType) {
-        return hiveColType
-                .toUpperCase()
-                .replaceAll("( )*STRUCT( )*<( )*", "ROW(")
-                .replaceAll("( )*MAP( )*<( )*", "MAP(")
-                .replaceAll("( )*ARRAY( )*<( )*", "ARRAY(")
-                .replaceAll("( )*>( )*", ")")
-                .replaceAll("( )*:( )*STRING( )*", " VARCHAR")
-                .replaceAll("( )*STRING( )*\\)", "VARCHAR)")
-                .replaceAll("\\(( )*STRING( )*", "(VARCHAR")
-                .replaceAll("( )*:( )*INT( )*", " INTEGER")
-                .replaceAll("\\(( )*INT( )*", "(INTEGER")
-                .replaceAll("INT( )*\\)", "INTEGER)")
-                .replace("BIGINTEGER", "BIGINT")
-                .replaceAll("( )*:( )*FLOAT( )*", " REAL")
-                .replaceAll("\\(( )*FLOAT( )*", "(REAL")
-                .replaceAll("FLOAT( )*\\)", "REAL)")
-                .replaceAll("`", "\"")
-                .replaceAll(":",  " ");
-    }
-
 }

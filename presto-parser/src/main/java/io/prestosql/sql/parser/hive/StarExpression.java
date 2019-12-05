@@ -22,15 +22,15 @@ import java.util.List;
 import java.util.Optional;
 
 public class StarExpression extends Expression {
-    private Optional<Identifier> identifier;
+    private List<Identifier> identifiers;
 
-    public StarExpression(NodeLocation location, Optional<Identifier> identifier) {
+    public StarExpression(NodeLocation location, List<Identifier> identifiers) {
         super(Optional.of(location));
-        this.identifier = identifier;
+        this.identifiers = identifiers;
     }
 
-    public Optional<Identifier> getIdentifier() {
-        return identifier;
+    public List<Identifier> getIdentifiers() {
+        return identifiers;
     }
 
     @Override

@@ -724,12 +724,17 @@ public class ExpressionAnalyzer
                 List<Expression> concatArgList = new ArrayList<>();
                 Set<String> typeSet = newKeySet();
 
+                boolean isSystemCoalesce = false;
                 for (Expression expression : node.getOperands()) {
+                    if (expression.toString().contains("$operator")) {
+                        isSystemCoalesce = true;
+                        break;
+                    }
                     Type expressionType = process(expression, context);
                     typeSet.add(expressionType.getTypeSignature().getBase());
                 }
 
-                if (typeSet.size() > 1) {
+                if (typeSet.size() > 1 && !isSystemCoalesce) {
                     for (Expression expression : node.getOperands()) {
                         concatArgList.add(new Cast(expression, TypeSignatureTranslator.toSqlType(VarcharType.VARCHAR)));
                     }

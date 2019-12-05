@@ -862,9 +862,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     List<QuerySpecification> querySpecifications = new ArrayList<>();
                     if (query.getQueryBody() instanceof Union) {
                         Union union = (Union) query.getQueryBody();
-                        for (Relation relation: union.getRelations()) {
-                            querySpecifications.add((QuerySpecification) relation);
-                        }
+                        getRelationFromUnion(union, querySpecifications);
                     } else if (query.getQueryBody() instanceof QuerySpecification) {
                         querySpecifications.add((QuerySpecification) query.getQueryBody());
                     }
@@ -885,6 +883,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             throw parseError("Don't support insert overwrite hive dir at the moment, stay tuned ;)", ctx);
         } else {
             throw parseError("Don't support insert syntax", ctx);
+        }
+    }
+
+    private void getRelationFromUnion(Union union, List<QuerySpecification> querySpecifications) {
+        for (Relation relation: union.getRelations()) {
+            if (relation instanceof QuerySpecification) {
+                querySpecifications.add((QuerySpecification) relation);
+            } else if (relation instanceof Union) {
+                getRelationFromUnion((Union) relation, querySpecifications);
+            }
         }
     }
 
@@ -1119,14 +1127,21 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override public Node visitQuery(SqlBaseParser.QueryContext ctx)
     {
         if (ctx.ctes() != null) {
-            Query query = (Query) visit(ctx.queryNoWith());
-            return new Query(
-                    Optional.of((With)visitCtes(ctx.ctes())),
-                    query.getQueryBody(),
-                    query.getOrderBy(),
-                    query.getOffset(),
-                    query.getLimit()
-            );
+            Node node = visit(ctx.queryNoWith());
+            if (node instanceof Query) {
+                Query query = (Query) node;
+                return new Query(
+                        Optional.of((With) visitCtes(ctx.ctes())),
+                        query.getQueryBody(),
+                        query.getOrderBy(),
+                        query.getOffset(),
+                        query.getLimit()
+                );
+            } else if (node instanceof Insert) {
+                Insert insert = (Insert) node;
+                insert.getQuery().setWith(Optional.of((With) visitCtes(ctx.ctes())));
+                return insert;
+            }
         }
         return visitChildren(ctx);
     }

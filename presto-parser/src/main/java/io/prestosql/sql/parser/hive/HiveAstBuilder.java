@@ -859,9 +859,23 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     SingleColumn singleColumn = singleColumns.get(i);
                     if (singleColumn.getAlias().isPresent()) {
                         --dynamicPartitionCount;
-                        if (!parent.getAlias().isPresent()) {
-                            throw parseError("Dynamic partition cannot be the parent of a static partition " + singleColumn.getAlias().get(), ctx);
+                    }
+                    for (int i = 1; i < singleColumns.size(); ++i) {
+                        SingleColumn singleColumn = singleColumns.get(i);
+                        if (singleColumn.getAlias().isPresent()) {
+                            --dynamicPartitionCount;
+                            if (!parent.getAlias().isPresent()) {
+                                throw parseError("Dynamic partition cannot be the parent of a static partition " + singleColumn.getAlias().get(), ctx);
+                            }
                         }
+                        parent = singleColumn;
+                    }
+                    List<QuerySpecification> querySpecifications = new ArrayList<>();
+                    if (query.getQueryBody() instanceof Union) {
+                        Union union = (Union) query.getQueryBody();
+                        getRelationFromUnion(union, querySpecifications);
+                    } else if (query.getQueryBody() instanceof QuerySpecification) {
+                        querySpecifications.add((QuerySpecification) query.getQueryBody());
                     }
                     parent = singleColumn;
                 }

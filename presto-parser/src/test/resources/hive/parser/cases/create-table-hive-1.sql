@@ -15,4 +15,4 @@ STORED AS INPUTFORMAT
 OUTPUTFORMAT
   'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
 LOCATION
-  'hdfs://bigocluster/apps/hive/warehouse/tmp.db/rec_like_event_orc_1'
+  '/tmp.db/rec_like_event_orc_1'

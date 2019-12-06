@@ -3,7 +3,7 @@ with
 (
 partitioned_by=ARRAY['day','hour'],
 format = 'ORC',
-location='test'
+external_location='test'
 )
 as
 select * from tmp.rec_like_event_orc

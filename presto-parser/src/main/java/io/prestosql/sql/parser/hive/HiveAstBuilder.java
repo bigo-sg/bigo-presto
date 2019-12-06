@@ -332,7 +332,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         } else {
             if (ctx.locationSpec() != null && ctx.locationSpec().size() > 0) {
                 String loc = tryUnquote(ctx.locationSpec(0).STRING().getText());
-                Property location = new Property(new Identifier("location", true),
+                Property location = new Property(new Identifier("external_location", true),
                         new StringLiteral(getLocation(ctx.locationSpec(0)), loc));
                 properties.add(location);
             }
@@ -365,8 +365,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         // process create table as select
-        if (ctx.AS() != null && ctx.query() != null) {
-
+        if (ctx.query() != null) {
+            if (ctx.AS() == null) {
+                throw parseError("'create table t as query' lack word of 'as' before 'query'", ctx.query());
+            }
             SqlBaseParser.SingleInsertQueryContext singleInsertQueryContext =
                     (SqlBaseParser.SingleInsertQueryContext)ctx.query().queryNoWith();
             Object queryObject = visit(singleInsertQueryContext.queryTerm());
@@ -833,49 +835,59 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         if (ctx.insertInto() == null) {
             return query;
         }
+        QualifiedName target;
+        SqlBaseParser.PartitionSpecContext partitionSpecContext = null;
         if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
-            QualifiedName target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
-            return new Insert(target, Optional.empty(), query);
+            SqlBaseParser.InsertIntoTableContext insertIntoTableContext =
+                    (SqlBaseParser.InsertIntoTableContext) ctx.insertInto();
+            partitionSpecContext = insertIntoTableContext.partitionSpec();
         } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteTableContext) {
             SqlBaseParser.InsertOverwriteTableContext insertOverwriteTableContext =
                     (SqlBaseParser.InsertOverwriteTableContext) ctx.insertInto();
-            SqlBaseParser.PartitionSpecContext partitionSpecContext = insertOverwriteTableContext.partitionSpec();
-            QualifiedName target = getQualifiedName(((SqlBaseParser.InsertOverwriteTableContext) ctx.insertInto()).tableIdentifier());
-            if (partitionSpecContext != null) {
-                List<SingleColumn> singleColumns = visit(partitionSpecContext.partitionVal(), SingleColumn.class);
-                int dynamicPartitionCount = singleColumns.size();
-                if (singleColumns.size() > 0) {
-                    SingleColumn parent = singleColumns.get(0);
-                    if (parent.getAlias().isPresent()) {
+            partitionSpecContext = insertOverwriteTableContext.partitionSpec();
+        }
+
+        if (partitionSpecContext != null) {
+            List<SingleColumn> singleColumns = visit(partitionSpecContext.partitionVal(), SingleColumn.class);
+            int dynamicPartitionCount = singleColumns.size();
+            if (singleColumns.size() > 0) {
+                SingleColumn parent = singleColumns.get(0);
+                if (parent.getAlias().isPresent()) {
+                    --dynamicPartitionCount;
+                }
+                for (int i = 1; i < singleColumns.size(); ++i) {
+                    SingleColumn singleColumn = singleColumns.get(i);
+                    if (singleColumn.getAlias().isPresent()) {
                         --dynamicPartitionCount;
-                    }
-                    for (int i = 1; i < singleColumns.size(); ++i) {
-                        SingleColumn singleColumn = singleColumns.get(i);
-                        if (singleColumn.getAlias().isPresent()) {
-                            --dynamicPartitionCount;
-                            if (!parent.getAlias().isPresent()) {
-                                throw parseError("Dynamic partition cannot be the parent of a static partition " + singleColumn.getAlias().get(), ctx);
-                            }
+                        if (!parent.getAlias().isPresent()) {
+                            throw parseError("Dynamic partition cannot be the parent of a static partition " + singleColumn.getAlias().get(), ctx);
                         }
-                        parent = singleColumn;
                     }
-                    List<QuerySpecification> querySpecifications = new ArrayList<>();
-                    if (query.getQueryBody() instanceof Union) {
-                        Union union = (Union) query.getQueryBody();
-                        getRelationFromUnion(union, querySpecifications);
-                    } else if (query.getQueryBody() instanceof QuerySpecification) {
-                        querySpecifications.add((QuerySpecification) query.getQueryBody());
-                    }
-                    for (QuerySpecification querySpecification: querySpecifications) {
-                        List<SelectItem> selectItems = querySpecification.getSelect().getSelectItems();
-                        for (int i = 0; i < singleColumns.size(); ++i) {
-                            if (singleColumns.get(i).getAlias().isPresent()) {
-                                selectItems.add(selectItems.size() - dynamicPartitionCount, singleColumns.get(i));
-                            }
+                    parent = singleColumn;
+                }
+                List<QuerySpecification> querySpecifications = new ArrayList<>();
+                if (query.getQueryBody() instanceof Union) {
+                    Union union = (Union) query.getQueryBody();
+                    getRelationFromUnion(union, querySpecifications);
+                } else if (query.getQueryBody() instanceof QuerySpecification) {
+                    querySpecifications.add((QuerySpecification) query.getQueryBody());
+                }
+                for (QuerySpecification querySpecification: querySpecifications) {
+                    List<SelectItem> selectItems = querySpecification.getSelect().getSelectItems();
+                    for (int i = 0; i < singleColumns.size(); ++i) {
+                        if (singleColumns.get(i).getAlias().isPresent()) {
+                            selectItems.add(selectItems.size() - dynamicPartitionCount, singleColumns.get(i));
                         }
                     }
                 }
             }
+        }
+
+        if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
+            target = getQualifiedName(((SqlBaseParser.InsertIntoTableContext) ctx.insertInto()).tableIdentifier());
+            return new Insert(target, Optional.empty(), query);
+        } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteTableContext) {
+            target = getQualifiedName(((SqlBaseParser.InsertOverwriteTableContext) ctx.insertInto()).tableIdentifier());
             return new Insert(target, Optional.empty(), query, true);
         } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteDirContext) {
             throw parseError("Don't support insert overwrite dir at the moment, stay tuned ;)", ctx);

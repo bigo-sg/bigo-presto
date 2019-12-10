@@ -483,6 +483,51 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         );
     }
 
+    @Override public Node visitDropTablePartitions(SqlBaseParser.DropTablePartitionsContext ctx) {
+        List<SqlBaseParser.PartitionSpecContext> partitionSpecContexts = ctx.partitionSpec();
+        Expression expressionRoot;
+
+        expressionRoot = getPartitionExpression(partitionSpecContexts.get(0));
+        for (int i = 1; i < partitionSpecContexts.size(); ++i) {
+            expressionRoot = new LogicalBinaryExpression(LogicalBinaryExpression.Operator.OR,
+                    expressionRoot,
+                    getPartitionExpression(partitionSpecContexts.get(i)));
+
+        }
+
+        return new Delete(
+                getLocation(ctx),
+                new Table(getLocation(ctx), getQualifiedName(ctx.tableIdentifier())),
+                Optional.of(expressionRoot));
+    }
+
+    private Expression getPartitionExpression(SqlBaseParser.PartitionSpecContext partitionSpecContext) {
+        Expression expression = null;
+        if (partitionSpecContext != null) {
+            List<SqlBaseParser.PartitionValContext> partitionValContexts =
+                    partitionSpecContext.partitionVal();
+            SqlBaseParser.PartitionValContext partitionValContext = partitionValContexts.get(0);
+            expression = new ComparisonExpression(getLocation(partitionValContexts.get(0)),
+                    ComparisonExpression.Operator.EQUAL,
+                    new Identifier(partitionValContext.identifier().getText()),
+                    new StringLiteral(getLocation(partitionValContext),
+                            unquote(partitionValContext.constant().getText())));
+            if (partitionValContexts.size() > 1) {
+                for (int i = 1; i < partitionValContexts.size(); ++i) {
+                    partitionValContext = partitionValContexts.get(i);
+                    expression = new LogicalBinaryExpression(LogicalBinaryExpression.Operator.AND,
+                            expression,
+                            new ComparisonExpression(getLocation(partitionValContext),
+                                    ComparisonExpression.Operator.EQUAL,
+                                    new Identifier(partitionValContext.identifier().getText()),
+                                    new StringLiteral(getLocation(partitionValContext),
+                                            unquote(partitionValContext.constant().getText()))));
+                }
+            }
+        }
+        return expression;
+    }
+
     @Override public Node visitDropTable(SqlBaseParser.DropTableContext ctx) {
 
         QualifiedName qualifiedName;
@@ -1034,26 +1079,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         SqlBaseParser.PartitionSpecContext partitionSpecContext = ctx.partitionSpec();
         Expression expression;
         if (partitionSpecContext != null) {
-            List<SqlBaseParser.PartitionValContext> partitionValContexts =
-                    partitionSpecContext.partitionVal();
-            SqlBaseParser.PartitionValContext partitionValContext = partitionValContexts.get(0);
-            expression = new ComparisonExpression(getLocation(partitionValContexts.get(0)),
-                    ComparisonExpression.Operator.EQUAL,
-                    new Identifier(partitionValContext.identifier().getText()),
-                    new StringLiteral(getLocation(partitionValContext),
-                            unquote(partitionValContext.constant().getText())));
-            if (partitionValContexts.size() > 1) {
-                for (int i = 1; i < partitionValContexts.size(); ++i) {
-                    partitionValContext = partitionValContexts.get(i);
-                    expression = new LogicalBinaryExpression(LogicalBinaryExpression.Operator.AND,
-                            expression,
-                            new ComparisonExpression(getLocation(partitionValContext),
-                                    ComparisonExpression.Operator.EQUAL,
-                                    new Identifier(partitionValContext.identifier().getText()),
-                                    new StringLiteral(getLocation(partitionValContext),
-                                            unquote(partitionValContext.constant().getText()))));
-                }
-            }
+            expression = getPartitionExpression(partitionSpecContext);
             condition = Optional.of(expression);
         }
         return new Delete(

@@ -11,5 +11,5 @@ with
 (
 partitioned_by=ARRAY['day','hour'],
 format = 'ORC',
-external_location='/tmp.db/rec_like_event_orc_1'
+external_location='hdfs://bigocluster/apps/hive/warehouse/tmp.db/rec_like_event_orc_1'
 )

@@ -6,5 +6,5 @@
  WITH (                                      
     partitioned_by = ARRAY['day','hour'],
     format = 'ORC',
-    external_location = '/tmp.db/rec_like_event_orc'
+    location = 'hdfs://bigocluster/recommend/hive/tmp.db/rec_like_event_orc'
  )

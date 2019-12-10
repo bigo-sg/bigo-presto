@@ -50,10 +50,4 @@ public class UnsupportedSQLs extends SQLTester {
 
         runHiveSQL(sql);
     }
-    // create table as select:when no as
-    @Test(expectedExceptions = ParsingException.class)
-    public void testCase10() {
-        String hiveSql = "create table t select m from t1";
-        checkASTNode(hiveSql);
-    }
 }

@@ -56,23 +56,4 @@ public class TestInsert extends SQLTester {
     public void insertOverwriteSelect4() {
         runHiveSQLFromFile("hive/parser/cases/insert-overwrite-select-hive5.sql");
     }
-
-
-    @Test
-    public void insertIntoPartitionSelect1() {
-        checkASTNodeFromFile("hive/parser/cases/insert-into-partition-select-presto.sql",
-                "hive/parser/cases/insert-into-partition-select-hive1.sql");
-    }
-
-    @Test
-    public void insertIntoPartitionSelect2() {
-        checkASTNodeFromFile("hive/parser/cases/insert-into-partition-select-presto2.sql",
-                "hive/parser/cases/insert-into-partition-select-hive2.sql");
-    }
-
-    @Test
-    public void insertIntoPartitionSelect3() {
-        checkASTNodeFromFile("hive/parser/cases/insert-into-partition-select-presto4.sql",
-                "hive/parser/cases/insert-into-partition-select-hive4.sql");
-    }
 }

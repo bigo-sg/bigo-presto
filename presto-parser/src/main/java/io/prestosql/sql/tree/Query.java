@@ -26,7 +26,7 @@ import static java.util.Objects.requireNonNull;
 public class Query
         extends Statement
 {
-    private Optional<With> with;
+    private final Optional<With> with;
     private final QueryBody queryBody;
     private final Optional<OrderBy> orderBy;
     private final Optional<Offset> offset;
@@ -74,10 +74,6 @@ public class Query
         this.orderBy = orderBy;
         this.offset = offset;
         this.limit = limit;
-    }
-
-    public void setWith(Optional<With> with) {
-        this.with = with;
     }
 
     public Optional<With> getWith()

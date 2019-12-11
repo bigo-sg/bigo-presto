@@ -507,6 +507,18 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
     }
 
+    @Override public Node visitCreateView(SqlBaseParser.CreateViewContext ctx) {
+        if (ctx.AS() == null) {
+            throw parseError("need AS before query when creating view", ctx.query());
+        }
+        QualifiedName name = getQualifiedName(ctx.tableIdentifier());
+        Query query = (Query) visit(ctx.query());
+        return new CreateView(name,
+                query,
+                ctx.REPLACE() != null,
+                Optional.empty());
+    }
+
     @Override
     public Node visitFunctionIdentifier(SqlBaseParser.FunctionIdentifierContext ctx) {
         return super.visitFunctionIdentifier(ctx);

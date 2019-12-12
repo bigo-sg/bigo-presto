@@ -84,7 +84,7 @@ public final class Insert
     @Override
     public int hashCode()
     {
-        return Objects.hash(target, columns, query);
+        return Objects.hash(target, columns, query, overwrite);
     }
 
     @Override
@@ -99,7 +99,8 @@ public final class Insert
         Insert o = (Insert) obj;
         return Objects.equals(target, o.target) &&
                 Objects.equals(columns, o.columns) &&
-                Objects.equals(query, o.query);
+                Objects.equals(query, o.query) &&
+                Objects.equals(overwrite, o.overwrite);
     }
 
     @Override
@@ -109,6 +110,7 @@ public final class Insert
                 .add("target", target)
                 .add("columns", columns)
                 .add("query", query)
+                .add("overwrite", overwrite)
                 .toString();
     }
 }

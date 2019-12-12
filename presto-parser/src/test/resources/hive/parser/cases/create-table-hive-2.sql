@@ -10,7 +10,7 @@ STORED AS INPUTFORMAT
 OUTPUTFORMAT 
   'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
 LOCATION
-  'hdfs://bigocluster/recommend/hive/tmp.db/rec_like_event_orc'
+  '/tmp.db/rec_like_event_orc'
 TBLPROPERTIES (
   'last_modified_by'='tangyun', 
   'last_modified_time'='1544684612', 

@@ -21,8 +21,12 @@ import io.airlift.log.Logger;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.prestosql.Session;
+import io.prestosql.client.Column;
 import io.prestosql.client.QueryResults;
+import io.prestosql.execution.DataDefinitionExecution;
 import io.prestosql.execution.QueryManager;
+import io.prestosql.execution.BaseShowTask;
+import io.prestosql.execution.SqlQueryManager;
 import io.prestosql.memory.context.SimpleLocalMemoryContext;
 import io.prestosql.operator.ExchangeClient;
 import io.prestosql.operator.ExchangeClientSupplier;
@@ -51,10 +55,12 @@ import javax.ws.rs.core.UriInfo;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -80,6 +86,7 @@ import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 @Path("/")
@@ -162,7 +169,52 @@ public class ExecutingStatementResource
             proto = uriInfo.getRequestUri().getScheme();
         }
 
+        // note: this is a hack to allow coordinator to return result
+        if (queryManager instanceof SqlQueryManager) {
+            SqlQueryManager sqlQueryManager = (SqlQueryManager) queryManager;
+            DataDefinitionExecution dde = sqlQueryManager.getDataDefinitionExecution(queryId);
+
+            if (dde != null) {
+                BaseShowTask showTask = dde.getShowBaseTask();
+
+                if (showTask != null) {
+                    ListenableFuture<QueryResults> queryResultsFuture = query.waitForResults(token, uriInfo, proto, MAX_WAIT_TIME, DEFAULT_TARGET_RESULT_SIZE);
+
+                    try {
+                        List<List<Object>> showRet = showTask.getResult();
+                        ListenableFuture<QueryResults> withShowResult = Futures.transform(queryResultsFuture, queryResults -> addShowRet(queryResults, showRet, showTask.getColumns()), directExecutor());
+
+                        ListenableFuture<Response> response = Futures.transform(withShowResult, queryResults -> toResponse(query, queryResults), directExecutor());
+
+                        bindAsyncResponse(asyncResponse, response, responseExecutor);
+                        return;
+                    } catch (Exception e) {
+                        throw badRequest(INTERNAL_SERVER_ERROR, e.getMessage());
+                    }
+
+                }
+            }
+        }
+
         asyncQueryResults(query, token, maxWait, targetResultSize, uriInfo, proto, asyncResponse);
+    }
+
+    private QueryResults addShowRet(QueryResults rs, List<List<Object>> showRet, List<Column> columns) {
+        QueryResults showQueryResult = new QueryResults(
+                rs.getId()
+                ,rs.getInfoUri()
+                ,rs.getPartialCancelUri()
+                ,rs.getNextUri()
+                ,columns
+                ,showRet
+                ,rs.getStats()
+                ,rs.getError()
+                ,rs.getWarnings()
+                ,null
+                ,rs.getUpdateCount()
+        );
+
+        return showQueryResult;
     }
 
     protected Query getQuery(QueryId queryId, String slug, long token)

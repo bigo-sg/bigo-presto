@@ -192,6 +192,16 @@ public class SqlQueryManager
         return queryTracker.getQuery(queryId).getQueryInfo();
     }
 
+    public DataDefinitionExecution getDataDefinitionExecution(QueryId queryId){
+        QueryExecution queryExecution = queryTracker.getQuery(queryId);
+
+        if (queryExecution instanceof DataDefinitionExecution) {
+            return (DataDefinitionExecution) queryExecution;
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public Session getQuerySession(QueryId queryId)
             throws NoSuchElementException

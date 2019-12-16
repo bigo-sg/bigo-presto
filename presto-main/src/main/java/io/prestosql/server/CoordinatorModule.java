@@ -87,6 +87,8 @@ import io.prestosql.execution.SetRoleTask;
 import io.prestosql.execution.SetSchemaAuthorizationTask;
 import io.prestosql.execution.SetSessionTask;
 import io.prestosql.execution.SetHiveConfigurationTask;
+import io.prestosql.execution.ShowColumnsTask;
+import io.prestosql.execution.ShowTablesTask;
 import io.prestosql.execution.SqlQueryManager;
 import io.prestosql.execution.StartTransactionTask;
 import io.prestosql.execution.TaskInfo;
@@ -151,6 +153,8 @@ import io.prestosql.sql.tree.SetPath;
 import io.prestosql.sql.tree.SetRole;
 import io.prestosql.sql.tree.SetSchemaAuthorization;
 import io.prestosql.sql.tree.SetSession;
+import io.prestosql.sql.tree.ShowColumns;
+import io.prestosql.sql.tree.ShowTables;
 import io.prestosql.sql.tree.StartTransaction;
 import io.prestosql.sql.tree.Statement;
 import io.prestosql.sql.tree.Use;
@@ -363,6 +367,10 @@ public class CoordinatorModule
         bindDataDefinitionTask(binder, executionBinder, SetHiveConfiguration.class, SetHiveConfigurationTask.class);
         bindDataDefinitionTask(binder, executionBinder, AddManageResource.class, AddManageResourceTask.class);
         bindDataDefinitionTask(binder, executionBinder, CreateFunction.class, CreateFunctionTask.class);
+
+        // run DDL task on coordinator node rather than worker node
+        bindDataDefinitionTask(binder, executionBinder, ShowTables.class, ShowTablesTask.class);
+        bindDataDefinitionTask(binder, executionBinder, ShowColumns.class, ShowColumnsTask.class);
 
         MapBinder<String, ExecutionPolicy> executionPolicyBinder = newMapBinder(binder, String.class, ExecutionPolicy.class);
         executionPolicyBinder.addBinding("all-at-once").to(AllAtOnceExecutionPolicy.class);

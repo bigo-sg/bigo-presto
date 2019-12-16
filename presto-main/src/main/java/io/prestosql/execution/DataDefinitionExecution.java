@@ -86,6 +86,14 @@ public class DataDefinitionExecution<T extends Statement>
         return slug;
     }
 
+    public BaseShowTask getShowBaseTask() {
+        if (task instanceof BaseShowTask) {
+            return (BaseShowTask) task;
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public VersionedMemoryPoolId getMemoryPool()
     {

@@ -100,8 +100,8 @@ public final class StatementUtils
         builder.put(ShowSchemas.class, QueryType.DESCRIBE);
         builder.put(ShowSession.class, QueryType.DESCRIBE);
         builder.put(ShowStats.class, QueryType.DESCRIBE);
-        builder.put(ShowTables.class, QueryType.DESCRIBE);
-        builder.put(ShowColumns.class, QueryType.DESCRIBE);
+        //builder.put(ShowTables.class, QueryType.DESCRIBE);
+        //builder.put(ShowColumns.class, QueryType.DESCRIBE);
         builder.put(DescribeInput.class, QueryType.DESCRIBE);
         builder.put(DescribeOutput.class, QueryType.DESCRIBE);
 
@@ -141,6 +141,10 @@ public final class StatementUtils
         builder.put(SetHiveConfiguration.class, QueryType.DATA_DEFINITION);
         builder.put(AddManageResource.class, QueryType.DATA_DEFINITION);
         builder.put(CreateFunction.class, QueryType.DATA_DEFINITION);
+
+        // overwrite the query type for DDL operation so we can run them on coordinator
+        builder.put(ShowTables.class, QueryType.DATA_DEFINITION);
+        builder.put(ShowColumns.class, QueryType.DATA_DEFINITION);
 
         STATEMENT_QUERY_TYPES = builder.build();
     }

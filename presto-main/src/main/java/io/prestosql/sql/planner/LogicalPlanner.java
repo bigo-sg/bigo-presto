@@ -87,6 +87,7 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Streams.zip;
+import static io.prestosql.spi.StandardErrorCode.MISMATCHED_COLUMN_COUNT;
 import static io.prestosql.spi.StandardErrorCode.NOT_SUPPORTED;
 import static io.prestosql.spi.statistics.TableStatisticType.ROW_COUNT;
 import static io.prestosql.spi.type.BigintType.BIGINT;
@@ -337,6 +338,10 @@ public class LogicalPlanner
 
         Map<String, ColumnHandle> columns = metadata.getColumnHandles(session, insert.getTarget());
         Assignments.Builder assignments = Assignments.builder();
+        if (insert.getColumns().size() != plan.getFieldMappings().size()) {
+            throw new PrestoException(MISMATCHED_COLUMN_COUNT, "Insert query has mismatched column count: Table have " +
+                    insert.getColumns().size() + " columns, but query has " + plan.getFieldMappings().size());
+        }
         for (ColumnMetadata column : tableMetadata.getColumns()) {
             if (column.isHidden()) {
                 continue;

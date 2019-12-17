@@ -643,6 +643,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         throw parseError("Don't support " + identifier.getValue(), ctx);
     }
 
+    @Override public Node visitInlineTable(SqlBaseParser.InlineTableContext ctx) {
+        List<SqlBaseParser.ExpressionContext> expressionContexts = ctx.expression();
+        List<Expression> expressions = visit(expressionContexts, Expression.class);
+        Values values = new Values(expressions);
+        return values;
+    }
+
     private Relation withJoinRelation(Relation left, SqlBaseParser.JoinRelationContext ctx) {
         if (ctx.joinType().ANTI() != null) {
             throw parseError("Don't support joinType: " + ctx.joinType().getText(), ctx);

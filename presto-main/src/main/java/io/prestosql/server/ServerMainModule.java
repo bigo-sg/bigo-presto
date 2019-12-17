@@ -232,7 +232,7 @@ public class ServerMainModule
                 .withTracing()
                 .withConfigDefaults(config -> {
                     config.setIdleTimeout(new Duration(30, SECONDS));
-                    config.setRequestTimeout(new Duration(10, SECONDS));
+                    config.setRequestTimeout(new Duration(200, SECONDS));
                 });
 
         // node scheduler
@@ -313,7 +313,7 @@ public class ServerMainModule
                 .withFilter(GenerateTraceTokenRequestFilter.class)
                 .withConfigDefaults(config -> {
                     config.setIdleTimeout(new Duration(30, SECONDS));
-                    config.setRequestTimeout(new Duration(10, SECONDS));
+                    config.setRequestTimeout(new Duration(200, SECONDS));
                     config.setMaxConnectionsPerServer(250);
                     config.setMaxContentLength(new DataSize(32, MEGABYTE));
                 });

@@ -100,6 +100,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Streams.zip;
 import static io.prestosql.SystemSessionProperties.isCollectPlanStatisticsForAllQueries;
 import static io.prestosql.SystemSessionProperties.isUsePreferredWritePartitioning;
+import static io.prestosql.spi.StandardErrorCode.MISMATCHED_COLUMN_COUNT;
 import static io.prestosql.spi.StandardErrorCode.NOT_SUPPORTED;
 import static io.prestosql.spi.statistics.TableStatisticType.ROW_COUNT;
 import static io.prestosql.spi.type.BigintType.BIGINT;
@@ -359,7 +360,10 @@ public class LogicalPlanner
         Assignments.Builder assignments = Assignments.builder();
         boolean supportsMissingColumnsOnInsert = metadata.supportsMissingColumnsOnInsert(session, insert.getTarget());
         ImmutableList.Builder<ColumnMetadata> insertedColumnsBuilder = ImmutableList.builder();
-
+        if (insert.getColumns().size() != plan.getFieldMappings().size()) {
+            throw new PrestoException(MISMATCHED_COLUMN_COUNT, "Insert query has mismatched column count: Table have " +
+                    insert.getColumns().size() + " columns, but query has " + plan.getFieldMappings().size());
+        }
         for (ColumnMetadata column : tableMetadata.getColumns()) {
             if (column.isHidden()) {
                 continue;

@@ -401,4 +401,11 @@ public class BasicSQLs extends SQLTester {
         checkASTNode(prestoSql, hiveSql);
     }
 
+    @Test
+    public void testInsertIntoValues()
+    {
+        String sql = "insert into tbl values ('a','b'),('c','d')";
+        checkASTNode(sql);
+    }
+
 }

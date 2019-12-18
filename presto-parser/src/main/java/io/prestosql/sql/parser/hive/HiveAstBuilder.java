@@ -1558,6 +1558,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         if (expressions.size() != 1 && ctx.qualifiedName().getText().equalsIgnoreCase("count")) {
+            if (expressions == null || expressions.size() == 0) {
+                throw parseError("count() need a parameter, count(1) for example", ctx);
+            }
             Row row = new Row(getLocation(ctx), expressions);
             return new FunctionCall(
                     Optional.of(getLocation(ctx)),

@@ -49,4 +49,10 @@ public class UnsupportedSQLs extends SQLTester {
         String hiveSql = "create table t select m from t1";
         checkASTNode(hiveSql);
     }
+
+    @Test(expectedExceptions = ParsingException.class)
+    public void testCase11() {
+        String hiveSql = "select count() from tbl";
+        checkASTNode(hiveSql);
+    }
 }

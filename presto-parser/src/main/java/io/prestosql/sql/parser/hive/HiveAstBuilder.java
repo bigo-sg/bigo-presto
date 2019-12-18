@@ -195,10 +195,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         TableSubquery child = new TableSubquery(getLocation(ctx), (Query) visit(ctx.queryNoWith()));
 
         Identifier tableAlias = (Identifier) visit(ctx.tableAlias());
+        Relation result;
         if (tableAlias == null) {
-            return child;
+            result = child;
         } else {
-            return new AliasedRelation(getLocation(ctx), child, tableAlias, null);
+            result = new AliasedRelation(getLocation(ctx), child, tableAlias, null);
+        }
+        if (ctx.sampledRelation() == null) {
+            return result;
+        } else {
+            return getSampleRelation(ctx.sampledRelation(), result);
         }
     }
 
@@ -208,10 +214,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             Relation relation = (Relation) visit(ctx.relation());
 
             Identifier tableAlias = (Identifier) visit(ctx.tableAlias());
+            Relation result;
             if (tableAlias == null) {
-                return relation;
+                result = relation;
             } else {
-                return new AliasedRelation(getLocation(ctx), relation, tableAlias, null);
+                result = new AliasedRelation(getLocation(ctx), relation, tableAlias, null);
+            }
+            if (ctx.sampledRelation() == null) {
+                return result;
+            } else {
+                return getSampleRelation(ctx.sampledRelation(), result);
             }
         }
 
@@ -641,6 +653,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         Identifier identifier = (Identifier) visit(ctx.functionTable().identifier());
 
         throw parseError("Don't support " + identifier.getValue(), ctx);
+    }
+
+    @Override public Node visitInlineTable(SqlBaseParser.InlineTableContext ctx) {
+        List<SqlBaseParser.ExpressionContext> expressionContexts = ctx.expression();
+        List<Expression> expressions = visit(expressionContexts, Expression.class);
+        Values values = new Values(expressions);
+        return values;
     }
 
     private Relation withJoinRelation(Relation left, SqlBaseParser.JoinRelationContext ctx) {
@@ -1125,20 +1144,39 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitTableName(SqlBaseParser.TableNameContext ctx) {
         Table table = (Table) visitTableIdentifier(ctx.tableIdentifier());
-
+        Relation result;
         if (ctx.tableAlias() != null && ctx.tableAlias().strictIdentifier() != null) {
             Identifier identifier = (Identifier) visit(ctx.tableAlias().strictIdentifier());
-
             List<Identifier> aliases = null;
             if (ctx.tableAlias().identifierList() != null) {
                 throw parseError("todo", ctx);
                 //aliases = visit(ctx.tableAlias().identifierList(), Identifier.class);
             }
-
-            return new AliasedRelation(getLocation(ctx), table, identifier, aliases);
+            result = new AliasedRelation(getLocation(ctx), table, identifier, aliases);
         } else {
-            return table;
+            result = table;
         }
+        if (ctx.sampledRelation() == null) {
+            return result;
+        } else {
+            return getSampleRelation(ctx.sampledRelation(), result);
+        }
+    }
+
+    private Node getSampleRelation(SqlBaseParser.SampledRelationContext ctx, Relation relation) {
+        SampledRelation.Type type;
+        if (ctx.sampleTypePresto().BERNOULLI() != null) {
+            type = SampledRelation.Type.BERNOULLI;
+        } else if (ctx.sampleTypePresto().SYSTEM() != null) {
+            type = SampledRelation.Type.SYSTEM;
+        } else {
+            throw parseError("not support sample function type", ctx);
+        }
+        SampledRelation sampledRelation = new SampledRelation(getLocation(ctx),
+                relation,
+                type,
+                new LongLiteral(ctx.percentage.getText()));
+        return sampledRelation;
     }
 
     @Override public Node visitShowFunctions(SqlBaseParser.ShowFunctionsContext ctx) {
@@ -1564,6 +1602,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         if (expressions.size() != 1 && ctx.qualifiedName().getText().equalsIgnoreCase("count")) {
+            if (expressions == null || expressions.size() == 0) {
+                throw parseError("count() need a parameter, count(1) for example", ctx);
+            }
             Row row = new Row(getLocation(ctx), expressions);
             return new FunctionCall(
                     Optional.of(getLocation(ctx)),

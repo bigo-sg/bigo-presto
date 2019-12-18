@@ -105,6 +105,7 @@ import io.prestosql.spiller.LocalSpillManager;
 import io.prestosql.spiller.NodeSpillConfig;
 import io.prestosql.spiller.PartitioningSpillerFactory;
 import io.prestosql.spiller.SingleStreamSpillerFactory;
+import io.prestosql.spiller.SpillSpaceTracker;
 import io.prestosql.spiller.SpillerFactory;
 import io.prestosql.spiller.SpillerStats;
 import io.prestosql.split.PageSinkManager;
@@ -419,8 +420,10 @@ public class ServerMainModule
         binder.bind(PartitioningSpillerFactory.class).to(GenericPartitioningSpillerFactory.class).in(Scopes.SINGLETON);
         binder.bind(SpillerStats.class).in(Scopes.SINGLETON);
         newExporter(binder).export(SpillerFactory.class).withGeneratedName();
+        newExporter(binder).export(SpillerStats.class).withGeneratedName();
         binder.bind(LocalSpillManager.class).in(Scopes.SINGLETON);
         configBinder(binder).bindConfig(NodeSpillConfig.class);
+        newExporter(binder).export(LocalSpillManager.class).withGeneratedName();
 
         // dispatcher
         // TODO remove dispatcher fromm ServerMainModule, and bind dependent components only on coordinators

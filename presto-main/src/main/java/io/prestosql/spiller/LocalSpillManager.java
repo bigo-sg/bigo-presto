@@ -14,6 +14,7 @@
 package io.prestosql.spiller;
 
 import com.google.inject.Inject;
+import org.weakref.jmx.Managed;
 
 import static java.util.Objects.requireNonNull;
 
@@ -31,5 +32,20 @@ public final class LocalSpillManager
     public SpillSpaceTracker getSpillSpaceTracker()
     {
         return spillSpaceTracker;
+    }
+
+    /**
+     * Returns the number of bytes currently on disk.
+     */
+    @Managed
+    public synchronized long getCurrentBytes()
+    {
+        return spillSpaceTracker.getCurrentBytes();
+    }
+
+    @Managed
+    public synchronized long getMaxBytes()
+    {
+        return spillSpaceTracker.getMaxBytes();
     }
 }

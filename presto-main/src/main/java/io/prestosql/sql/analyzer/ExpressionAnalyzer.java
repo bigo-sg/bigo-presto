@@ -545,6 +545,7 @@ public class ExpressionAnalyzer
                 }
                 else if (tc.stringAndValueType(leftType, rightType) == rightType) {
                     if (leftType.getTypeSignature().getBase().equals(StandardTypes.BIGINT)) {
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(BigintType.BIGINT)));
                     } else {
                         node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(DoubleType.DOUBLE)));
                         if (!leftType.getTypeSignature().getBase().equals(StandardTypes.DOUBLE)) {

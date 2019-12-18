@@ -113,22 +113,24 @@ public class ShowColumnsTask
 
         for (List<ColumnMetadata> columnMetadataList : schemaTableNameListMap.values()) {
             for (ColumnMetadata columnMetadata : columnMetadataList) {
-                List<Object> row = new ArrayList<>();
+                if (!columnMetadata.isHidden()) {
+                    List<Object> row = new ArrayList<>();
 
-                row.add(columnMetadata.getName());
-                row.add(columnMetadata.getType().getDisplayName());
-                if (columnMetadata.getExtraInfo() == null) {
-                    row.add("");
-                } else {
-                    row.add(columnMetadata.getExtraInfo());
-                }
-                if (columnMetadata.getComment() == null) {
-                    row.add("");
-                } else {
-                    row.add(columnMetadata.getComment());
-                }
+                    row.add(columnMetadata.getName());
+                    row.add(columnMetadata.getType().getDisplayName());
+                    if (columnMetadata.getExtraInfo() == null) {
+                        row.add("");
+                    } else {
+                        row.add(columnMetadata.getExtraInfo());
+                    }
+                    if (columnMetadata.getComment() == null) {
+                        row.add("");
+                    } else {
+                        row.add(columnMetadata.getComment());
+                    }
 
-                ret.add(row);
+                    ret.add(row);
+                }
             }
 
         }

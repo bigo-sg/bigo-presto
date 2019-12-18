@@ -408,4 +408,32 @@ public class BasicSQLs extends SQLTester {
         checkASTNode(sql);
     }
 
+    @Test
+    public void testSample()
+    {
+        String sql = "select * from tbl TABLESAMPLE BERNOULLI(25)";
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSample1()
+    {
+        String sql = "select * from tbl TABLESAMPLE SYSTEM(25)";
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSample2()
+    {
+        String sql = "select * from tbl t TABLESAMPLE SYSTEM(25)";
+        checkASTNode(sql);
+    }
+
+    @Test
+    public void testSample3()
+    {
+        String sql = "select * from (select uid from t)tbl TABLESAMPLE SYSTEM(25)";
+        checkASTNode(sql);
+    }
+
 }

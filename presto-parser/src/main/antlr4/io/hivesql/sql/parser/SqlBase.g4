@@ -508,11 +508,20 @@ identifierComment
     ;
 
 relationPrimary
-    : tableIdentifier sample? tableAlias      #tableName
-    | '(' queryNoWith ')' sample? tableAlias  #aliasedQuery
-    | '(' relation ')' sample? tableAlias     #aliasedRelation
-    | inlineTable                             #inlineTableDefault2
-    | functionTable                           #tableValuedFunction
+    : tableIdentifier sample? tableAlias sampledRelation?      #tableName
+    | '(' queryNoWith ')' sample? tableAlias sampledRelation?  #aliasedQuery
+    | '(' relation ')' sample? tableAlias sampledRelation?     #aliasedRelation
+    | inlineTable                                              #inlineTableDefault2
+    | functionTable                                            #tableValuedFunction
+    ;
+
+sampledRelation
+    : TABLESAMPLE sampleTypePresto '(' percentage=expression ')'
+    ;
+
+sampleTypePresto
+    : BERNOULLI
+    | SYSTEM
     ;
 
 inlineTable
@@ -789,6 +798,8 @@ DISTINCT: 'DISTINCT';
 WHERE: 'WHERE';
 GROUP: 'GROUP';
 BY: 'BY';
+BERNOULLI: 'BERNOULLI';
+SYSTEM: 'SYSTEM';
 GROUPING: 'GROUPING';
 SETS: 'SETS';
 CUBE: 'CUBE';

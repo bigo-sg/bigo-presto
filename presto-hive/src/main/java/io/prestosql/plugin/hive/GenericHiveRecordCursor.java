@@ -60,6 +60,7 @@ import static io.prestosql.plugin.hive.util.HiveUtil.getDeserializer;
 import static io.prestosql.plugin.hive.util.HiveUtil.getTableObjectInspector;
 import static io.prestosql.plugin.hive.util.HiveUtil.isStructuralType;
 import static io.prestosql.plugin.hive.util.SerDeUtils.getBlockObject;
+import static io.prestosql.spi.StandardErrorCode.INVALID_ARGUMENTS;
 import static io.prestosql.spi.type.BigintType.BIGINT;
 import static io.prestosql.spi.type.BooleanType.BOOLEAN;
 import static io.prestosql.spi.type.Chars.isCharType;
@@ -477,13 +478,25 @@ public class GenericHiveRecordCursor<K, V extends Writable>
             parseLongColumn(column);
         }
         else if (INTEGER.equals(type)) {
-            parseLongColumn(column);
+            try {
+                parseLongColumn(column);
+            } catch (Exception e) {
+                throw new PrestoException(INVALID_ARGUMENTS, "Can't convert INTEGER into BIGINT: " + e.getMessage());
+            }
         }
         else if (SMALLINT.equals(type)) {
-            parseLongColumn(column);
+            try {
+                parseLongColumn(column);
+            } catch (Exception e) {
+                throw new PrestoException(INVALID_ARGUMENTS, "Can't convert SMALLINT into BIGINT: " + e.getMessage());
+            }
         }
         else if (TINYINT.equals(type)) {
-            parseLongColumn(column);
+            try {
+                parseLongColumn(column);
+            } catch (Exception e) {
+                throw new PrestoException(INVALID_ARGUMENTS, "Can't convert TINYINT into BIGINT: " + e.getMessage());
+            }
         }
         else if (REAL.equals(type)) {
             parseLongColumn(column);

@@ -481,21 +481,21 @@ public class GenericHiveRecordCursor<K, V extends Writable>
             try {
                 parseLongColumn(column);
             } catch (Exception e) {
-                throw new PrestoException(INVALID_ARGUMENTS, "Can't convert INTEGER into BIGINT: " + e.getMessage());
+                throw new PrestoException(INVALID_ARGUMENTS, "Can't convert BIGINT into INTEGER: " + e.getMessage());
             }
         }
         else if (SMALLINT.equals(type)) {
             try {
                 parseLongColumn(column);
             } catch (Exception e) {
-                throw new PrestoException(INVALID_ARGUMENTS, "Can't convert SMALLINT into BIGINT: " + e.getMessage());
+                throw new PrestoException(INVALID_ARGUMENTS, "Can't convert BIGINT into SMALLINT: " + e.getMessage());
             }
         }
         else if (TINYINT.equals(type)) {
             try {
                 parseLongColumn(column);
             } catch (Exception e) {
-                throw new PrestoException(INVALID_ARGUMENTS, "Can't convert TINYINT into BIGINT: " + e.getMessage());
+                throw new PrestoException(INVALID_ARGUMENTS, "Can't convert BIGINT into TINYINT: " + e.getMessage());
             }
         }
         else if (REAL.equals(type)) {

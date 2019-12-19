@@ -330,22 +330,22 @@ public class TestMapOperators
                 mapType(BIGINT, TINYINT),
                 asMap(
                         ImmutableList.of(1L, 2L, 3L, 5L, 8L, 13L),
-                        asList((byte) 1, (byte) 0, (byte) 12, (byte) 13, (byte) 12, null)));
+                        asList((byte) 1, (byte) 0, (byte) 12, (byte) 12, (byte) 12, null)));
         assertFunction("CAST(JSON '{\"1\": true, \"2\": false, \"3\": 12345, \"5\": 12345.6, \"8\": \"12345\", \"13\": null}' AS MAP<BIGINT, SMALLINT>)",
                 mapType(BIGINT, SMALLINT),
                 asMap(
                         ImmutableList.of(1L, 2L, 3L, 5L, 8L, 13L),
-                        asList((short) 1, (short) 0, (short) 12345, (short) 12346, (short) 12345, null)));
+                        asList((short) 1, (short) 0, (short) 12345, (short) 12345, (short) 12345, null)));
         assertFunction("CAST(JSON '{\"1\": true, \"2\": false, \"3\": 12345678, \"5\": 12345678.9, \"8\": \"12345678\", \"13\": null}' AS MAP<BIGINT, INTEGER>)",
                 mapType(BIGINT, INTEGER),
                 asMap(
                         ImmutableList.of(1L, 2L, 3L, 5L, 8L, 13L),
-                        asList(1, 0, 12345678, 12345679, 12345678, null)));
+                        asList(1, 0, 12345678, 12345678, 12345678, null)));
         assertFunction("CAST(JSON '{\"1\": true, \"2\": false, \"3\": 1234567891234567, \"5\": 1234567891234567.8, \"8\": \"1234567891234567\", \"13\": null}' AS MAP<BIGINT, BIGINT>)",
                 mapType(BIGINT, BIGINT),
                 asMap(
                         ImmutableList.of(1L, 2L, 3L, 5L, 8L, 13L),
-                        asList(1L, 0L, 1234567891234567L, 1234567891234568L, 1234567891234567L, null)));
+                        asList(1L, 0L, 1234567891234567L, 1234567891234567L, 1234567891234567L, null)));
 
         // value type: real, double, decimal
         assertFunction("CAST(JSON '{\"1\": true, \"2\": false, \"3\": 12345, \"5\": 12345.67, \"8\": \"3.14\", \"13\": \"NaN\", \"21\": \"Infinity\", \"34\": \"-Infinity\", \"55\": null}' AS MAP<BIGINT, REAL>)",

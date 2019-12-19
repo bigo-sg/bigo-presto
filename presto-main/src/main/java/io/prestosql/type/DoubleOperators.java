@@ -193,7 +193,8 @@ public final class DoubleOperators
             throw new PrestoException(INVALID_CAST_ARGUMENT, "Cannot cast double NaN to integer");
         }
         try {
-            return toIntExact((long) MathFunctions.round(value));
+//            return toIntExact((long) MathFunctions.round(value));
+            return toIntExact((long) value);
         }
         catch (ArithmeticException e) {
             throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, "Out of range for integer: " + value, e);
@@ -208,7 +209,8 @@ public final class DoubleOperators
             throw new PrestoException(INVALID_CAST_ARGUMENT, "Cannot cast double NaN to smallint");
         }
         try {
-            return Shorts.checkedCast((long) MathFunctions.round(value));
+//            return Shorts.checkedCast((long) MathFunctions.round(value));
+            return Shorts.checkedCast((long) value);
         }
         catch (IllegalArgumentException e) {
             throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, "Out of range for smallint: " + value, e);
@@ -223,7 +225,8 @@ public final class DoubleOperators
             throw new PrestoException(INVALID_CAST_ARGUMENT, "Cannot cast double NaN to tinyint");
         }
         try {
-            return SignedBytes.checkedCast((long) MathFunctions.round(value));
+//            return SignedBytes.checkedCast((long) MathFunctions.round(value));
+            return SignedBytes.checkedCast((long) value);
         }
         catch (IllegalArgumentException e) {
             throw new PrestoException(NUMERIC_VALUE_OUT_OF_RANGE, "Out of range for tinyint: " + value, e);
@@ -235,7 +238,8 @@ public final class DoubleOperators
     public static long castToLong(@SqlType(StandardTypes.DOUBLE) double value)
     {
         try {
-            return DoubleMath.roundToLong(value, HALF_UP);
+//            return DoubleMath.roundToLong(value, HALF_UP);
+            return (long) value;
         }
         catch (ArithmeticException e) {
             throw new PrestoException(INVALID_CAST_ARGUMENT, format("Unable to cast %s to bigint", value), e);

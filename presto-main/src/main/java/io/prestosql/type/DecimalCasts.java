@@ -186,11 +186,12 @@ public final class DecimalCasts
     @UsedByGeneratedCode
     public static long shortDecimalToBigint(long decimal, long precision, long scale, long tenToScale)
     {
-        // this rounds the decimal value to the nearest integral value
-        if (decimal >= 0) {
-            return (decimal + tenToScale / 2) / tenToScale;
-        }
-        return -((-decimal + tenToScale / 2) / tenToScale);
+//        // this rounds the decimal value to the nearest integral value
+//        if (decimal >= 0) {
+//            return (decimal + tenToScale / 2) / tenToScale;
+//        }
+//        return -((-decimal + tenToScale / 2) / tenToScale);
+        return decimal / tenToScale;
     }
 
     @UsedByGeneratedCode
@@ -237,11 +238,12 @@ public final class DecimalCasts
     @UsedByGeneratedCode
     public static long shortDecimalToInteger(long decimal, long precision, long scale, long tenToScale)
     {
-        // this rounds the decimal value to the nearest integral value
-        long longResult = (decimal + tenToScale / 2) / tenToScale;
-        if (decimal < 0) {
-            longResult = -((-decimal + tenToScale / 2) / tenToScale);
-        }
+//        // this rounds the decimal value to the nearest integral value
+//        long longResult = (decimal + tenToScale / 2) / tenToScale;
+//        if (decimal < 0) {
+//            longResult = -((-decimal + tenToScale / 2) / tenToScale);
+//        }
+        long longResult = decimal / tenToScale;
 
         try {
             return toIntExact(longResult);
@@ -295,12 +297,12 @@ public final class DecimalCasts
     @UsedByGeneratedCode
     public static long shortDecimalToSmallint(long decimal, long precision, long scale, long tenToScale)
     {
-        // this rounds the decimal value to the nearest integral value
-        long longResult = (decimal + tenToScale / 2) / tenToScale;
-        if (decimal < 0) {
-            longResult = -((-decimal + tenToScale / 2) / tenToScale);
-        }
-
+//        // this rounds the decimal value to the nearest integral value
+//        long longResult = (decimal + tenToScale / 2) / tenToScale;
+//        if (decimal < 0) {
+//            longResult = -((-decimal + tenToScale / 2) / tenToScale);
+//        }
+        long longResult = decimal / tenToScale;
         try {
             return Shorts.checkedCast(longResult);
         }
@@ -353,12 +355,12 @@ public final class DecimalCasts
     @UsedByGeneratedCode
     public static long shortDecimalToTinyint(long decimal, long precision, long scale, long tenToScale)
     {
-        // this rounds the decimal value to the nearest integral value
-        long longResult = (decimal + tenToScale / 2) / tenToScale;
-        if (decimal < 0) {
-            longResult = -((-decimal + tenToScale / 2) / tenToScale);
-        }
-
+//        // this rounds the decimal value to the nearest integral value
+//        long longResult = (decimal + tenToScale / 2) / tenToScale;
+//        if (decimal < 0) {
+//            longResult = -((-decimal + tenToScale / 2) / tenToScale);
+//        }
+        long longResult = decimal / tenToScale;
         try {
             return SignedBytes.checkedCast(longResult);
         }

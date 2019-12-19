@@ -190,7 +190,11 @@ public final class VarcharOperators
             return Long.parseLong(slice.toStringUtf8());
         }
         catch (Exception e) {
-            return null;
+            try {
+                return (long) Double.parseDouble(slice.toStringUtf8());
+            } catch (NumberFormatException ex) {
+                return null;
+            }
         }
     }
 
@@ -204,7 +208,11 @@ public final class VarcharOperators
             return (long) Integer.parseInt(slice.toStringUtf8());
         }
         catch (Exception e) {
-            return null;
+            try {
+                return (long) Double.parseDouble(slice.toStringUtf8());
+            } catch (NumberFormatException ex) {
+                return null;
+            }
         }
     }
 
@@ -218,7 +226,11 @@ public final class VarcharOperators
             return (long) Short.parseShort(slice.toStringUtf8());
         }
         catch (Exception e) {
-            return null;
+            try {
+                return (long) Double.parseDouble(slice.toStringUtf8());
+            } catch (NumberFormatException ex) {
+                return null;
+            }
         }
     }
 
@@ -232,7 +244,11 @@ public final class VarcharOperators
             return (long) Byte.parseByte(slice.toStringUtf8());
         }
         catch (Exception e) {
-            return null;
+            try {
+                return (long) Double.parseDouble(slice.toStringUtf8());
+            } catch (NumberFormatException ex) {
+                return null;
+            }
         }
     }
 

@@ -455,7 +455,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitCreateTableLike(SqlBaseParser.CreateTableLikeContext ctx) {
-        return super.visitCreateTableLike(ctx);
+        return new CreateTableLike(
+                Optional.of(getLocation(ctx)),
+                getQualifiedName(ctx.target),
+                getQualifiedName(ctx.source),
+                ctx.EXISTS() != null && ctx.NOT() != null);
     }
 
     @Override

@@ -45,6 +45,7 @@ import io.prestosql.eventlistener.EventListenerManager;
 import io.prestosql.execution.CommentTask;
 import io.prestosql.execution.CommitTask;
 import io.prestosql.execution.CreateTableTask;
+import io.prestosql.execution.CreateTableLikeTask;
 import io.prestosql.execution.CreateViewTask;
 import io.prestosql.execution.DataDefinitionTask;
 import io.prestosql.execution.DeallocateTask;
@@ -130,6 +131,7 @@ import io.prestosql.sql.gen.JoinFilterFunctionCompiler;
 import io.prestosql.sql.gen.OrderingCompiler;
 import io.prestosql.sql.gen.PageFunctionCompiler;
 import io.prestosql.sql.parser.SqlParser;
+import io.prestosql.sql.parser.hive.CreateTableLike;
 import io.prestosql.sql.planner.LocalExecutionPlanner;
 import io.prestosql.sql.planner.LocalExecutionPlanner.LocalExecutionPlan;
 import io.prestosql.sql.planner.LogicalPlanner;
@@ -395,6 +397,7 @@ public class LocalQueryRunner
 
         dataDefinitionTask = ImmutableMap.<Class<? extends Statement>, DataDefinitionTask<?>>builder()
                 .put(CreateTable.class, new CreateTableTask())
+                .put(CreateTableLike.class, new CreateTableLikeTask())
                 .put(CreateView.class, new CreateViewTask(sqlParser, featuresConfig))
                 .put(DropTable.class, new DropTableTask())
                 .put(DropView.class, new DropViewTask())

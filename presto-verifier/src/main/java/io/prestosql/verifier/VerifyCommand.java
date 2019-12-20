@@ -31,6 +31,7 @@ import io.airlift.log.Logger;
 import io.prestosql.sql.parser.ParsingOptions;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.parser.SqlParserOptions;
+import io.prestosql.sql.parser.hive.CreateTableLike;
 import io.prestosql.sql.tree.AddColumn;
 import io.prestosql.sql.tree.Comment;
 import io.prestosql.sql.tree.CreateTable;
@@ -354,6 +355,9 @@ public class VerifyCommand
             return MODIFY;
         }
         if (statement instanceof CreateTable) {
+            return CREATE;
+        }
+        if (statement instanceof CreateTableLike) {
             return CREATE;
         }
         if (statement instanceof CreateTableAsSelect) {

@@ -499,6 +499,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         );
     }
 
+    @Override public Node visitChangeColumn(SqlBaseParser.ChangeColumnContext ctx) {
+        throw parseError("change column type not support yet!", ctx);
+    }
+
     @Override public Node visitDropTablePartitions(SqlBaseParser.DropTablePartitionsContext ctx) {
         List<SqlBaseParser.PartitionSpecContext> partitionSpecContexts = ctx.partitionSpec();
         Expression expressionRoot;

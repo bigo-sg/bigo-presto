@@ -55,4 +55,15 @@ public class UnsupportedSQLs extends SQLTester {
         String hiveSql = "select count() from tbl";
         checkASTNode(hiveSql);
     }
+    @Test(expectedExceptions = ParsingException.class)
+    public void testCase12() {
+        String hiveSql = "alter table tbl change c d string";
+        runHiveSQL(hiveSql);
+    }
+    @Test(expectedExceptions = ParsingException.class)
+    public void testCase13() {
+        String hiveSql = "alter table tbl change c string";
+        runHiveSQL(hiveSql);
+    }
+
 }

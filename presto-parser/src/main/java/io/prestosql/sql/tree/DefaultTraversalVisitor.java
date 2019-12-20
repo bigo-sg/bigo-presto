@@ -13,6 +13,9 @@
  */
 package io.prestosql.sql.tree;
 
+import io.prestosql.sql.parser.hive.CreateTableLike;
+import io.prestosql.sql.parser.hive.RLikePredicate;
+
 public abstract class DefaultTraversalVisitor<R, C>
         extends AstVisitor<R, C>
 {
@@ -595,6 +598,12 @@ public abstract class DefaultTraversalVisitor<R, C>
             process(property, context);
         }
 
+        return null;
+    }
+
+    @Override
+    public R visitCreateTableLike(CreateTableLike node, C context)
+    {
         return null;
     }
 

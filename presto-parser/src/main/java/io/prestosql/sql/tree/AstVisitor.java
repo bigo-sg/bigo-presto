@@ -13,6 +13,9 @@
  */
 package io.prestosql.sql.tree;
 
+import io.prestosql.sql.parser.hive.CreateTableLike;
+import io.prestosql.sql.parser.hive.RLikePredicate;
+
 import javax.annotation.Nullable;
 
 public abstract class AstVisitor<R, C>
@@ -548,6 +551,11 @@ public abstract class AstVisitor<R, C>
     }
 
     protected R visitCreateTable(CreateTable node, C context)
+    {
+        return visitStatement(node, context);
+    }
+
+    public R visitCreateTableLike(CreateTableLike node, C context)
     {
         return visitStatement(node, context);
     }

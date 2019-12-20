@@ -15,6 +15,7 @@ package io.prestosql.sql;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
+import io.prestosql.sql.parser.hive.CreateTableLike;
 import io.prestosql.sql.tree.AddColumn;
 import io.prestosql.sql.tree.AliasedRelation;
 import io.prestosql.sql.tree.AllColumns;
@@ -942,6 +943,20 @@ public final class SqlFormatter
 
             builder.append(formatPropertiesMultiLine(node.getProperties()));
 
+            return null;
+        }
+
+        @Override
+        public Void visitCreateTableLike(CreateTableLike node, Integer indent)
+        {
+            builder.append("CREATE TABLE ");
+            if (node.isNotExists()) {
+                builder.append("IF NOT EXISTS ");
+            }
+            String tableName = formatName(node.getName());
+            builder.append(tableName).append(" LIKE ");
+            String source = formatName(node.getSource());
+            builder.append(source);
             return null;
         }
 

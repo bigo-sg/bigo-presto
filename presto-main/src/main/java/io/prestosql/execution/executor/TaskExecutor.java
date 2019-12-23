@@ -64,8 +64,8 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Sets.newConcurrentHashSet;
+import static io.prestosql.execution.executor.BigoThreads.threadsNamed;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
-import static io.airlift.concurrent.Threads.threadsNamed;
 import static io.prestosql.execution.executor.MultilevelSplitQueue.computeLevel;
 import static io.prestosql.util.MoreMath.min;
 import static java.lang.String.format;
@@ -196,7 +196,7 @@ public class TaskExecutor
         checkArgument(guaranteedNumberOfDriversPerTask <= maximumNumberOfDriversPerTask, "guaranteedNumberOfDriversPerTask cannot be greater than maximumNumberOfDriversPerTask");
 
         // we manage thread pool size directly, so create an unlimited pool
-        this.executor = newCachedThreadPool(threadsNamed("task-processor-%s"));
+        this.executor = newCachedThreadPool(threadsNamed("task-processor-%s", Thread.MIN_PRIORITY));
         this.executorMBean = new ThreadPoolExecutorMBean((ThreadPoolExecutor) executor);
         this.runnerThreads = runnerThreads;
         this.embedVersion = requireNonNull(embedVersion, "embedVersion is null");

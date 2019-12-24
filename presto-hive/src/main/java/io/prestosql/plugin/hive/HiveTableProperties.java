@@ -181,7 +181,11 @@ public class HiveTableProperties
 
     public static HiveStorageFormat getHiveStorageFormat(Map<String, Object> tableProperties)
     {
-        return (HiveStorageFormat) tableProperties.get(STORAGE_FORMAT_PROPERTY);
+        HiveStorageFormat hiveStorageFormat = (HiveStorageFormat) tableProperties.get(STORAGE_FORMAT_PROPERTY);
+        if (hiveStorageFormat == null) {
+            return HiveStorageFormat.ORC;
+        }
+        return hiveStorageFormat;
     }
 
     @SuppressWarnings("unchecked")

@@ -25,7 +25,6 @@ import io.prestosql.metadata.QualifiedObjectName;
 import io.prestosql.metadata.TableHandle;
 import io.prestosql.security.AccessControl;
 import io.prestosql.spi.PrestoException;
-import io.prestosql.spi.connector.ColumnMetadata;
 import io.prestosql.spi.connector.ConnectorTableMetadata;
 import io.prestosql.sql.parser.hive.CreateTableLike;
 import io.prestosql.sql.tree.Expression;
@@ -33,7 +32,7 @@ import io.prestosql.transaction.TransactionManager;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static io.prestosql.metadata.MetadataUtil.createQualifiedObjectName;
@@ -80,7 +79,15 @@ public class CreateTableLikeTask
         }
 
         accessControl.checkCanCreateTable(session.toSecurityContext(), tableName);
-        ImmutableMap.Builder properties = ImmutableMap.builder().putAll(tableMetadata.getMetadata().getProperties());
+        ImmutableMap.Builder properties = ImmutableMap.builder();
+        tableMetadata.getMetadata().getProperties().forEach(new BiConsumer<String, Object>() {
+            @Override
+            public void accept(String s, Object o) {
+                if (!s.equals("external_location")) {
+                    properties.put(s, o);
+                }
+            }
+        });
         if (!tableMetadata.getMetadata().getProperties().containsKey("sorted_by")) {
             properties.put("sorted_by", ImmutableList.of());
         }
@@ -100,12 +107,9 @@ public class CreateTableLikeTask
             properties.put("bucket_count", 0);
         }
         ImmutableList.Builder columnMetadatas = ImmutableList.builder();
-        tableMetadata.getColumns().stream().forEach(new Consumer<ColumnMetadata>() {
-            @Override
-            public void accept(ColumnMetadata columnMetadata) {
-                if (!columnMetadata.getName().startsWith("$")) {
-                    columnMetadatas.add(columnMetadata);
-                }
+        tableMetadata.getColumns().stream().forEach(columnMetadata -> {
+            if (!columnMetadata.getName().startsWith("$")) {
+                columnMetadatas.add(columnMetadata);
             }
         });
         ConnectorTableMetadata newTableMetadata = new ConnectorTableMetadata(

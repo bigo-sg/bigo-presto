@@ -93,4 +93,15 @@ public abstract class SQLTester {
                         getFile() + path;
         return new String(FileUtils.getFileAsBytes(fullPath));
     }
+
+    public void traversalAstTree(Node node, NodeAction nodeAction) {
+        nodeAction.action(node);
+        for (Node child: node.getChildren()) {
+            traversalAstTree(child, nodeAction);
+        }
+    }
+
+    public interface NodeAction {
+        void action(Node node);
+    }
 }

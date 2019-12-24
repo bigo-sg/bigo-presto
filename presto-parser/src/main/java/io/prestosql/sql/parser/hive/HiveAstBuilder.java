@@ -470,7 +470,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitCtes(SqlBaseParser.CtesContext ctx) {
 
-        With with = null;
+        With with;
         List<SqlBaseParser.NamedQueryContext> namedQueryContexts = ctx.namedQuery();
         List<WithQuery> queries = new ArrayList<>();
         for (SqlBaseParser.NamedQueryContext namedQueryContext: namedQueryContexts) {
@@ -1435,10 +1435,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     return comparisonExpression;
                 }
             case SqlBaseParser.RLIKE:
+                Expression pattern = (Expression)visit(ctx.pattern);
+                if (pattern instanceof StringLiteral) {
+                    pattern = new StringLiteral(decreaseSlash(((StringLiteral)pattern).getValue()));
+                }
                 Expression rLikePredicate = new RLikePredicate(
                         getLocation(ctx),
                         expression,
-                        (Expression) visit(ctx.pattern),
+                        pattern,
                         Optional.empty());
 
                 if (ctx.NOT() != null) {
@@ -1596,6 +1600,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         List<Expression> expressions = visit(ctx.expression(), Expression.class);
+        ImmutableList.Builder expressionsBuileder = ImmutableList.builder();
+        expressions.stream().forEach(expression -> {
+            if (expression instanceof StringLiteral) {
+                expressionsBuileder.add(new StringLiteral(
+                        decreaseSlash(((StringLiteral)expression).getValue())
+                ));
+            } else {
+                expressionsBuileder.add(expression);
+            }
+        });
         if (expressions.size() == 1 && expressions.get(0) instanceof StarExpression) {
             return new FunctionCall(
                     Optional.of(getLocation(ctx)),
@@ -1633,7 +1647,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 Optional.empty(),//orderBy,
                 distinct,
                 Optional.empty(),
-                expressions
+                expressionsBuileder.build()
         );
     }
 
@@ -2146,6 +2160,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     {
         return value.substring(1, value.length() - 1)
                 .replace("''", "'");
+    }
+
+    /**
+     * replace \\ with \
+     * @param value
+     * @return replaced value
+     */
+    public static String decreaseSlash(String value)
+    {
+        return value.replace("\\\\", "\\");
     }
 
     public static String tryUnquote(String value)

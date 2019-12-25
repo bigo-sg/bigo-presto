@@ -152,7 +152,7 @@ public class TestDecimalCasts
     public void testDecimalToBigintCasts()
     {
         assertFunction("CAST(DECIMAL '2.34' AS BIGINT)", BIGINT, 2L);
-        assertFunction("CAST(DECIMAL '2.5' AS BIGINT)", BIGINT, 3L);
+        assertFunction("CAST(DECIMAL '2.5' AS BIGINT)", BIGINT, 2L);
         assertFunction("CAST(DECIMAL '2.49' AS BIGINT)", BIGINT, 2L);
         assertFunction("CAST(DECIMAL '20' AS BIGINT)", BIGINT, 20L);
         assertFunction("CAST(DECIMAL '1' AS BIGINT)", BIGINT, 1L);
@@ -160,12 +160,12 @@ public class TestDecimalCasts
         assertFunction("CAST(DECIMAL '-20' AS BIGINT)", BIGINT, -20L);
         assertFunction("CAST(DECIMAL '-1' AS BIGINT)", BIGINT, -1L);
         assertFunction("CAST(DECIMAL '-2.49' AS BIGINT)", BIGINT, -2L);
-        assertFunction("CAST(DECIMAL '-2.5' AS BIGINT)", BIGINT, -3L);
+        assertFunction("CAST(DECIMAL '-2.5' AS BIGINT)", BIGINT, -2L);
         assertFunction("CAST(DECIMAL '0.1234567890123456' AS BIGINT)", BIGINT, 0L);
-        assertFunction("CAST(DECIMAL '0.9999999999999999' AS BIGINT)", BIGINT, 1L);
+        assertFunction("CAST(DECIMAL '0.9999999999999999' AS BIGINT)", BIGINT, 0L);
         assertFunction("CAST(DECIMAL '0.00000000000000000000' AS BIGINT)", BIGINT, 0L);
         assertFunction("CAST(DECIMAL '0.99999999999999999999' AS BIGINT)", BIGINT, 1L);
-        assertFunction("CAST(DECIMAL '123.999999999999999' AS BIGINT)", BIGINT, 124L);
+        assertFunction("CAST(DECIMAL '123.999999999999999' AS BIGINT)", BIGINT, 123L);
         assertFunction("CAST(DECIMAL '999999999999999999' AS BIGINT)", BIGINT, 999999999999999999L);
 
         assertFunction("CAST(DECIMAL '1234567890.1234567890' AS BIGINT)", BIGINT, 1234567890L);
@@ -177,7 +177,7 @@ public class TestDecimalCasts
     public void testDecimalToIntegerCasts()
     {
         assertFunction("CAST(DECIMAL '2.34' AS INTEGER)", INTEGER, 2);
-        assertFunction("CAST(DECIMAL '2.5' AS INTEGER)", INTEGER, 3);
+        assertFunction("CAST(DECIMAL '2.5' AS INTEGER)", INTEGER, 2);
         assertFunction("CAST(DECIMAL '2.49' AS INTEGER)", INTEGER, 2);
         assertFunction("CAST(DECIMAL '20' AS INTEGER)", INTEGER, 20);
         assertFunction("CAST(DECIMAL '1' AS INTEGER)", INTEGER, 1);
@@ -185,12 +185,12 @@ public class TestDecimalCasts
         assertFunction("CAST(DECIMAL '-20' AS INTEGER)", INTEGER, -20);
         assertFunction("CAST(DECIMAL '-1' AS INTEGER)", INTEGER, -1);
         assertFunction("CAST(DECIMAL '-2.49' AS INTEGER)", INTEGER, -2);
-        assertFunction("CAST(DECIMAL '-2.5' AS INTEGER)", INTEGER, -3);
+        assertFunction("CAST(DECIMAL '-2.5' AS INTEGER)", INTEGER, -2);
         assertFunction("CAST(DECIMAL '0.1234567890123456' AS INTEGER)", INTEGER, 0);
-        assertFunction("CAST(DECIMAL '0.9999999999999999' AS INTEGER)", INTEGER, 1);
+        assertFunction("CAST(DECIMAL '0.9999999999999999' AS INTEGER)", INTEGER, 0);
         assertFunction("CAST(DECIMAL '0.00000000000000000000' AS INTEGER)", INTEGER, 0);
         assertFunction("CAST(DECIMAL '0.99999999999999999999' AS INTEGER)", INTEGER, 1);
-        assertFunction("CAST(DECIMAL '123.999999999999999' AS INTEGER)", INTEGER, 124);
+        assertFunction("CAST(DECIMAL '123.999999999999999' AS INTEGER)", INTEGER, 123);
 
         assertFunction("CAST(DECIMAL '1234567890.1234567890' AS INTEGER)", INTEGER, 1234567890);
         assertFunction("CAST(DECIMAL '-1234567890.1234567890' AS INTEGER)", INTEGER, -1234567890);
@@ -201,7 +201,7 @@ public class TestDecimalCasts
     public void testDecimalToSmallintCasts()
     {
         assertFunction("CAST(DECIMAL '2.34' AS SMALLINT)", SMALLINT, (short) 2);
-        assertFunction("CAST(DECIMAL '2.5' AS SMALLINT)", SMALLINT, (short) 3);
+        assertFunction("CAST(DECIMAL '2.5' AS SMALLINT)", SMALLINT, (short) 2);
         assertFunction("CAST(DECIMAL '2.49' AS SMALLINT)", SMALLINT, (short) 2);
         assertFunction("CAST(DECIMAL '20' AS SMALLINT)", SMALLINT, (short) 20);
         assertFunction("CAST(DECIMAL '1' AS SMALLINT)", SMALLINT, (short) 1);
@@ -209,12 +209,12 @@ public class TestDecimalCasts
         assertFunction("CAST(DECIMAL '-20' AS SMALLINT)", SMALLINT, (short) -20);
         assertFunction("CAST(DECIMAL '-1' AS SMALLINT)", SMALLINT, (short) -1);
         assertFunction("CAST(DECIMAL '-2.49' AS SMALLINT)", SMALLINT, (short) -2);
-        assertFunction("CAST(DECIMAL '-2.5' AS SMALLINT)", SMALLINT, (short) -3);
+        assertFunction("CAST(DECIMAL '-2.5' AS SMALLINT)", SMALLINT, (short) -2);
         assertFunction("CAST(DECIMAL '0.1234567890123456' AS SMALLINT)", SMALLINT, (short) 0);
-        assertFunction("CAST(DECIMAL '0.9999999999999999' AS SMALLINT)", SMALLINT, (short) 1);
+        assertFunction("CAST(DECIMAL '0.9999999999999999' AS SMALLINT)", SMALLINT, (short) 0);
         assertFunction("CAST(DECIMAL '0.00000000000000000000' AS SMALLINT)", SMALLINT, (short) 0);
         assertFunction("CAST(DECIMAL '0.99999999999999999999' AS SMALLINT)", SMALLINT, (short) 1);
-        assertFunction("CAST(DECIMAL '123.999999999999999' AS SMALLINT)", SMALLINT, (short) 124);
+        assertFunction("CAST(DECIMAL '123.999999999999999' AS SMALLINT)", SMALLINT, (short) 123);
 
         assertFunction("CAST(DECIMAL '1234.1234567890' AS SMALLINT)", SMALLINT, (short) 1234);
         assertFunction("CAST(DECIMAL '-1234.1234567890' AS SMALLINT)", SMALLINT, (short) -1234);
@@ -225,7 +225,7 @@ public class TestDecimalCasts
     public void testDecimalToTinyintCasts()
     {
         assertFunction("CAST(DECIMAL '2.34' AS TINYINT)", TINYINT, (byte) 2);
-        assertFunction("CAST(DECIMAL '2.5' AS TINYINT)", TINYINT, (byte) 3);
+        assertFunction("CAST(DECIMAL '2.5' AS TINYINT)", TINYINT, (byte) 2);
         assertFunction("CAST(DECIMAL '2.49' AS TINYINT)", TINYINT, (byte) 2);
         assertFunction("CAST(DECIMAL '20' AS TINYINT)", TINYINT, (byte) 20);
         assertFunction("CAST(DECIMAL '1' AS TINYINT)", TINYINT, (byte) 1);
@@ -233,12 +233,12 @@ public class TestDecimalCasts
         assertFunction("CAST(DECIMAL '-20' AS TINYINT)", TINYINT, (byte) -20);
         assertFunction("CAST(DECIMAL '-1' AS TINYINT)", TINYINT, (byte) -1);
         assertFunction("CAST(DECIMAL '-2.49' AS TINYINT)", TINYINT, (byte) -2);
-        assertFunction("CAST(DECIMAL '-2.5' AS TINYINT)", TINYINT, (byte) -3);
+        assertFunction("CAST(DECIMAL '-2.5' AS TINYINT)", TINYINT, (byte) -2);
         assertFunction("CAST(DECIMAL '0.1234567890123456' AS TINYINT)", TINYINT, (byte) 0);
-        assertFunction("CAST(DECIMAL '0.9999999999999999' AS TINYINT)", TINYINT, (byte) 1);
+        assertFunction("CAST(DECIMAL '0.9999999999999999' AS TINYINT)", TINYINT, (byte) 0);
         assertFunction("CAST(DECIMAL '0.00000000000000000000' AS TINYINT)", TINYINT, (byte) 0);
         assertFunction("CAST(DECIMAL '0.99999999999999999999' AS TINYINT)", TINYINT, (byte) 1);
-        assertFunction("CAST(DECIMAL '123.999999999999999' AS TINYINT)", TINYINT, (byte) 124);
+        assertFunction("CAST(DECIMAL '123.999999999999999' AS TINYINT)", TINYINT, (byte) 123);
 
         assertFunction("CAST(DECIMAL '12.1234567890' AS TINYINT)", TINYINT, (byte) 12);
         assertFunction("CAST(DECIMAL '-12.1234567890' AS TINYINT)", TINYINT, (byte) -12);

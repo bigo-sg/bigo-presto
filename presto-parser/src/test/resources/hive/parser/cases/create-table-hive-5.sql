@@ -3,4 +3,4 @@ create table if not exists tmp.test (
   sex string
 )ROW FORMAT DELIMITED
   FIELDS TERMINATED BY ','
-  ESCAPED BY '\n'
+  ESCAPED BY 'm'

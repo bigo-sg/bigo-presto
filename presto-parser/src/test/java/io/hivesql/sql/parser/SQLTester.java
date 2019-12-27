@@ -71,14 +71,14 @@ public abstract class SQLTester {
         checkASTNode(sql, sql);
     }
 
-    public void runHiveSQLFromFile(String hiveSqlPath) {
+    public Node runHiveSQLFromFile(String hiveSqlPath) {
         String hiveSql = getResourceContent(hiveSqlPath);
-        useHiveParser(hiveSql);
+        return useHiveParser(hiveSql);
     }
 
-    public void runPrestoSQLFromFile(String prestoSqlPath) {
+    public Node runPrestoSQLFromFile(String prestoSqlPath) {
         String prestoSql = getResourceContent(prestoSqlPath);
-        usePrestoParser(prestoSql);
+        return usePrestoParser(prestoSql);
     }
 
     static {

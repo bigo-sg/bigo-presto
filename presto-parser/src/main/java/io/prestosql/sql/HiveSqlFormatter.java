@@ -978,6 +978,14 @@ public final class HiveSqlFormatter
 
             List<String> bloomColumns = getPropertyColumns(properties, "orc_bloom_filter_columns");
             StringBuilder tableProperties = new StringBuilder();
+            Node node = properties.get("textfile_field_separator");
+            if (node != null) {
+                String separator = ((StringLiteral)node).getValue();
+                tableProperties.append(INDENT);
+                tableProperties.append("'field.delim'='");
+                tableProperties.append(separator);
+                tableProperties.append("',\n");
+            }
             if (bloomColumns.size() > 0) {
                 tableProperties.append(INDENT);
                 tableProperties.append("'orc.bloom.filter.columns'='");

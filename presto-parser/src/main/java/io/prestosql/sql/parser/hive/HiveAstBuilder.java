@@ -66,7 +66,51 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitShowPartitions(SqlBaseParser.ShowPartitionsContext ctx) {
-        throw parseError("Don't support show partitions at the moment, stay tuned ;)", ctx);
+        Table table = (Table)visit(ctx.tableIdentifier());
+        QualifiedName qualifiedName = table.getName();
+        String[] parts = new String[qualifiedName.getParts().size()];
+        for (int i = 0; i < qualifiedName.getParts().size(); ++i) {
+            parts[i] = qualifiedName.getParts().get(i);
+        }
+        parts[qualifiedName.getParts().size() - 1] = qualifiedName.getParts().get(qualifiedName.getParts().size() - 1) + "$partitions";
+        String[] newPart = new String[parts.length - 1];
+        for (int i = 0; i < parts.length - 1; ++i) {
+            newPart[i] = parts[i + 1];
+        }
+        QualifiedName newQualifiedName;
+        if (parts.length > 1) {
+            newQualifiedName = QualifiedName.of(parts[0], newPart);
+        } else {
+            newQualifiedName = QualifiedName.of(parts[0]);
+        }
+        Table newTable = new Table(newQualifiedName);
+        Optional<Expression> condition = Optional.empty();
+        SqlBaseParser.PartitionSpecContext partitionSpecContext = ctx.partitionSpec();
+        Expression expression;
+        if (partitionSpecContext != null) {
+            expression = getPartitionExpression(partitionSpecContext);
+            condition = Optional.of(expression);
+        }
+
+        Select select = new Select(false, ImmutableList.of(new AllColumns()));
+        QuerySpecification querySpecification = new QuerySpecification(
+                select,
+                Optional.of(newTable),
+                condition,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
+        );
+        Query query = new Query(
+                Optional.empty(),
+                querySpecification,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
+        );
+        return query;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package io.prestosql.plugin.bigo.udf;
 
+import io.airlift.slice.Murmur3Hash128;
+import io.airlift.slice.Murmur3Hash32;
 import io.airlift.slice.Slice;
 import io.prestosql.spi.function.Description;
 import io.prestosql.spi.function.LiteralParameters;
@@ -61,6 +63,26 @@ public final class MiscFunctions {
     public static long hash(@SqlType("varchar(x)") Slice value1, @SqlType("varchar(y)") Slice value2, @SqlType("varchar(z)") Slice value3, @SqlType("varchar(u)") Slice value4, @SqlType("varchar(t)") Slice value5)
     {
         long hashValue = Objects.hash(value1.hashCode(), value2.hashCode(), value3.hashCode(), value4.hashCode(), value5.hashCode());
+        return hashValue;
+    }
+
+    @Description("MurmurHash3_32 function")
+    @ScalarFunction("hash32")
+    @LiteralParameters("x")
+    @SqlType(StandardTypes.INTEGER)
+    public static long hash32(@SqlType("varchar(x)") Slice value)
+    {
+        long hashValue = Murmur3Hash32.hash(value);
+        return hashValue;
+    }
+
+    @Description("MurmurHash3_128 function")
+    @ScalarFunction("hash64")
+    @LiteralParameters("x")
+    @SqlType(StandardTypes.INTEGER)
+    public static long hash64(@SqlType("varchar(x)") Slice value)
+    {
+        long hashValue = Murmur3Hash128.hash64(value);
         return hashValue;
     }
 

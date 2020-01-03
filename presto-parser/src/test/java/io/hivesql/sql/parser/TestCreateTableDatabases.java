@@ -1,6 +1,7 @@
 package io.hivesql.sql.parser;
 
 import io.prestosql.sql.parser.hive.HiveAstBuilder;
+import io.prestosql.sql.tree.Node;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -79,6 +80,13 @@ public class TestCreateTableDatabases extends SQLTester {
 
         checkASTNodeFromFile("hive/parser/cases/create-table-presto-5.sql",
                 "hive/parser/cases/create-table-hive-5.sql");
+    }
+
+    @Test
+    public void createTable6() {
+
+        Node node = runHiveSQLFromFile("hive/parser/cases/create-table-hive-6.sql");
+        System.out.println(node);
     }
 
     @Test

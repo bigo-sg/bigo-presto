@@ -14,6 +14,7 @@
 package io.prestosql.sql.parser.hive;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import io.hivesql.sql.parser.SqlBaseLexer;
 import io.hivesql.sql.parser.SqlBaseParser;
@@ -27,10 +28,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -68,7 +66,51 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitShowPartitions(SqlBaseParser.ShowPartitionsContext ctx) {
-        throw parseError("Don't support show partitions at the moment, stay tuned ;)", ctx);
+        Table table = (Table)visit(ctx.tableIdentifier());
+        QualifiedName qualifiedName = table.getName();
+        String[] parts = new String[qualifiedName.getParts().size()];
+        for (int i = 0; i < qualifiedName.getParts().size(); ++i) {
+            parts[i] = qualifiedName.getParts().get(i);
+        }
+        parts[qualifiedName.getParts().size() - 1] = qualifiedName.getParts().get(qualifiedName.getParts().size() - 1) + "$partitions";
+        String[] newPart = new String[parts.length - 1];
+        for (int i = 0; i < parts.length - 1; ++i) {
+            newPart[i] = parts[i + 1];
+        }
+        QualifiedName newQualifiedName;
+        if (parts.length > 1) {
+            newQualifiedName = QualifiedName.of(parts[0], newPart);
+        } else {
+            newQualifiedName = QualifiedName.of(parts[0]);
+        }
+        Table newTable = new Table(newQualifiedName);
+        Optional<Expression> condition = Optional.empty();
+        SqlBaseParser.PartitionSpecContext partitionSpecContext = ctx.partitionSpec();
+        Expression expression;
+        if (partitionSpecContext != null) {
+            expression = getPartitionExpression(partitionSpecContext);
+            condition = Optional.of(expression);
+        }
+
+        Select select = new Select(false, ImmutableList.of(new AllColumns()));
+        QuerySpecification querySpecification = new QuerySpecification(
+                select,
+                Optional.of(newTable),
+                condition,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
+        );
+        Query query = new Query(
+                Optional.empty(),
+                querySpecification,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
+        );
+        return query;
     }
 
     @Override
@@ -244,6 +286,46 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
     }
 
+    private String getSpecialChar(String input) {
+        ImmutableMap map = ImmutableMap.builder()
+                .put('b', "\b")
+                .put('f', "\f")
+                .put('n', "\n")
+                .put('r', "\r")
+                .put('t', "\t")
+                .put('\\', "\\")
+                .put('\'', "\'")
+                .put('\"', "\"")
+                .build();
+        if (input == null || input.length() != 2 || input.charAt(0) != '\\') {
+            return input;
+        }
+        if (input.length() == 2 && input.charAt(0) == '\\') {
+            return (String) map.get(input.charAt(1));
+        }
+        return input;
+    }
+
+    private String getFileFormat(String sqlFormat) {
+        if (sqlFormat == null || sqlFormat.isEmpty()) {
+            return "ORC";
+        }
+        ImmutableMap map = ImmutableMap.builder()
+                .put("TEXTFILE", "TEXTFILE")
+                .put("SEQUENCEFILE", "SEQUENCEFILE")
+                .put("ORC", "ORC")
+                .put("ORCFILE", "ORC")
+                .put("PARQUET", "PARQUET")
+                .put("AVRO", "AVRO")
+                .put("RCFILE", "RCBINARY")
+                .put("JSONFILE", "JSON")
+                .build();
+        if (map.containsKey(sqlFormat)) {
+            return (String) map.get(sqlFormat.toUpperCase());
+        }
+        return "ORC";
+    }
+
     @Override
     public Node visitCreateHiveTable(SqlBaseParser.CreateHiveTableContext ctx) {
 
@@ -269,6 +351,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             properties.add(partitionedBy);
         }
 
+        boolean formatGet = false;
         // get store format
         if (ctx.rowFormat() != null && ctx.rowFormat(0) != null) {
             SqlBaseParser.RowFormatContext rowFormatContext = ctx.rowFormat(0);
@@ -279,18 +362,22 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Property property = new Property(new Identifier("format", false),
                             new StringLiteral("JSON"));
                     properties.add(property);
+                    formatGet = true;
                 } else if (format.contains("ParquetHiveSerDe")) {
                     Property property = new Property(new Identifier("format", false),
                             new StringLiteral("PARQUET"));
                     properties.add(property);
+                    formatGet = true;
                 } else if (format.contains("org.apache.hadoop.hive.serde2.avro.AvroSerDe")) {
                     Property property = new Property(new Identifier("format", false),
                             new StringLiteral("AVRO"));
                     properties.add(property);
+                    formatGet = true;
                 } else {
                     Property property = new Property(new Identifier("format", false),
                             new StringLiteral("ORC"));
                     properties.add(property);
+                    formatGet = true;
                 }
             } else if (rowFormatContext instanceof SqlBaseParser.RowFormatDelimitedContext) {
                 SqlBaseParser.RowFormatDelimitedContext rowFormatDelimitedContext =
@@ -299,65 +386,36 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     Property formatProperty = new Property(new Identifier("format", false),
                             new StringLiteral("TEXTFILE"));
                     properties.add(formatProperty);
+                    formatGet = true;
                     if (rowFormatDelimitedContext.FIELDS() != null) {
                         Property property = new Property(new Identifier("textfile_field_separator", false),
-                                new StringLiteral(unquote(rowFormatDelimitedContext.fieldsTerminatedBy.getText())));
+                                new StringLiteral(getSpecialChar(unquote(rowFormatDelimitedContext.fieldsTerminatedBy.getText()))));
                         properties.add(property);
                     }
                     if (rowFormatDelimitedContext.ESCAPED() != null) {
                         Property property = new Property(new Identifier("textfile_field_separator_escape", false),
-                                new StringLiteral(unquote(rowFormatDelimitedContext.escapedBy.getText())));
+                                new StringLiteral(getSpecialChar(unquote(rowFormatDelimitedContext.escapedBy.getText()))));
                         properties.add(property);
                     }
                 }
             }
-        } else if (ctx.createFileFormat() != null && ctx.createFileFormat(0) != null) {
+        }
+
+        if (!formatGet && ctx.createFileFormat() != null && ctx.createFileFormat(0) != null) {
             SqlBaseParser.CreateFileFormatContext createFileFormatContext = ctx.createFileFormat(0);
+
+            if (createFileFormatContext.BY() != null) {
+                throw parseError("not support stored by which is syntax for hive storage handler", createFileFormatContext);
+            }
             String format = createFileFormatContext.fileFormat().getText();
-            if (format.contains("org.apache.hadoop.hive.ql.io.RCFileInputFormat")) {
+
+            if (createFileFormatContext.fileFormat() instanceof SqlBaseParser.GenericFileFormatContext) {
+                SqlBaseParser.GenericFileFormatContext genericFileFormatContext = (SqlBaseParser.GenericFileFormatContext)createFileFormatContext.fileFormat();
+                String hiveFormat = getFileFormat(genericFileFormatContext.identifier().getText().toUpperCase());
                 Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("RCTEXT"));
+                        new StringLiteral(hiveFormat));
                 properties.add(property);
-            } else if (format.contains("org.apache.hadoop.mapred.SequenceFileInputFormat")) {
-                Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("SEQUENCEFILE"));
-                properties.add(property);
-            } else if (format.contains("org.apache.hadoop.mapred.TextInputFormat")) {
-                Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("TEXTFILE"));
-                properties.add(property);
-            } else if (format.equalsIgnoreCase("orc")) {
-                Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("ORC"));
-                properties.add(property);
-            } else if (format.equalsIgnoreCase("orcfile")) {
-                Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("ORC"));
-                properties.add(property);
-            } else if (format.equalsIgnoreCase("textfile")) {
-                Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("TEXTFILE"));
-                properties.add(property);
-            } else if (format.equalsIgnoreCase("rcfile")) {
-                Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("RCBINARY"));
-                properties.add(property);
-            } else if (format.equalsIgnoreCase("SEQUENCEFILE")) {
-                Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("SEQUENCEFILE"));
-                properties.add(property);
-            } else if (format.equalsIgnoreCase("PARQUET")) {
-                Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("PARQUET"));
-                properties.add(property);
-            } else if (format.equalsIgnoreCase("AVRO")) {
-                Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("AVRO"));
-                properties.add(property);
-            } else if (format.equalsIgnoreCase("JSON")) {
-                Property property = new Property(new Identifier("format", false),
-                        new StringLiteral("JSON"));
-                properties.add(property);
+                formatGet = true;
             } else {
                 throw parseError("create table format " + format + " not supported!",
                         createFileFormatContext);

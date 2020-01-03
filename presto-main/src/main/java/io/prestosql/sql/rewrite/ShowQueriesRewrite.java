@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Primitives;
 import io.prestosql.Session;
+import io.prestosql.SystemSessionProperties;
 import io.prestosql.connector.CatalogName;
 import io.prestosql.execution.warnings.WarningCollector;
 import io.prestosql.metadata.FunctionKind;
@@ -39,6 +40,7 @@ import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.spi.security.PrestoPrincipal;
 import io.prestosql.spi.security.PrincipalType;
 import io.prestosql.spi.session.PropertyMetadata;
+import io.prestosql.sql.HiveSqlFormatter;
 import io.prestosql.sql.analyzer.QueryExplainer;
 import io.prestosql.sql.parser.ParsingException;
 import io.prestosql.sql.parser.SqlParser;
@@ -479,7 +481,11 @@ final class ShowQueriesRewrite
                         false,
                         propertyNodes,
                         connectorTableMetadata.getComment());
-                return singleValueQuery("Create Table", formatSql(createTable).trim());
+                if (SystemSessionProperties.isEnableHiveSqlSynTax(session)) {
+                    return singleValueQuery("Create Table", HiveSqlFormatter.formatSql(createTable).trim());
+                } else {
+                    return singleValueQuery("Create Table", formatSql(createTable).trim());
+                }
             }
 
             throw new UnsupportedOperationException("SHOW CREATE only supported for tables and views");

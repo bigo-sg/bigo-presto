@@ -5,5 +5,5 @@
  WITH (
     format = 'TEXTFILE',
     textfile_field_separator = ',',
-    textfile_field_separator_escape = '\n'
+    textfile_field_separator_escape = 'm'
  )

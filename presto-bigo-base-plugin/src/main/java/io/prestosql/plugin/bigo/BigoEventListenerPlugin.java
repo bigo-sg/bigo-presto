@@ -35,6 +35,7 @@ import io.prestosql.plugin.bigo.udf.HexFunction;
 import io.prestosql.plugin.bigo.udf.IsNullFunction;
 import io.prestosql.plugin.bigo.udf.MD5Function;
 import io.prestosql.plugin.bigo.udf.MapSizeFunction;
+import io.prestosql.plugin.bigo.udf.MiscFunctions;
 import io.prestosql.plugin.bigo.udf.PosModFunction;
 import io.prestosql.plugin.bigo.udf.Sha2Function;
 import io.prestosql.plugin.bigo.udf.ShaFunction;

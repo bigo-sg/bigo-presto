@@ -112,7 +112,7 @@ public class RemoteTaskStats
     @ThreadSafe
     private static class IncrementalAverage
     {
-        private long count;
+        private volatile long count;
         private final AtomicDouble average = new AtomicDouble();
 
         synchronized void add(long value)

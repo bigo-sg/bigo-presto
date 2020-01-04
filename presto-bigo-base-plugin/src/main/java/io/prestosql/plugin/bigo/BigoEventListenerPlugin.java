@@ -30,6 +30,7 @@ import io.prestosql.plugin.bigo.udf.BigoTypeConversionFunctions;
 import io.prestosql.plugin.bigo.udf.BinaryFunction;
 import io.prestosql.plugin.bigo.udf.ConcatWsFunction;
 import io.prestosql.plugin.bigo.udf.DecodeFunction;
+import io.prestosql.plugin.bigo.udf.DefaultStrToMapFunction;
 import io.prestosql.plugin.bigo.udf.EncodeFunction;
 import io.prestosql.plugin.bigo.udf.HexFunction;
 import io.prestosql.plugin.bigo.udf.IsNullFunction;
@@ -42,9 +43,11 @@ import io.prestosql.plugin.bigo.udf.ShaFunction;
 import io.prestosql.plugin.bigo.udf.ShiftLeftFunction;
 import io.prestosql.plugin.bigo.udf.ShiftRightFunction;
 import io.prestosql.plugin.bigo.udf.ShiftRightUnsignedFunction;
+import io.prestosql.plugin.bigo.udf.StrToMapFunction;
 import io.prestosql.plugin.bigo.udf.SubstringIndexFunction;
 import io.prestosql.plugin.bigo.udf.UnBase64;
 import io.prestosql.plugin.bigo.udf.UnHexFunction;
+
 import io.prestosql.spi.Plugin;
 import io.prestosql.spi.eventlistener.EventListenerFactory;
 
@@ -96,6 +99,9 @@ public class BigoEventListenerPlugin
                 .add(UnBase64.class)
                 .add(SubstringIndexFunction.class)
                 .add(IsNullFunction.class)
+                .add(MiscFunctions.class)
+                .add(StrToMapFunction.class)
+                .add(DefaultStrToMapFunction.class)
                 .build();
     }
 }

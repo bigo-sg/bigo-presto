@@ -81,7 +81,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Bigo Hive Metastore Cache
  *
- * Only refresh tableCache, partitionNamesCache and partitionFilterCache
+ * Only refresh tableCache, tableNamesCache, partitionNamesCache and partitionFilterCache
  */
 @ThreadSafe
 public class BigoCachingHiveMetastore
@@ -148,7 +148,7 @@ public class BigoCachingHiveMetastore
         databaseCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadDatabase), executor));
 
-        tableNamesCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
+        tableNamesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadAllTables), executor));
 
         tablesWithParameterCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)

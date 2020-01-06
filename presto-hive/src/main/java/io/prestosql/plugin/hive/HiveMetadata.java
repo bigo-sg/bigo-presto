@@ -1046,6 +1046,16 @@ public class HiveMetadata
         metastore.renameTable(new HiveIdentity(session), handle.getSchemaName(), handle.getTableName(), newTableName.getSchemaName(), newTableName.getTableName());
     }
 
+    /**
+     * load data to table
+     */
+    public void loadData(ConnectorSession session, ConnectorTableHandle tableHandle, SchemaTableName tableName, String path, boolean overwrite, String partitionsEnd)
+    {
+        HiveTableHandle handle = (HiveTableHandle) tableHandle;
+        String location = metastore.getLocation(new HiveIdentity(session), handle.getSchemaName(), handle.getTableName()) + partitionsEnd;
+        locationService.loadData(session, tableName.getSchemaName(), tableName.getTableName(), location, path, overwrite);
+    }
+
     @Override
     public void setTableComment(ConnectorSession session, ConnectorTableHandle tableHandle, Optional<String> comment)
     {

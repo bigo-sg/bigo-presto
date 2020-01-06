@@ -69,6 +69,11 @@ public interface HiveMetastore
 
     void renameTable(HiveIdentity identity, String databaseName, String tableName, String newDatabaseName, String newTableName);
 
+    default void loadData(HiveIdentity identity, String location, String path, boolean overwrite)
+    {
+
+    }
+
     void commentTable(HiveIdentity identity, String databaseName, String tableName, Optional<String> comment);
 
     void addColumn(HiveIdentity identity, String databaseName, String tableName, String columnName, HiveType columnType, String columnComment);

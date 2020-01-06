@@ -63,6 +63,7 @@ import io.prestosql.sql.analyzer.Scope.AsteriskedIdentifierChainBasis;
 import io.prestosql.sql.parser.ParsingException;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.parser.hive.CreateTableLike;
+import io.prestosql.sql.parser.hive.LoadData;
 import io.prestosql.sql.planner.DeterminismEvaluator;
 import io.prestosql.sql.planner.ExpressionInterpreter;
 import io.prestosql.sql.planner.SymbolsExtractor;
@@ -747,6 +748,12 @@ class StatementAnalyzer
 
         @Override
         public Scope visitCreateTableLike(CreateTableLike node, Optional<Scope> scope)
+        {
+            return createAndAssignScope(node, scope);
+        }
+
+        @Override
+        public Scope visitLoadData(LoadData node, Optional<Scope> scope)
         {
             return createAndAssignScope(node, scope);
         }

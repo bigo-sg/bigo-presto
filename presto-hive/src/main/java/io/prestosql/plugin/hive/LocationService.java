@@ -79,4 +79,6 @@ public interface LocationService
             return writeMode;
         }
     }
+
+    void loadData(ConnectorSession session, String schemaName, String tableName, String location, String path, boolean overwrite);
 }

@@ -173,6 +173,14 @@ public interface Metadata
     void renameTable(Session session, TableHandle tableHandle, QualifiedObjectName newTableName);
 
     /**
+     * load data into the specified table.
+     */
+    default void loadData(Session session, TableHandle tableHandle, QualifiedObjectName qualifiedObjectName, String path, boolean overwrite, String partitionsEnd)
+    {
+
+    }
+
+    /**
      * Comments to the specified table.
      */
     void setTableComment(Session session, TableHandle tableHandle, Optional<String> comment);

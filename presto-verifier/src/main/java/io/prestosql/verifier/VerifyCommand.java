@@ -32,6 +32,7 @@ import io.prestosql.sql.parser.ParsingOptions;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.parser.SqlParserOptions;
 import io.prestosql.sql.parser.hive.CreateTableLike;
+import io.prestosql.sql.parser.hive.LoadData;
 import io.prestosql.sql.tree.AddColumn;
 import io.prestosql.sql.tree.Comment;
 import io.prestosql.sql.tree.CreateTable;
@@ -372,6 +373,9 @@ public class VerifyCommand
             return CREATE;
         }
         if (statement instanceof Delete) {
+            return MODIFY;
+        }
+        if (statement instanceof LoadData) {
             return MODIFY;
         }
         if (statement instanceof DropTable) {

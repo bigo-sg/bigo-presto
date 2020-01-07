@@ -67,10 +67,28 @@ public final class MiscFunctions {
     }
 
     @Description("MurmurHash3_32 function")
+    @ScalarFunction("hash")
+    @SqlType(StandardTypes.INTEGER)
+    public static long hash(@SqlType(StandardTypes.INTEGER) long value)
+    {
+        long hashValue = Murmur3Hash32.hash(value);
+        return hashValue;
+    }
+
+    @Description("MurmurHash3_32 function")
     @ScalarFunction("hash32")
     @LiteralParameters("x")
     @SqlType(StandardTypes.INTEGER)
     public static long hash32(@SqlType("varchar(x)") Slice value)
+    {
+        long hashValue = Murmur3Hash32.hash(value);
+        return hashValue;
+    }
+
+    @Description("MurmurHash3_32 function")
+    @ScalarFunction("hash32")
+    @SqlType(StandardTypes.INTEGER)
+    public static long hash32(@SqlType(StandardTypes.INTEGER) long value)
     {
         long hashValue = Murmur3Hash32.hash(value);
         return hashValue;
@@ -81,6 +99,15 @@ public final class MiscFunctions {
     @LiteralParameters("x")
     @SqlType(StandardTypes.INTEGER)
     public static long hash64(@SqlType("varchar(x)") Slice value)
+    {
+        long hashValue = Murmur3Hash128.hash64(value);
+        return hashValue;
+    }
+
+    @Description("MurmurHash3_128 function")
+    @ScalarFunction("hash64")
+    @SqlType(StandardTypes.INTEGER)
+    public static long hash64(@SqlType(StandardTypes.INTEGER) long value)
     {
         long hashValue = Murmur3Hash128.hash64(value);
         return hashValue;

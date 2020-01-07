@@ -17,6 +17,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.CaseFormat;
+import com.google.common.collect.ImmutableList;
 import io.prestosql.spi.PrestoWarning;
 import io.prestosql.spi.eventlistener.*;
 import lombok.Data;
@@ -76,6 +77,7 @@ public class AuditLogBean
     private String remoteClientAddress;
     private String userAgent;
     private String clientInfo;
+    private List<String> clientTags;
     private String source;
     private String catalog;
     private String schema;
@@ -146,6 +148,7 @@ public class AuditLogBean
         remoteClientAddress = getFromOptionalString(queryContext.getRemoteClientAddress());
         userAgent = getFromOptionalString(queryContext.getUserAgent());
         clientInfo = getFromOptionalString(queryContext.getClientInfo());
+        clientTags = ImmutableList.copyOf(queryContext.getClientTags());
         source = getFromOptionalString(queryContext.getSource());
         catalog = getFromOptionalString(queryContext.getCatalog());
         schema = getFromOptionalString(queryContext.getSchema());
@@ -237,6 +240,9 @@ public class AuditLogBean
                 } else if (name.equals("log")) {
                     // ignore log field
                     continue;
+                } else if (name.equals("client_tags")) {
+                    JSONArray clientTagsJson = JSON.parseArray(JSON.toJSONString(clientTags));
+                    jsonObject.put("client_tags", clientTagsJson);
                 }
                 jsonObject.put(name, value);
             } catch (IllegalAccessException e) {

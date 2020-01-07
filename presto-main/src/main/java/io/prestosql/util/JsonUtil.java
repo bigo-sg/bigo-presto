@@ -1311,7 +1311,7 @@ public final class JsonUtil
     public static class HashTable
     {
         private static final int EXPECTED_ENTRIES = 20;
-        private static final float FILL_RATIO = 0.75f;
+        private static final float FILL_RATIO = 0.85f;
         private static final int EMPTY_SLOT = -1;
 
         private final Type type;

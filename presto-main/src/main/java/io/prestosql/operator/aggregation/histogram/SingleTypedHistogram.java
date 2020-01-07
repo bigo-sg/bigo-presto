@@ -33,7 +33,7 @@ public class SingleTypedHistogram
         implements TypedHistogram
 {
     private static final int INSTANCE_SIZE = ClassLayout.parseClass(SingleTypedHistogram.class).instanceSize();
-    private static final float FILL_RATIO = 0.75f;
+    private static final float FILL_RATIO = 0.85f;
 
     private final int expectedSize;
     private int hashCapacity;

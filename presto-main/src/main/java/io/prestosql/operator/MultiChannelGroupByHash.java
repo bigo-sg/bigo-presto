@@ -55,7 +55,7 @@ public class MultiChannelGroupByHash
         implements GroupByHash
 {
     private static final int INSTANCE_SIZE = ClassLayout.parseClass(MultiChannelGroupByHash.class).instanceSize();
-    private static final float FILL_RATIO = 0.75f;
+    private static final float FILL_RATIO = 0.85f;
     private final List<Type> types;
     private final List<Type> hashTypes;
     private final int[] channels;

@@ -45,7 +45,7 @@ public class TypedSet
 
     private static final int INSTANCE_SIZE = ClassLayout.parseClass(TypedSet.class).instanceSize();
     private static final int INT_ARRAY_LIST_INSTANCE_SIZE = ClassLayout.parseClass(IntArrayList.class).instanceSize();
-    private static final float FILL_RATIO = 0.75f;
+    private static final float FILL_RATIO = 0.85f;
 
     private final Type elementType;
     private final Optional<MethodHandle> elementIsDistinctFrom;

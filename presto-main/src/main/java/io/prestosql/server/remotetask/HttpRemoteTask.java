@@ -592,7 +592,7 @@ public final class HttpRemoteTask
         if (currentRequest != null) {
             currentRequest.cancel(true);
             currentRequest = null;
-            currentRequestStartNanos = 0;
+            // currentRequestStartNanos = 0;
         }
 
         taskStatusFetcher.stop();

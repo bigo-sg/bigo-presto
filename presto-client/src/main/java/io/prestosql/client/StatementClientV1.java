@@ -36,6 +36,7 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.time.ZoneId;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -113,6 +115,8 @@ class StatementClientV1
     private final String clientCapabilities;
 
     private final AtomicReference<State> state = new AtomicReference<>(State.RUNNING);
+
+    private static final Logger LOG = Logger.getLogger("StatementClientV1");
 
     public StatementClientV1(OkHttpClient httpClient, ClientSession session, String query)
     {
@@ -384,12 +388,17 @@ class StatementClientV1
             attempts++;
 
             JsonResponse<QueryResults> response;
+            Calendar calendar = Calendar.getInstance();
             try {
+                System.out.println(calendar.getTime() + ", client_advance, start processing response...request: " + request);
                 response = JsonResponse.execute(QUERY_RESULTS_CODEC, httpClient, request);
             }
             catch (RuntimeException e) {
+                System.out.println(calendar.getTime() + ", client_advance, process response error. " + e.getMessage() + ". request: " + request);
                 cause = e;
                 continue;
+            } finally {
+                System.out.println(calendar.getTime() + ", client_advance, final message. request: " + request);
             }
 
             if ((response.getStatusCode() == HTTP_OK) && response.hasValue()) {

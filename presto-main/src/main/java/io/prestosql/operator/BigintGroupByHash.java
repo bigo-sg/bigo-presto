@@ -45,7 +45,7 @@ public class BigintGroupByHash
 {
     private static final int INSTANCE_SIZE = ClassLayout.parseClass(BigintGroupByHash.class).instanceSize();
 
-    private static final float FILL_RATIO = 0.75f;
+    private static final float FILL_RATIO = 0.85f;
     private static final List<Type> TYPES = ImmutableList.of(BIGINT);
     private static final List<Type> TYPES_WITH_RAW_HASH = ImmutableList.of(BIGINT, BIGINT);
 

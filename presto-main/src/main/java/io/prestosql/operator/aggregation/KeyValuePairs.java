@@ -35,7 +35,7 @@ public class KeyValuePairs
     private static final int INSTANCE_SIZE = ClassLayout.parseClass(KeyValuePairs.class).instanceSize();
     private static final int EXPECTED_ENTRIES = 10;
     private static final int EXPECTED_ENTRY_SIZE = 16;
-    private static final float FILL_RATIO = 0.75f;
+    private static final float FILL_RATIO = 0.85f;
     private static final int EMPTY_SLOT = -1;
 
     private final BlockBuilder keyBlockBuilder;

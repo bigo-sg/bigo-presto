@@ -60,7 +60,7 @@ public final class PagesHash
         this.channelCount = pagesHashStrategy.getChannelCount();
 
         // reserve memory for the arrays
-        int hashSize = HashCommon.arraySize(addresses.size(), 0.75f);
+        int hashSize = HashCommon.arraySize(addresses.size(), 0.85f);
 
         mask = hashSize - 1;
         key = new int[hashSize];

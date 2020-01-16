@@ -19,9 +19,13 @@ import org.weakref.jmx.Managed;
 import org.weakref.jmx.Nested;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class RemoteTaskStats
 {
+    private final IncrementalAverage realTimeUpdateRoundTripMillis = new IncrementalAverage(true);
     private final IncrementalAverage updateRoundTripMillis = new IncrementalAverage();
     private final IncrementalAverage infoRoundTripMillis = new IncrementalAverage();
     private final IncrementalAverage statusRoundTripMillis = new IncrementalAverage();
@@ -44,6 +48,10 @@ public class RemoteTaskStats
     public void updateRoundTripMillis(long roundTripMillis)
     {
         updateRoundTripMillis.add(roundTripMillis);
+    }
+
+    public void realTimeUpdateRoundTripMillis(long realTimeUpdateRoundTripMillis) {
+        this.realTimeUpdateRoundTripMillis.add(realTimeUpdateRoundTripMillis);
     }
 
     public void responseSize(long responseSizeBytes)
@@ -103,6 +111,11 @@ public class RemoteTaskStats
     }
 
     @Managed
+    public double getRealTimeUpdateRoundTripMillis() {
+        return realTimeUpdateRoundTripMillis.get();
+    }
+
+    @Managed
     @Nested
     public DistributionStat getUpdateWithPlanBytes()
     {
@@ -112,8 +125,26 @@ public class RemoteTaskStats
     @ThreadSafe
     private static class IncrementalAverage
     {
+        // This is used for cleaning up the variables count and average at fixed rate
+        private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(3);
+
         private volatile long count;
         private final AtomicDouble average = new AtomicDouble();
+
+        public IncrementalAverage() {
+            this(false);
+        }
+
+        public IncrementalAverage(boolean cleanUpAtFixedRate) {
+            if (cleanUpAtFixedRate) {
+                executorService.scheduleAtFixedRate(() -> {
+                    synchronized (IncrementalAverage.this) {
+                        count = 0L;
+                        average.set(0);
+                    }
+                }, 1L, 1L, TimeUnit.MINUTES);
+            }
+        }
 
         synchronized void add(long value)
         {

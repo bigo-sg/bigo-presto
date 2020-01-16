@@ -827,6 +827,7 @@ public final class HttpRemoteTask
         {
             Duration requestRoundTrip = Duration.nanosSince(currentRequestStartNanos);
             stats.updateRoundTripMillis(requestRoundTrip.toMillis());
+            stats.realTimeUpdateRoundTripMillis(requestRoundTrip.toMillis());
         }
     }
 }

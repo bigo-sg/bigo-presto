@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 public class RemoteTaskStats
 {
+    private final IncrementalMaximum maxUpdateRoundTripMillis = new IncrementalMaximum(true);
     private final IncrementalAverage realTimeUpdateRoundTripMillis = new IncrementalAverage(true);
     private final IncrementalAverage updateRoundTripMillis = new IncrementalAverage();
     private final IncrementalAverage infoRoundTripMillis = new IncrementalAverage();
@@ -52,6 +53,10 @@ public class RemoteTaskStats
 
     public void realTimeUpdateRoundTripMillis(long realTimeUpdateRoundTripMillis) {
         this.realTimeUpdateRoundTripMillis.add(realTimeUpdateRoundTripMillis);
+    }
+
+    public void maxUpdateRoundTripMillis(long maxUpdateRoundTripMillis) {
+        this.maxUpdateRoundTripMillis.add(maxUpdateRoundTripMillis);
     }
 
     public void responseSize(long responseSizeBytes)
@@ -116,6 +121,11 @@ public class RemoteTaskStats
     }
 
     @Managed
+    public double getMaxUpdateRoundTripMillis() {
+        return maxUpdateRoundTripMillis.get();
+    }
+
+    @Managed
     @Nested
     public DistributionStat getUpdateWithPlanBytes()
     {
@@ -126,7 +136,7 @@ public class RemoteTaskStats
     private static class IncrementalAverage
     {
         // This is used for cleaning up the variables count and average at fixed rate
-        private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(3);
+        private ScheduledExecutorService executorService;
 
         private volatile long count;
         private final AtomicDouble average = new AtomicDouble();
@@ -137,6 +147,14 @@ public class RemoteTaskStats
 
         public IncrementalAverage(boolean cleanUpAtFixedRate) {
             if (cleanUpAtFixedRate) {
+                // use double-check strategy to reduce thread number
+                if (null == executorService) {
+                    synchronized (IncrementalAverage.this) {
+                        if (null == executorService) {
+                            executorService = Executors.newScheduledThreadPool(3);
+                        }
+                    }
+                }
                 executorService.scheduleAtFixedRate(() -> {
                     synchronized (IncrementalAverage.this) {
                         count = 0L;
@@ -156,6 +174,50 @@ public class RemoteTaskStats
         double get()
         {
             return average.get();
+        }
+    }
+
+    @ThreadSafe
+    private static class IncrementalMaximum
+    {
+        // This is used for cleaning up the variables count and maximum at fixed rate
+        private ScheduledExecutorService executorService;
+
+        private final AtomicDouble maximum = new AtomicDouble();
+
+        public IncrementalMaximum() {
+            this(false);
+        }
+
+        public IncrementalMaximum(boolean cleanUpAtFixedRate) {
+            if (cleanUpAtFixedRate) {
+                // use double-check strategy to reduce thread number
+                if (null == executorService) {
+                    synchronized (IncrementalMaximum.this) {
+                        if (null == executorService) {
+                            executorService = Executors.newScheduledThreadPool(3);
+                        }
+                    }
+                }
+                executorService.scheduleAtFixedRate(() -> {
+                    synchronized (IncrementalMaximum.this) {
+                        maximum.set(0);
+                    }
+                }, 1L, 1L, TimeUnit.MINUTES);
+            }
+        }
+
+        synchronized void add(long value)
+        {
+            double oldMaximum = maximum.get();
+            if (value > oldMaximum) {
+                maximum.set(value);
+            }
+        }
+
+        double get()
+        {
+            return maximum.get();
         }
     }
 }

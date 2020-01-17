@@ -159,16 +159,16 @@ public final class DateTimeFunctions
         return localChronology.getZone().convertUTCToLocal(session.getStartTime());
     }
 
-    @ScalarFunction("from_unixtime")
+    @ScalarFunction("from_unixtime_presto")
     @SqlType(StandardTypes.TIMESTAMP)
-    public static long fromUnixTime(@SqlType(StandardTypes.DOUBLE) double unixTime)
+    public static long fromUnixTimePresto(@SqlType(StandardTypes.DOUBLE) double unixTime)
     {
         return Math.round(unixTime * 1000);
     }
 
-    @ScalarFunction("from_unixtime")
+    @ScalarFunction("from_unixtime_presto")
     @SqlType(StandardTypes.TIMESTAMP_WITH_TIME_ZONE)
-    public static long fromUnixTime(@SqlType(StandardTypes.DOUBLE) double unixTime, @SqlType(StandardTypes.BIGINT) long hoursOffset, @SqlType(StandardTypes.BIGINT) long minutesOffset)
+    public static long fromUnixTimePresto(@SqlType(StandardTypes.DOUBLE) double unixTime, @SqlType(StandardTypes.BIGINT) long hoursOffset, @SqlType(StandardTypes.BIGINT) long minutesOffset)
     {
         TimeZoneKey timeZoneKey;
         try {
@@ -180,10 +180,10 @@ public final class DateTimeFunctions
         return packDateTimeWithZone(Math.round(unixTime * 1000), timeZoneKey);
     }
 
-    @ScalarFunction("from_unixtime")
+    @ScalarFunction("from_unixtime_presto")
     @LiteralParameters("x")
     @SqlType(StandardTypes.TIMESTAMP_WITH_TIME_ZONE)
-    public static long fromUnixTime(@SqlType(StandardTypes.DOUBLE) double unixTime, @SqlType("varchar(x)") Slice zoneId)
+    public static long fromUnixTimePresto(@SqlType(StandardTypes.DOUBLE) double unixTime, @SqlType("varchar(x)") Slice zoneId)
     {
         return packDateTimeWithZone(Math.round(unixTime * 1000), zoneId.toStringUtf8());
     }

@@ -15,38 +15,7 @@ package io.prestosql.plugin.bigo;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import io.prestosql.plugin.bigo.udf.ArrayContainsFunction;
-import io.prestosql.plugin.bigo.udf.ArraySizeFunction;
-import io.prestosql.plugin.bigo.udf.AsciiFunction;
-import io.prestosql.plugin.bigo.udf.BigoConditionalFunctions;
-import io.prestosql.plugin.bigo.udf.BigoDateTimeFunctions;
-import io.prestosql.plugin.bigo.udf.BigoDecodeUrl;
-import io.prestosql.plugin.bigo.udf.BigoIndigoUidHash;
-import io.prestosql.plugin.bigo.udf.BigoIndigoUidHashMod;
-import io.prestosql.plugin.bigo.udf.BigoIsAVFeature;
-import io.prestosql.plugin.bigo.udf.BigoIsAVTest;
-import io.prestosql.plugin.bigo.udf.BigoStringFunctions;
-import io.prestosql.plugin.bigo.udf.BigoTypeConversionFunctions;
-import io.prestosql.plugin.bigo.udf.BinaryFunction;
-import io.prestosql.plugin.bigo.udf.ConcatWsFunction;
-import io.prestosql.plugin.bigo.udf.DecodeFunction;
-import io.prestosql.plugin.bigo.udf.DefaultStrToMapFunction;
-import io.prestosql.plugin.bigo.udf.EncodeFunction;
-import io.prestosql.plugin.bigo.udf.HexFunction;
-import io.prestosql.plugin.bigo.udf.IsNullFunction;
-import io.prestosql.plugin.bigo.udf.MD5Function;
-import io.prestosql.plugin.bigo.udf.MapSizeFunction;
-import io.prestosql.plugin.bigo.udf.MiscFunctions;
-import io.prestosql.plugin.bigo.udf.PosModFunction;
-import io.prestosql.plugin.bigo.udf.Sha2Function;
-import io.prestosql.plugin.bigo.udf.ShaFunction;
-import io.prestosql.plugin.bigo.udf.ShiftLeftFunction;
-import io.prestosql.plugin.bigo.udf.ShiftRightFunction;
-import io.prestosql.plugin.bigo.udf.ShiftRightUnsignedFunction;
-import io.prestosql.plugin.bigo.udf.StrToMapFunction;
-import io.prestosql.plugin.bigo.udf.SubstringIndexFunction;
-import io.prestosql.plugin.bigo.udf.UnBase64;
-import io.prestosql.plugin.bigo.udf.UnHexFunction;
+import io.prestosql.plugin.bigo.udf.*;
 
 import io.prestosql.spi.Plugin;
 import io.prestosql.spi.eventlistener.EventListenerFactory;
@@ -102,6 +71,7 @@ public class BigoEventListenerPlugin
                 .add(MiscFunctions.class)
                 .add(StrToMapFunction.class)
                 .add(DefaultStrToMapFunction.class)
+                .add(ExternalDateTimeFunctions.class)
                 .build();
     }
 }

@@ -12,6 +12,7 @@ import io.prestosql.sql.tree.Expression;
 import io.prestosql.sql.tree.Identifier;
 import io.prestosql.sql.tree.Limit;
 import io.prestosql.sql.tree.Node;
+import io.prestosql.sql.tree.NodeLocation;
 import io.prestosql.sql.tree.NodeRef;
 import io.prestosql.sql.tree.Parameter;
 import io.prestosql.sql.tree.Property;
@@ -33,6 +34,14 @@ final public class DownloadRewrite
 
     static final Optional<String> COMMENT = Optional.of("This table is generated automatically by Presto to store temporary result for download. It is safe to delete.");
 
+    private static NodeLocation getLocation(Node node) {
+        if (node.getLocation().isPresent()) {
+            return node.getLocation().get();
+        } else {
+            return new NodeLocation(0, 0);
+        }
+    }
+
     @Override
     // note, we didn't use visitor pattern in here as it's easier to implement in this way.
     public Statement rewrite(
@@ -46,18 +55,12 @@ final public class DownloadRewrite
             AccessControl accessControl,
             WarningCollector warningCollector) {
 
-
         if (! SystemSessionProperties.isEnableDownloadRewrite(session)) {
             return node;
         }
 
         // only rewrite query statement
         if (! (node instanceof Query)) {
-            return node;
-        }
-
-        // only rewrite the query if this is the original statement.
-        if (! node.getLocation().isPresent()) {
             return node;
         }
 
@@ -105,7 +108,7 @@ final public class DownloadRewrite
     private QuerySpecification updateQuerySpecification(QuerySpecification querySpecification, Session session) {
         Optional<Node> updatedLimitNode = updateLimitNode(querySpecification.getLimit(), session);
 
-        return new QuerySpecification(querySpecification.getLocation().get(),
+        return new QuerySpecification(getLocation(querySpecification),
                 querySpecification.getSelect(),
                 querySpecification.getFrom(),
                 querySpecification.getWhere(),

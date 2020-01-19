@@ -19,9 +19,14 @@ import org.weakref.jmx.Managed;
 import org.weakref.jmx.Nested;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class RemoteTaskStats
 {
+    private final IncrementalMaximum maxUpdateRoundTripMillis = new IncrementalMaximum(true);
+    private final IncrementalAverage realTimeUpdateRoundTripMillis = new IncrementalAverage(true);
     private final IncrementalAverage updateRoundTripMillis = new IncrementalAverage();
     private final IncrementalAverage infoRoundTripMillis = new IncrementalAverage();
     private final IncrementalAverage statusRoundTripMillis = new IncrementalAverage();
@@ -44,6 +49,14 @@ public class RemoteTaskStats
     public void updateRoundTripMillis(long roundTripMillis)
     {
         updateRoundTripMillis.add(roundTripMillis);
+    }
+
+    public void realTimeUpdateRoundTripMillis(long realTimeUpdateRoundTripMillis) {
+        this.realTimeUpdateRoundTripMillis.add(realTimeUpdateRoundTripMillis);
+    }
+
+    public void maxUpdateRoundTripMillis(long maxUpdateRoundTripMillis) {
+        this.maxUpdateRoundTripMillis.add(maxUpdateRoundTripMillis);
     }
 
     public void responseSize(long responseSizeBytes)
@@ -103,6 +116,16 @@ public class RemoteTaskStats
     }
 
     @Managed
+    public double getRealTimeUpdateRoundTripMillis() {
+        return realTimeUpdateRoundTripMillis.get();
+    }
+
+    @Managed
+    public double getMaxUpdateRoundTripMillis() {
+        return maxUpdateRoundTripMillis.get();
+    }
+
+    @Managed
     @Nested
     public DistributionStat getUpdateWithPlanBytes()
     {
@@ -112,8 +135,34 @@ public class RemoteTaskStats
     @ThreadSafe
     private static class IncrementalAverage
     {
+        // This is used for cleaning up the variables count and average at fixed rate
+        private ScheduledExecutorService executorService;
+
         private volatile long count;
         private final AtomicDouble average = new AtomicDouble();
+
+        public IncrementalAverage() {
+            this(false);
+        }
+
+        public IncrementalAverage(boolean cleanUpAtFixedRate) {
+            if (cleanUpAtFixedRate) {
+                // use double-check strategy to reduce thread number
+                if (null == executorService) {
+                    synchronized (IncrementalAverage.this) {
+                        if (null == executorService) {
+                            executorService = Executors.newScheduledThreadPool(3);
+                        }
+                    }
+                }
+                executorService.scheduleAtFixedRate(() -> {
+                    synchronized (IncrementalAverage.this) {
+                        count = 0L;
+                        average.set(0);
+                    }
+                }, 1L, 1L, TimeUnit.MINUTES);
+            }
+        }
 
         synchronized void add(long value)
         {
@@ -125,6 +174,50 @@ public class RemoteTaskStats
         double get()
         {
             return average.get();
+        }
+    }
+
+    @ThreadSafe
+    private static class IncrementalMaximum
+    {
+        // This is used for cleaning up the variables count and maximum at fixed rate
+        private ScheduledExecutorService executorService;
+
+        private final AtomicDouble maximum = new AtomicDouble();
+
+        public IncrementalMaximum() {
+            this(false);
+        }
+
+        public IncrementalMaximum(boolean cleanUpAtFixedRate) {
+            if (cleanUpAtFixedRate) {
+                // use double-check strategy to reduce thread number
+                if (null == executorService) {
+                    synchronized (IncrementalMaximum.this) {
+                        if (null == executorService) {
+                            executorService = Executors.newScheduledThreadPool(3);
+                        }
+                    }
+                }
+                executorService.scheduleAtFixedRate(() -> {
+                    synchronized (IncrementalMaximum.this) {
+                        maximum.set(0);
+                    }
+                }, 1L, 1L, TimeUnit.MINUTES);
+            }
+        }
+
+        synchronized void add(long value)
+        {
+            double oldMaximum = maximum.get();
+            if (value > oldMaximum) {
+                maximum.set(value);
+            }
+        }
+
+        double get()
+        {
+            return maximum.get();
         }
     }
 }

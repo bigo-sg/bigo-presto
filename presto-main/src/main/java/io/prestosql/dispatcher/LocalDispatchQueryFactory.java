@@ -16,6 +16,7 @@ package io.prestosql.dispatcher;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import io.prestosql.Session;
+import io.prestosql.SystemSessionProperties;
 import io.prestosql.event.QueryMonitor;
 import io.prestosql.execution.ClusterSizeMonitor;
 import io.prestosql.execution.LocationFactory;
@@ -31,6 +32,8 @@ import io.prestosql.security.AccessControl;
 import io.prestosql.server.protocol.Slug;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.resourcegroups.ResourceGroupId;
+import io.prestosql.sql.tree.ShowCatalogs;
+import io.prestosql.sql.tree.ShowColumns;
 import io.prestosql.sql.tree.Statement;
 import io.prestosql.transaction.TransactionManager;
 
@@ -111,11 +114,15 @@ public class LocalDispatchQueryFactory
         queryMonitor.queryCreatedEvent(stateMachine.getBasicQueryInfo(Optional.empty()));
 
         ListenableFuture<QueryExecution> queryExecutionFuture = executor.submit(() -> {
-            QueryExecutionFactory<?> queryExecutionFactory = executionFactories.get(preparedQuery.getStatement().getClass());
+            QueryExecutionFactory<?> queryExecutionFactory;
+            if (preparedQuery.getStatement().getClass() == ShowColumns.class || !SystemSessionProperties.isUseCaching(session)) {
+                queryExecutionFactory = executionFactories.get(ShowCatalogs.class);
+            } else {
+                queryExecutionFactory = executionFactories.get(preparedQuery.getStatement().getClass());
+            }
             if (queryExecutionFactory == null) {
                 throw new PrestoException(NOT_SUPPORTED, "Unsupported statement type: " + preparedQuery.getStatement().getClass().getSimpleName());
             }
-
             return queryExecutionFactory.createQueryExecution(preparedQuery, stateMachine, slug, warningCollector);
         });
 

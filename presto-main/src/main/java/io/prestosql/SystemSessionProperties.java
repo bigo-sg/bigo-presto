@@ -137,6 +137,7 @@ public final class SystemSessionProperties
     public static final String ENABLE_DOWNLOAD_REWRITE = "enable_download_rewrite";
     public static final String DOWNLOAD_REWRITE_DB_NAME = "download_rewrite_db_name";
     public static final String DOWNLOAD_REWRITE_ROW_LIMIT = "download_rewrite_row_limit";
+    public static final String USE_CACHING = "use_caching";
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -608,6 +609,11 @@ public final class SystemSessionProperties
                 booleanProperty(
                         ENABLE_HIVE_SQL_SYNTAX,
                         "Experimental: Use hive sql syntax",
+                        false,
+                        false),
+                booleanProperty(
+                        USE_CACHING,
+                        "Experimental: Use caching",
                         false,
                         false));
     }
@@ -1082,5 +1088,10 @@ public final class SystemSessionProperties
     public static boolean isEnableHiveSqlSynTax(Session session)
     {
         return session.getSystemProperty(ENABLE_HIVE_SQL_SYNTAX, Boolean.class);
+    }
+
+    public static boolean isUseCaching(Session session)
+    {
+        return session.getSystemProperty(USE_CACHING, Boolean.class);
     }
 }

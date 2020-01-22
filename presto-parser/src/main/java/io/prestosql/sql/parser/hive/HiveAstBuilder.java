@@ -1268,18 +1268,32 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override public Node visitDescribeTable(SqlBaseParser.DescribeTableContext ctx)
     {
         if (ctx.tableIdentifier().db != null) {
+            if (!parsingOptions.useCaching()) {
+                return new ShowColumnsSkipCache(QualifiedName.of(ctx.tableIdentifier().db.getText(),
+                        ctx.tableIdentifier().table.getText()));
+            }
             return new ShowColumns(QualifiedName.of(ctx.tableIdentifier().db.getText(),
                     ctx.tableIdentifier().table.getText()));
         } else {
+            if (!parsingOptions.useCaching()) {
+                return new ShowColumnsSkipCache(QualifiedName.of(ctx.tableIdentifier().table.getText()));
+            }
             return new ShowColumns(QualifiedName.of(ctx.tableIdentifier().table.getText()));
         }
     }
 
     @Override public Node visitShowColumns(SqlBaseParser.ShowColumnsContext ctx) {
         if (ctx.tableIdentifier().db != null) {
+            if (!parsingOptions.useCaching()) {
+                return new ShowColumnsSkipCache(QualifiedName.of(ctx.tableIdentifier().db.getText(),
+                        ctx.tableIdentifier().table.getText()));
+            }
             return new ShowColumns(QualifiedName.of(ctx.tableIdentifier().db.getText(),
                     ctx.tableIdentifier().table.getText()));
         } else {
+            if (!parsingOptions.useCaching()) {
+                return new ShowColumnsSkipCache(QualifiedName.of(ctx.tableIdentifier().table.getText()));
+            }
             return new ShowColumns(QualifiedName.of(ctx.tableIdentifier().table.getText()));
         }
     }

@@ -56,6 +56,7 @@ import io.prestosql.sql.tree.SetRole;
 import io.prestosql.sql.tree.SetSession;
 import io.prestosql.sql.tree.ShowCatalogs;
 import io.prestosql.sql.tree.ShowColumns;
+import io.prestosql.sql.tree.ShowColumnsSkipCache;
 import io.prestosql.sql.tree.ShowCreate;
 import io.prestosql.sql.tree.ShowFunctions;
 import io.prestosql.sql.tree.ShowGrants;
@@ -101,6 +102,7 @@ public final class StatementUtils
         builder.put(ShowStats.class, QueryType.DESCRIBE);
         //builder.put(ShowTables.class, QueryType.DESCRIBE);
         //builder.put(ShowColumns.class, QueryType.DESCRIBE);
+        builder.put(ShowColumnsSkipCache.class,QueryType.DESCRIBE);
         builder.put(DescribeInput.class, QueryType.DESCRIBE);
         builder.put(DescribeOutput.class, QueryType.DESCRIBE);
 

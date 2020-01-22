@@ -27,6 +27,7 @@ public final class ParsingUtil
     {
         ParsingOptions parsingOptions = new ParsingOptions(isParseDecimalLiteralsAsDouble(session) ? AS_DOUBLE : AS_DECIMAL);
         parsingOptions.setIfUseHiveParser(SystemSessionProperties.isEnableHiveSqlSynTax(session));
+        parsingOptions.setIfUseCaching(SystemSessionProperties.isUseCaching(session));
 
         return parsingOptions;
     }

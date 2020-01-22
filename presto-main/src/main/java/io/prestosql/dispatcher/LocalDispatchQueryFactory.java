@@ -115,11 +115,7 @@ public class LocalDispatchQueryFactory
 
         ListenableFuture<QueryExecution> queryExecutionFuture = executor.submit(() -> {
             QueryExecutionFactory<?> queryExecutionFactory;
-            if (preparedQuery.getStatement().getClass() == ShowColumns.class || !SystemSessionProperties.isUseCaching(session)) {
-                queryExecutionFactory = executionFactories.get(ShowCatalogs.class);
-            } else {
-                queryExecutionFactory = executionFactories.get(preparedQuery.getStatement().getClass());
-            }
+            queryExecutionFactory = executionFactories.get(preparedQuery.getStatement().getClass());
             if (queryExecutionFactory == null) {
                 throw new PrestoException(NOT_SUPPORTED, "Unsupported statement type: " + preparedQuery.getStatement().getClass().getSimpleName());
             }

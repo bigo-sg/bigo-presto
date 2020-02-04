@@ -182,6 +182,25 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 columnDefinition);
     }
 
+    @Override
+    public Node visitAddTablePartition(SqlBaseParser.AddTablePartitionContext ctx) {
+        List<Map<Object, Object>> partitions = new ArrayList<>();
+
+        List<SqlBaseParser.PartitionSpecLocationContext> partitionSpecLocationContexts = ctx.partitionSpecLocation();
+        partitionSpecLocationContexts.forEach(partitionSpecLocationContext -> {
+            Map<Object, Object> partition = new HashMap<>();
+            List<SqlBaseParser.PartitionValContext> partitionValContexts = partitionSpecLocationContext.partitionSpec().partitionVal();
+            partitionValContexts.forEach(partitionValContext -> {
+                String partitionColumnName = partitionValContext.identifier().getText();
+                String partitionValue = partitionValContext.constant().getText().replace("'", "");
+                partition.put(partitionColumnName, partitionValue);
+            });
+            partitions.add(partition);
+        });
+        // Do not support location temporarily
+        return new AddPartition(getLocation(ctx), getQualifiedName(ctx.tableIdentifier()), null, partitions);
+    }
+
     @Override public Node visitRenameTable(SqlBaseParser.RenameTableContext ctx) {
         return new RenameTable(getLocation(ctx), getQualifiedName(ctx.from), getQualifiedName(ctx.to));
     }

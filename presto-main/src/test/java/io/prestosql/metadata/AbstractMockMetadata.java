@@ -244,6 +244,11 @@ public abstract class AbstractMockMetadata
     }
 
     @Override
+    public void addPartition(Session session, TableHandle tableHandle, List<Map<Object, Object>> partitions) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void dropTable(Session session, TableHandle tableHandle)
     {
         throw new UnsupportedOperationException();

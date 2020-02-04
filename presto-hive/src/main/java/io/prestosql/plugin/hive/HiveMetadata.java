@@ -28,6 +28,7 @@ import com.google.common.collect.Sets;
 import io.airlift.json.JsonCodec;
 import io.airlift.slice.Slice;
 import io.prestosql.plugin.base.CatalogName;
+import io.airlift.slice.Slices;
 import io.prestosql.plugin.hive.HdfsEnvironment.HdfsContext;
 import io.prestosql.plugin.hive.LocationService.WriteInfo;
 import io.prestosql.plugin.hive.authentication.HiveIdentity;
@@ -48,6 +49,7 @@ import io.prestosql.plugin.hive.util.HiveWriteUtils;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.StandardErrorCode;
 import io.prestosql.spi.block.Block;
+import io.prestosql.spi.classloader.ThreadContextClassLoader;
 import io.prestosql.spi.connector.ColumnHandle;
 import io.prestosql.spi.connector.ColumnMetadata;
 import io.prestosql.spi.connector.ConnectorInsertTableHandle;
@@ -87,6 +89,7 @@ import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.TypeManager;
 import io.prestosql.spi.type.VarcharType;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.common.FileUtils;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator;
 import org.apache.hadoop.hive.serde.serdeConstants;
@@ -104,6 +107,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -223,6 +227,7 @@ import static io.prestosql.spi.StandardErrorCode.INVALID_SCHEMA_PROPERTY;
 import static io.prestosql.spi.StandardErrorCode.INVALID_TABLE_PROPERTY;
 import static io.prestosql.spi.StandardErrorCode.NOT_SUPPORTED;
 import static io.prestosql.spi.StandardErrorCode.SCHEMA_NOT_EMPTY;
+import static io.prestosql.spi.StandardErrorCode.INVALID_PROCEDURE_ARGUMENT;
 import static io.prestosql.spi.predicate.TupleDomain.withColumnDomains;
 import static io.prestosql.spi.statistics.TableStatisticType.ROW_COUNT;
 import static io.prestosql.spi.type.BigintType.BIGINT;
@@ -1073,6 +1078,55 @@ public class HiveMetadata
         failIfAvroSchemaIsSet(session, handle);
 
         metastore.addColumn(new HiveIdentity(session), handle.getSchemaName(), handle.getTableName(), column.getName(), toHiveType(typeTranslator, column.getType()), column.getComment());
+    }
+
+    @Override
+    public void addPartition(ConnectorSession session, ConnectorTableHandle tableHandle, List<Object> partitionColumnNames, List<Object> partitionValues) {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(getClass().getClassLoader())) {
+            HiveTableHandle handle = (HiveTableHandle) tableHandle;
+            failIfAvroSchemaIsSet(session, handle);
+            doCreateEmptyPartition(session, handle.getSchemaName(), handle.getTableName(), partitionColumnNames, partitionValues);
+        }
+    }
+
+    private void doCreateEmptyPartition(ConnectorSession session, String schema, String table, List<Object> partitionColumnNames, List<Object> partitionValues)
+    {
+        ConnectorTableHandle tableHandle = getTableHandle(session, new SchemaTableName(schema, table));
+        HiveInsertTableHandle hiveInsertTableHandle = beginInsert(session, tableHandle);
+
+        List<String> actualPartitionColumnNames = hiveInsertTableHandle.getInputColumns().stream()
+                .filter(HiveColumnHandle::isPartitionKey)
+                .map(HiveColumnHandle::getName)
+                .collect(toImmutableList());
+        if (!Objects.equals(partitionColumnNames, actualPartitionColumnNames)) {
+            throw new PrestoException(INVALID_PROCEDURE_ARGUMENT, "input partition column names doesn't match actual partition column names");
+        }
+
+        List<String> partitionStringValues = partitionValues.stream()
+                .map(String.class::cast)
+                .collect(toImmutableList());
+
+        String partitionName = FileUtils.makePartName(actualPartitionColumnNames, partitionStringValues);
+
+        WriteInfo writeInfo = locationService.getPartitionWriteInfo(hiveInsertTableHandle.getLocationHandle(), Optional.empty(), partitionName);
+        Slice serializedPartitionUpdate = Slices.wrappedBuffer(
+                partitionUpdateCodec.toJsonBytes(
+                        new PartitionUpdate(
+                                partitionName,
+                                PartitionUpdate.UpdateMode.NEW,
+                                writeInfo.getWritePath(),
+                                writeInfo.getTargetPath(),
+                                ImmutableList.of(),
+                                0,
+                                0,
+                                0)));
+
+        finishInsert(
+                session,
+                hiveInsertTableHandle,
+                ImmutableList.of(serializedPartitionUpdate),
+                ImmutableList.of());
+        //commit();
     }
 
     @Override

@@ -279,6 +279,13 @@ public class ClassLoaderSafeConnectorMetadata
     }
 
     @Override
+    public void addPartition(ConnectorSession session, ConnectorTableHandle tableHandle, List<Object> partitionColumnNames, List<Object> partitionValues) {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+            delegate.addPartition(session, tableHandle, partitionColumnNames, partitionValues);
+        }
+    }
+
+    @Override
     public void createSchema(ConnectorSession session, String schemaName, Map<String, Object> properties, PrestoPrincipal owner)
     {
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {

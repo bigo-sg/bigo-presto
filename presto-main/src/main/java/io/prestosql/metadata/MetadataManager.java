@@ -643,6 +643,22 @@ public final class MetadataManager
     }
 
     @Override
+    public void addPartition(Session session, TableHandle tableHandle, List<Map<Object, Object>> partitions) {
+        CatalogMetadata catalogMetadata = getCatalogMetadataForWrite(session, tableHandle.getCatalogName());
+        CatalogName catalog = catalogMetadata.getCatalogName();
+        ConnectorMetadata metadata = catalogMetadata.getMetadata();
+        List<Object> partitionColumnNames = new ArrayList<>();
+        List<Object> partitionValues = new ArrayList<>();
+        partitions.forEach(partition -> {
+            for (Object partitionColumnName : partition.keySet()) {
+                partitionColumnNames.add(partitionColumnName);
+                partitionValues.add(partition.get(partitionColumnName));
+            }
+            metadata.addPartition(session.toConnectorSession(catalog), tableHandle.getConnectorHandle(), partitionColumnNames, partitionValues);
+        });
+    }
+
+    @Override
     public void dropTable(Session session, TableHandle tableHandle)
     {
         CatalogName catalogName = tableHandle.getCatalogName();

@@ -20,6 +20,7 @@ import io.prestosql.sql.parser.hive.CreateFunction;
 import io.prestosql.sql.parser.hive.CreateTableLike;
 import io.prestosql.sql.parser.hive.SetHiveConfiguration;
 import io.prestosql.sql.tree.AddColumn;
+import io.prestosql.sql.tree.AddPartition;
 import io.prestosql.sql.tree.Analyze;
 import io.prestosql.sql.tree.Call;
 import io.prestosql.sql.tree.Comment;
@@ -110,6 +111,7 @@ public final class StatementUtils
         builder.put(DropSchema.class, QueryType.DATA_DEFINITION);
         builder.put(RenameSchema.class, QueryType.DATA_DEFINITION);
         builder.put(AddColumn.class, QueryType.DATA_DEFINITION);
+        builder.put(AddPartition.class, QueryType.DATA_DEFINITION);
         builder.put(CreateTable.class, QueryType.DATA_DEFINITION);
         builder.put(CreateTableLike.class, QueryType.DATA_DEFINITION);
         builder.put(RenameTable.class, QueryType.DATA_DEFINITION);

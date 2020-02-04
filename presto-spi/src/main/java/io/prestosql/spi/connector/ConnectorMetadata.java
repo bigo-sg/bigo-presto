@@ -300,6 +300,14 @@ public interface ConnectorMetadata
     }
 
     /**
+     * Add the specified partition
+     */
+    default void addPartition(ConnectorSession session, ConnectorTableHandle tableHandle, List<Object> partitionColumnNames, List<Object> partitionValues)
+    {
+        throw new PrestoException(NOT_SUPPORTED, "This connector does not support adding partitions");
+    }
+
+    /**
      * Rename the specified column
      */
     default void renameColumn(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle source, String target)

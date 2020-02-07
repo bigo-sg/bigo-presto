@@ -19,9 +19,11 @@ import io.airlift.slice.InvalidUtf8Exception;
 import io.airlift.slice.Slice;
 import io.airlift.slice.SliceUtf8;
 import io.airlift.slice.Slices;
+import io.prestosql.FullConnectorSession;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.block.Block;
 import io.prestosql.spi.block.BlockBuilder;
+import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.function.Description;
 import io.prestosql.spi.function.LiteralParameter;
 import io.prestosql.spi.function.LiteralParameters;
@@ -314,19 +316,24 @@ public final class StringFunctions
     @ScalarFunction
     @LiteralParameters({"x", "y"})
     @SqlType("array(varchar(x))")
-    public static Block split(@SqlType("varchar(x)") Slice string, @SqlType("varchar(y)") Slice delimiter)
+    public static Block split(ConnectorSession session, @SqlType("varchar(x)") Slice string, @SqlType("varchar(y)") Slice delimiter)
     {
-        return split(string, delimiter, string.length() + 1);
+        return split(session, string, delimiter, string.length() + 1);
     }
 
     @ScalarFunction
     @LiteralParameters({"x", "y"})
     @SqlType("array(varchar(x))")
-    public static Block split(@SqlType("varchar(x)") Slice string, @SqlType("varchar(y)") Slice delimiter, @SqlType(StandardTypes.BIGINT) long limit)
+    public static Block split(ConnectorSession session, @SqlType("varchar(x)") Slice string, @SqlType("varchar(y)") Slice delimiter, @SqlType(StandardTypes.BIGINT) long limit)
     {
         checkCondition(limit > 0, INVALID_FUNCTION_ARGUMENT, "Limit must be positive");
         checkCondition(limit <= Integer.MAX_VALUE, INVALID_FUNCTION_ARGUMENT, "Limit is too large");
         checkCondition(delimiter.length() > 0, INVALID_FUNCTION_ARGUMENT, "The delimiter may not be the empty string");
+        boolean enable_hive_syntax = Boolean.valueOf(((FullConnectorSession) session).getSession().getSystemProperties().get("enable_hive_syntax"));
+        if (enable_hive_syntax) {
+            delimiter = processSpecialChar(delimiter);
+        }
+
         BlockBuilder parts = VARCHAR.createBlockBuilder(null, 1, string.length());
         // If limit is one, the last and only element is the complete string
         if (limit == 1) {
@@ -354,6 +361,14 @@ public final class StringFunctions
         VARCHAR.writeSlice(parts, string, index, string.length() - index);
 
         return parts.build();
+    }
+
+    private static Slice processSpecialChar(Slice original) {
+        String newStr = original.toStringUtf8().replace("\\\\@", "@");
+        newStr = newStr.replace("\\\\|", "|");
+        newStr = newStr.replace("\\\\#", "#");
+        // TODO: add logic to deal with other special characters.
+        return Slices.utf8Slice(newStr);
     }
 
     @SqlNullable

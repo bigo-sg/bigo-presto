@@ -426,9 +426,9 @@ public final class StringFunctions
     }
 
     private static Slice processSpecialChar(Slice original) {
-        String newStr = original.toStringUtf8().replace("\\\\@", "@");
-        newStr = newStr.replace("\\\\|", "|");
-        newStr = newStr.replace("\\\\#", "#");
+        String newStr = original.toStringUtf8().replace("\\@", "@");
+        newStr = newStr.replace("\\|", "|");
+        newStr = newStr.replace("\\#", "#");
         // TODO: add logic to deal with other special characters.
         return Slices.utf8Slice(newStr);
     }

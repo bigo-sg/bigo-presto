@@ -53,6 +53,7 @@ public class HiveMetadataFactory
     private final TypeTranslator typeTranslator;
     private final String prestoVersion;
     private final AccessControlMetadataFactory accessControlMetadataFactory;
+    private CreateEmptyPartitionProcedure createEmptyPartitionProcedure;
 
     @Inject
     @SuppressWarnings("deprecation")
@@ -136,6 +137,10 @@ public class HiveMetadataFactory
         }
 
         renameExecution = new BoundedExecutor(executorService, maxConcurrentFileRenames);
+    }
+
+    public void setCreateEmptyPartitionProcedure(CreateEmptyPartitionProcedure createEmptyPartitionProcedure) {
+        this.createEmptyPartitionProcedure = createEmptyPartitionProcedure;
     }
 
     @Override

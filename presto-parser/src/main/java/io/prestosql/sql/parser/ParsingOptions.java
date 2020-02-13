@@ -19,6 +19,12 @@ public class ParsingOptions
 {
     boolean ifUseHiveParser = false;
 
+    boolean ifUseCaching = true;
+
+    public void setIfUseCaching(boolean ifUseCaching) {
+        this.ifUseCaching = ifUseCaching;
+    }
+
     public void setIfUseHiveParser(boolean ifUseHiveParser) {
         this.ifUseHiveParser = ifUseHiveParser;
     }
@@ -26,6 +32,11 @@ public class ParsingOptions
     public boolean useHiveParser() {
         return ifUseHiveParser;
     }
+
+    public boolean useCaching() {
+        return ifUseCaching;
+    }
+
     public enum DecimalLiteralTreatment
     {
         AS_DOUBLE,

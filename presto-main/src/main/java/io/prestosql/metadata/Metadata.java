@@ -197,6 +197,11 @@ public interface Metadata
     void dropColumn(Session session, TableHandle tableHandle, ColumnHandle column);
 
     /**
+     * Add the specified partition to the table.
+     */
+    void addPartition(Session session, TableHandle tableHandle, List<Map<Object, Object>> partitions);
+
+    /**
      * Drops the specified table
      *
      * @throws RuntimeException if the table can not be dropped or table handle is no longer valid

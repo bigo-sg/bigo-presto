@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import io.airlift.stats.CounterStat;
 import io.prestosql.execution.ManagedQueryExecution;
+import io.prestosql.execution.QueryState;
 import io.prestosql.execution.resourcegroups.WeightedFairQueue.Usage;
 import io.prestosql.server.QueryStateInfo;
 import io.prestosql.server.ResourceGroupInfo;
@@ -43,6 +44,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -912,7 +914,16 @@ public class InternalResourceGroup
                 // Always allow at least one running query
                 hardConcurrencyLimit = Math.max(1, hardConcurrencyLimit);
             }
-            return runningQueries.size() + descendantRunningQueries < hardConcurrencyLimit;
+            final int[] runningQueriesNum = { 0 };
+            final int[] finishingQueriesNum = { 0 };
+            runningQueries.keySet().stream().forEach(managedQueryExecution -> {
+                if (managedQueryExecution.getBasicQueryInfo().getState() != QueryState.FINISHING) {
+                    runningQueriesNum[0] += 1;
+                } else {
+                    finishingQueriesNum[0] += 1;
+                }
+            });
+            return runningQueriesNum[0] + descendantRunningQueries < hardConcurrencyLimit && finishingQueriesNum[0] < 40;
         }
     }
 

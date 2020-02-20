@@ -188,7 +188,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         List<SqlBaseParser.PartitionSpecLocationContext> partitionSpecLocationContexts = ctx.partitionSpecLocation();
         partitionSpecLocationContexts.forEach(partitionSpecLocationContext -> {
-            Map<Object, Object> partition = new HashMap<>();
+            Map<Object, Object> partition = new TreeMap<>();
             List<SqlBaseParser.PartitionValContext> partitionValContexts = partitionSpecLocationContext.partitionSpec().partitionVal();
             partitionValContexts.forEach(partitionValContext -> {
                 String partitionColumnName = partitionValContext.identifier().getText();

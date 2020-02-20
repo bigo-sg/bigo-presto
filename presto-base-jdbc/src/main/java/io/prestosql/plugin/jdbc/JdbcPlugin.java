@@ -15,8 +15,11 @@ package io.prestosql.plugin.jdbc;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Module;
+import com.google.common.collect.ImmutableSet;
 import io.prestosql.spi.Plugin;
 import io.prestosql.spi.connector.ConnectorFactory;
+
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -40,4 +43,13 @@ public class JdbcPlugin
     {
         return ImmutableList.of(new JdbcConnectorFactory(name, module));
     }
+
+    @Override
+    public Set<Class<?>> getFunctions()
+    {
+        return ImmutableSet.<Class<?>>builder()
+                .add(MaxMindFunction.class)
+                .build();
+    }
+
 }

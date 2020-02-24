@@ -21,6 +21,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Streams;
 import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.airlift.log.Logger;
 import io.prestosql.plugin.hive.HdfsEnvironment.HdfsContext;
 import io.prestosql.plugin.hive.HiveSplit.BucketConversion;
 import io.prestosql.plugin.hive.metastore.Column;
@@ -67,6 +68,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -194,6 +196,7 @@ public class BackgroundHiveSplitLoader
         {
             while (true) {
                 if (stopped) {
+                    logPartition();
                     return TaskStatus.finished();
                 }
                 ListenableFuture<?> future;
@@ -212,6 +215,7 @@ public class BackgroundHiveSplitLoader
                     // Otherwise, a race could occur where the split source is completed before we fail it.
                     hiveSplitSource.fail(e);
                     checkState(stopped);
+                    logPartition();
                     return TaskStatus.finished();
                 }
                 finally {
@@ -219,6 +223,7 @@ public class BackgroundHiveSplitLoader
                 }
                 invokeNoMoreSplitsIfNecessary();
                 if (!future.isDone()) {
+                    logPartition();
                     return TaskStatus.continueOn(future);
                 }
             }
@@ -261,12 +266,46 @@ public class BackgroundHiveSplitLoader
         }
     }
 
+    List<HivePartitionMetadata> cachedPartitions = new ArrayList<>();
+    private static final Logger log = Logger.get(BackgroundHiveSplitLoader.class);
+
+    public void logPartition() {
+        if (cachedPartitions.size() == 0) {
+            log.warn(session.getQueryId() + ":" + "no partition to process");
+        }
+        final long[] totalBytes = {0};
+        cachedPartitions.stream().forEach(hivePartitionMetadata -> {
+            Path path = new Path(getPartitionLocation(table, hivePartitionMetadata.getPartition()));
+            try {
+                FileSystem fs = hdfsEnvironment.getFileSystem(hdfsContext, path);
+                if (!fs.exists(path)) {
+                    log.warn(session.getQueryId() + ":" + "partition path not exist,path:" +
+                    path.toString());
+                }
+                FileStatus[] statuses = fs.listStatus(path);
+                for (FileStatus status: statuses) {
+                    totalBytes[0] +=status.getLen();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        if (totalBytes[0] == 0) {
+            log.warn(session.getQueryId() + ":" + "no data to process");
+        } else {
+            log.info(session.getQueryId() + ":" + "have "+totalBytes[0]+" data to process");
+        }
+    }
+
     private ListenableFuture<?> loadSplits()
             throws IOException
     {
         Iterator<InternalHiveSplit> splits = fileIterators.poll();
         if (splits == null) {
             HivePartitionMetadata partition = partitions.poll();
+            if (partition != null) {
+                cachedPartitions.add(partition);
+            }
             if (partition == null) {
                 return COMPLETED_FUTURE;
             }

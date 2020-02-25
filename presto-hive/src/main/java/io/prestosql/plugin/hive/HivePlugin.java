@@ -40,10 +40,4 @@ public class HivePlugin
         return ImmutableList.of(new HiveConnectorFactory(name));
     }
 
-    @Override
-    public Set<Class<?>> getFunctions() {
-        return ImmutableSet.<Class<?>>builder()
-                .add(MaxMindFunction.class)
-                .build();
-    }
 }

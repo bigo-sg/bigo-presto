@@ -1,4 +1,4 @@
-package io.prestosql.plugin.hive;
+package io.prestosql.plugin.bigo.udf;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;
@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
@@ -48,12 +49,11 @@ public final class MaxMindFunction {
             .build(new CacheLoader<String, DatabaseReader>() {
                 @Override
                 public DatabaseReader load(String timestamp) throws Exception {
-                    String fileFullName = "hdfs://bigocluster/data/services/udf/geoip2/GeoIP2-City_" + timestamp + ".mmdb";
+                    String fileFullName = "/data/services/udf/geoip2/GeoIP2-City_" + timestamp + ".mmdb";
                     Path p = new Path(fileFullName);
                     Configuration conf = new Configuration();
-                    conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-                    conf.addResource(HADOOP_CORE_SITE_FILE_PATH);
-                    conf.addResource(HADOOP_HDFS_SITE_FILE_PATH);
+                    conf.addResource(new File(HADOOP_CORE_SITE_FILE_PATH).toURI().toURL());
+                    conf.addResource(new File(HADOOP_HDFS_SITE_FILE_PATH).toURI().toURL());
                     conf.setClassLoader(MaxMindFunction.class.getClassLoader());
                     FileSystem fs = FileSystem.get(conf);
                     try (FSDataInputStream inputStream = fs.open(p)) {

@@ -48,7 +48,7 @@ public final class MaxMindFunction {
             .build(new CacheLoader<String, DatabaseReader>() {
                 @Override
                 public DatabaseReader load(String timestamp) throws Exception {
-                    String fileFullName = "/data/services/udf/geoip2/GeoIP2-City_" + timestamp + ".mmdb";
+                    String fileFullName = "hdfs://bigocluster/data/services/udf/geoip2/GeoIP2-City_" + timestamp + ".mmdb";
                     Path p = new Path(fileFullName);
                     Configuration conf = new Configuration();
                     conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());

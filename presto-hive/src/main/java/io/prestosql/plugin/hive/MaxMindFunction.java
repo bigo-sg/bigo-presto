@@ -1,4 +1,4 @@
-package io.prestosql.plugin.bigo.udf;
+package io.prestosql.plugin.hive;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.CacheBuilder;

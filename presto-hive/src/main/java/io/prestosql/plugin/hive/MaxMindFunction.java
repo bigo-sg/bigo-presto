@@ -54,6 +54,8 @@ public final class MaxMindFunction {
                     Configuration conf = new Configuration();
                     conf.addResource(new File(HADOOP_CORE_SITE_FILE_PATH).toURI().toURL());
                     conf.addResource(new File(HADOOP_HDFS_SITE_FILE_PATH).toURI().toURL());
+                    conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
+                    conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
                     conf.setClassLoader(MaxMindFunction.class.getClassLoader());
                     FileSystem fs = FileSystem.get(conf);
                     try (FSDataInputStream inputStream = fs.open(p)) {

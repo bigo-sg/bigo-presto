@@ -51,6 +51,7 @@ public final class MaxMindFunction {
                     String fileFullName = "/data/services/udf/geoip2/GeoIP2-City_" + timestamp + ".mmdb";
                     Path p = new Path(fileFullName);
                     Configuration conf = new Configuration();
+                    conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
                     conf.addResource(HADOOP_CORE_SITE_FILE_PATH);
                     conf.addResource(HADOOP_HDFS_SITE_FILE_PATH);
                     conf.setClassLoader(MaxMindFunction.class.getClassLoader());

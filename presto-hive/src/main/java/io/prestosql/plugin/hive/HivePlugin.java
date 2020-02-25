@@ -36,4 +36,5 @@ public class HivePlugin
     {
         return ImmutableList.of(new HiveConnectorFactory(name));
     }
+
 }

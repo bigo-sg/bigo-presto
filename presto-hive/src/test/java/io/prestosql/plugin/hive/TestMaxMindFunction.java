@@ -1,4 +1,4 @@
-package io.prestosql.plugin.bigo.udf;
+package io.prestosql.plugin.hive;
 
 import io.prestosql.spi.block.Block;
 import org.testng.annotations.Test;

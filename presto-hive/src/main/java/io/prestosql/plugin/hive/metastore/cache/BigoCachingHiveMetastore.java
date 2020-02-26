@@ -182,10 +182,10 @@ public class BigoCachingHiveMetastore
         partitionNamesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadPartitionNames), executor));
 
-        partitionFilterCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        partitionFilterCache = newCacheBuilder(OptionalLong.of(0L), refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadPartitionNamesByParts), executor));
 
-        partitionCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
+        partitionCache = newCacheBuilder(OptionalLong.of(0L), OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(new CacheLoader<WithIdentity<HivePartitionName>, Optional<Partition>>()
                 {
                     @Override

@@ -5,10 +5,12 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.AddressNotFoundException;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
 import com.maxmind.geoip2.record.City;
 import com.maxmind.geoip2.record.Country;
+import com.maxmind.geoip2.record.Location;
 import com.maxmind.geoip2.record.Subdivision;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
@@ -99,33 +101,55 @@ public final class MaxMindFunction {
 
     private static List<String> getCountry(String ip, String timestamp) throws IOException, GeoIp2Exception, ExecutionException {
         long start = System.currentTimeMillis();
+
         DatabaseReader reader = dbCache.get(timestamp);
         InetAddress ipAddress = InetAddress.getByName(ip);
 
-        // Do the lookup
-        CityResponse response = reader.city(ipAddress);
-
-        Country country = response.getCountry();
         String countryCode = null;
-        if (country != null) {
-            countryCode = country.getIsoCode();
-        }
-
-        Subdivision subdivision = response.getMostSpecificSubdivision();
         String subdivisionName = null;
-        if (subdivision != null) {
-            subdivisionName = subdivision.getName();
-        }
-        City city = response.getCity();
         String cityName = null;
-        if (city != null) {
-            cityName = city.getName();
+        String latitude = null;
+        String longitude = null;
+        try {
+            // Do the lookup
+            CityResponse response = reader.city(ipAddress);
+
+            Country country = response.getCountry();
+            if (country != null) {
+                countryCode = country.getIsoCode();
+            }
+
+            Subdivision subdivision = response.getMostSpecificSubdivision();
+            if (subdivision != null) {
+                subdivisionName = subdivision.getName();
+            }
+
+            City city = response.getCity();
+            if (city != null) {
+                cityName = city.getName();
+            }
+
+            Location location = response.getLocation();
+            if (location != null) {
+                Double latitudeDouble = location.getLatitude();
+                Double longitudeDouble = location.getLongitude();
+                if (latitudeDouble != null) {
+                    latitude = latitudeDouble.toString();
+                }
+                if (longitudeDouble != null) {
+                    longitude = longitudeDouble.toString();
+                }
+            }
+        } catch (AddressNotFoundException e) {
+            log.info(e.getMessage());
         }
 
         List<String> resList = new ArrayList<>();
         resList.add(countryCode);
         resList.add(subdivisionName);
         resList.add(cityName);
+        resList.add(latitude);
+        resList.add(longitude);
 
         long end = System.currentTimeMillis();
         log.info("Total Time of Reading Data from GeoIP2-City.mmdb: " + (end - start) + " ms");

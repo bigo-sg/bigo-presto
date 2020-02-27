@@ -72,7 +72,7 @@ public final class MaxMindFunction {
     @LiteralParameters("x")
     @SqlType("array(varchar(x))")
     public static Block ip2Country(@SqlType("varchar(x)") Slice ipString) {
-        SimpleDateFormat simpleFormatter = new SimpleDateFormat("yyyyMMdd");
+        SimpleDateFormat simpleFormatter = new SimpleDateFormat("yyyy-MM-dd");
         String timestamp = simpleFormatter.format(new Date());
         return ip2Country(ipString, utf8Slice(timestamp));
     }

@@ -109,7 +109,7 @@ public final class MaxMindFunction {
             }
             return parts.build();
         } catch (IOException | GeoIp2Exception | ExecutionException e) {
-            log.error(e.getCause());
+            log.error(e.getMessage());
             // return null as there's something wrong
             BlockBuilder parts = VARCHAR.createBlockBuilder(null, ENTRY_SIZE);
             for (int i = 0; i < ENTRY_SIZE; i++) {
@@ -161,7 +161,7 @@ public final class MaxMindFunction {
                 }
             }
         } catch (Exception e) {
-            log.error(e.getCause());
+            log.error(e.getMessage());
         }
 
         List<String> resList = new ArrayList<>();

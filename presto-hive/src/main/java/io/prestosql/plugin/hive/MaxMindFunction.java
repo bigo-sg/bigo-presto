@@ -46,6 +46,8 @@ public final class MaxMindFunction {
 
     private static final String HADOOP_HDFS_SITE_FILE_PATH = "/data/opt/druid/current/hadoop_conf/hdfs-site.xml";
 
+    private static final Integer ENTRY_SIZE = 5;
+
     private static final LoadingCache<String, DatabaseReader> dbCache = CacheBuilder.newBuilder()
             .maximumSize(3L)
             .ticker(Ticker.systemTicker())
@@ -159,7 +161,7 @@ public final class MaxMindFunction {
                 }
             }
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error(e.getCause());
         }
 
         List<String> resList = new ArrayList<>();

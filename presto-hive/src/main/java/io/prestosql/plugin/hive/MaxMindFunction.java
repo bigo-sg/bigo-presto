@@ -112,7 +112,7 @@ public final class MaxMindFunction {
             log.error(e.getCause());
             // return null as there's something wrong
             BlockBuilder parts = VARCHAR.createBlockBuilder(null, ENTRY_SIZE);
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < ENTRY_SIZE; i++) {
                 VARCHAR.writeSlice(parts, utf8Slice("null"));
             }
             return parts.build();

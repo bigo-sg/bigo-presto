@@ -107,8 +107,13 @@ public final class MaxMindFunction {
             }
             return parts.build();
         } catch (IOException | GeoIp2Exception | ExecutionException e) {
-            log.error(e.getMessage());
-            throw new RuntimeException(e.getMessage());
+            log.error(e.getCause());
+            // return null as there's something wrong
+            BlockBuilder parts = VARCHAR.createBlockBuilder(null, ENTRY_SIZE);
+            for (int i = 0; i < ENTRY_SIZE; i++) {
+                VARCHAR.writeSlice(parts, utf8Slice("null"));
+            }
+            return parts.build();
         }
     }
 

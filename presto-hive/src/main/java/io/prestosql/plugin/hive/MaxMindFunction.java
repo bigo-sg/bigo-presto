@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -73,8 +74,20 @@ public final class MaxMindFunction {
     @SqlType("array(varchar(x))")
     public static Block ip2Country(@SqlType("varchar(x)") Slice ipString) {
         SimpleDateFormat simpleFormatter = new SimpleDateFormat("yyyy-MM-dd");
-        String timestamp = simpleFormatter.format(new Date());
-        return ip2Country(ipString, utf8Slice(timestamp));
+        Date date = new Date();
+        String timestamp = simpleFormatter.format(date);
+        try {
+            return ip2Country(ipString, utf8Slice(timestamp));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            // try again with the last day
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(date);
+            calendar.add(Calendar.DAY_OF_MONTH, -1);
+            date = calendar.getTime();
+            timestamp = simpleFormatter.format(date);
+            return ip2Country(ipString, utf8Slice(timestamp));
+        }
     }
 
     @Description("get geographic information by IP address and timestamp.")
@@ -94,7 +107,7 @@ public final class MaxMindFunction {
             }
             return parts.build();
         } catch (IOException | GeoIp2Exception | ExecutionException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -140,8 +153,8 @@ public final class MaxMindFunction {
                     longitude = longitudeDouble.toString();
                 }
             }
-        } catch (AddressNotFoundException e) {
-            log.info(e.getMessage());
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         List<String> resList = new ArrayList<>();

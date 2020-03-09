@@ -345,6 +345,15 @@ public class ClassLoaderSafeConnectorMetadata
             delegate.renameTable(session, tableHandle, newTableName);
         }
     }
+    /**
+     * load data to specified table
+     */
+    public void loadData(ConnectorSession session, ConnectorTableHandle tableHandle, SchemaTableName newTableName, String path, boolean overwrite, String partitionsEnd)
+    {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+            delegate.loadData(session, tableHandle, newTableName, path, overwrite, partitionsEnd);
+        }
+    }
 
     @Override
     public void setTableComment(ConnectorSession session, ConnectorTableHandle tableHandle, Optional<String> comment)

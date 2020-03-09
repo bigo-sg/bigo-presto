@@ -18,6 +18,7 @@ import io.prestosql.spi.resourcegroups.QueryType;
 import io.prestosql.sql.parser.hive.AddManageResource;
 import io.prestosql.sql.parser.hive.CreateFunction;
 import io.prestosql.sql.parser.hive.CreateTableLike;
+import io.prestosql.sql.parser.hive.LoadData;
 import io.prestosql.sql.parser.hive.SetHiveConfiguration;
 import io.prestosql.sql.tree.AddColumn;
 import io.prestosql.sql.tree.AddPartition;
@@ -114,6 +115,7 @@ public final class StatementUtils
         builder.put(AddPartition.class, QueryType.DATA_DEFINITION);
         builder.put(CreateTable.class, QueryType.DATA_DEFINITION);
         builder.put(CreateTableLike.class, QueryType.DATA_DEFINITION);
+        builder.put(LoadData.class, QueryType.DATA_DEFINITION);
         builder.put(RenameTable.class, QueryType.DATA_DEFINITION);
         builder.put(Comment.class, QueryType.DATA_DEFINITION);
         builder.put(RenameColumn.class, QueryType.DATA_DEFINITION);

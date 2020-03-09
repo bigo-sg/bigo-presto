@@ -17,6 +17,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import io.prestosql.sql.parser.hive.CreateTableLike;
+import io.prestosql.sql.parser.hive.LoadData;
 import io.prestosql.sql.tree.AddColumn;
 import io.prestosql.sql.tree.AliasedRelation;
 import io.prestosql.sql.tree.AllColumns;
@@ -941,6 +942,19 @@ public final class HiveSqlFormatter
             builder.append(tableName).append(" LIKE ");
             String source = formatName(node.getSource());
             builder.append(source);
+            return null;
+        }
+
+        @Override
+        public Void visitLoadData(LoadData node, Integer indent)
+        {
+            builder.append("LOAD DATA INPATH ");
+            builder.append(node.getPath()).append(" ");
+            if (node.isOverwrite()) {
+                builder.append("OVERWRITE ");
+            }
+            builder.append("INTO TABLE ");
+            builder.append(formatName(node.getName()));
             return null;
         }
 

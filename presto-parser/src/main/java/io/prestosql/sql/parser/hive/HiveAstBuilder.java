@@ -207,7 +207,26 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitLoadData(SqlBaseParser.LoadDataContext ctx) {
-        throw parseError("Presto do NOT support load data syntax, please using hive", ctx);
+        if (ctx.LOCAL() != null) {
+            throw parseError("hive on presto not support load data from local!", ctx);
+        }
+        List<SingleColumn> partitions = null;
+        if (ctx.partitionSpec() != null) {
+            partitions = visit(ctx.partitionSpec().partitionVal(), SingleColumn.class);
+            for (int i = 0; i < partitions.size(); ++i) {
+                SingleColumn singleColumn = partitions.get(i);
+                if (!singleColumn.getAlias().isPresent()) {
+                    throw parseError("load data to dynamic partition not support " + singleColumn.getAlias().get(), ctx);
+                }
+            }
+        }
+        return new LoadData(
+                Optional.of(getLocation(ctx)),
+                getQualifiedName(ctx.tableIdentifier()),
+                ctx.path.getText(),
+                ctx.OVERWRITE() != null,
+                partitions == null?ImmutableList.of():partitions
+        );
     }
 
     @Override public Node visitTableProperty(SqlBaseParser.TablePropertyContext ctx)

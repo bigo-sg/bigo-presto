@@ -284,6 +284,14 @@ public interface ConnectorMetadata
     }
 
     /**
+     * load data to specified table
+     */
+    default void loadData(ConnectorSession session, ConnectorTableHandle tableHandle, SchemaTableName newTableName, String path, boolean overwrite, String partitionsEnd)
+    {
+        throw new PrestoException(NOT_SUPPORTED, "This connector does not support load data");
+    }
+
+    /**
      * Comments to the specified table
      */
     default void setTableComment(ConnectorSession session, ConnectorTableHandle tableHandle, Optional<String> comment)

@@ -46,6 +46,8 @@ public final class MaxMindFunction {
 
     private static final String HADOOP_HDFS_SITE_FILE_PATH = "/data/opt/druid/current/hadoop_conf/hdfs-site.xml";
 
+    private static final Integer ENTRY_SIZE = 5;
+
     private static final LoadingCache<String, DatabaseReader> dbCache = CacheBuilder.newBuilder()
             .maximumSize(3L)
             .ticker(Ticker.systemTicker())
@@ -107,8 +109,13 @@ public final class MaxMindFunction {
             }
             return parts.build();
         } catch (IOException | GeoIp2Exception | ExecutionException e) {
-            log.error(e.getMessage());
-            throw new RuntimeException(e.getMessage());
+            log.error(e.getCause());
+            // return null as there's something wrong
+            BlockBuilder parts = VARCHAR.createBlockBuilder(null, ENTRY_SIZE);
+            for (int i = 0; i < 5; i++) {
+                VARCHAR.writeSlice(parts, utf8Slice("null"));
+            }
+            return parts.build();
         }
     }
 
@@ -154,7 +161,7 @@ public final class MaxMindFunction {
                 }
             }
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error(e.getCause());
         }
 
         List<String> resList = new ArrayList<>();

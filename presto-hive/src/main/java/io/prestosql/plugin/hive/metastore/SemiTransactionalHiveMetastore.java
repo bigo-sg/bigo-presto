@@ -417,6 +417,16 @@ public class SemiTransactionalHiveMetastore
         setExclusive((delegate, hdfsEnvironment) -> delegate.renameTable(identity, databaseName, tableName, newDatabaseName, newTableName));
     }
 
+    public synchronized String getLocation(HiveIdentity identity, String databaseName, String tableName)
+    {
+        Optional<Table> table = getTable(identity, databaseName, tableName);
+        String location = null;
+        if (table.isPresent()) {
+            location = table.get().getStorage().getLocation();
+        }
+        return location;
+     }
+
     public synchronized void commentTable(HiveIdentity identity, String databaseName, String tableName, Optional<String> comment)
     {
         setExclusive((delegate, hdfsEnvironment) -> delegate.commentTable(identity, databaseName, tableName, comment));

@@ -610,6 +610,23 @@ public final class MetadataManager
         metadata.renameTable(session.toConnectorSession(catalog), tableHandle.getConnectorHandle(), newTableName.asSchemaTableName());
     }
 
+    /**
+     * load data to the specified table.
+     */
+    public void loadData(Session session, TableHandle tableHandle, QualifiedObjectName qualifiedObjectName, String path, boolean overwrite, String partitionsEnd)
+    {
+        String catalogName = qualifiedObjectName.getCatalogName();
+        CatalogMetadata catalogMetadata = getCatalogMetadataForWrite(session, catalogName);
+        CatalogName catalog = catalogMetadata.getCatalogName();
+        if (!tableHandle.getCatalogName().equals(catalog)) {
+            throw new PrestoException(SYNTAX_ERROR, "can not load data to the specified table");
+        }
+
+        ConnectorMetadata metadata = catalogMetadata.getMetadata();
+        metadata.loadData(session.toConnectorSession(catalog), tableHandle.getConnectorHandle(),
+                qualifiedObjectName.asSchemaTableName(), path, overwrite, partitionsEnd);
+    }
+
     @Override
     public void setTableComment(Session session, TableHandle tableHandle, Optional<String> comment)
     {

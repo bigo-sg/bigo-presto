@@ -33,6 +33,10 @@ public class DownloadRewriteTest {
         }
     }
 
+    protected Statement createHiveStatement(String sql) {
+        return useHiveParser(sql);
+    }
+
     protected Statement useHiveParser(String sql) {
         return sqlParser.createStatement(sql, hiveParsingOptions);
     }
@@ -64,6 +68,20 @@ public class DownloadRewriteTest {
         Session session = getSession(enableDownloadRewrite);
 
         Statement rewriteNode = rewrite.rewrite(session, null, sqlParser, null, createStatement(originalSQL), null, null, null, null);
+
+        Assert.assertEquals(rewriteNode, createStatement(expectedSQL));
+
+        if (!originalSQL.equals(expectedSQL)) {
+            // make sure the session properties is set correctly.
+            Assert.assertEquals(SystemSessionProperties.isScaleWriters(session), false);
+            Assert.assertEquals(SystemSessionProperties.isRedistributeWrites(session), false);
+        }
+    }
+
+    void testHiveRewrite(String originalSQL, String expectedSQL, boolean enableDownloadRewrite) {
+        Session session = getSession(enableDownloadRewrite);
+
+        Statement rewriteNode = rewrite.rewrite(session, null, sqlParser, null, createHiveStatement(originalSQL), null, null, null, null);
 
         Assert.assertEquals(rewriteNode, createStatement(expectedSQL));
 
@@ -211,6 +229,20 @@ public class DownloadRewriteTest {
                 "SELECT c FROM z";
 
         testRewrite(sql);
+    }
+
+    @Test
+    public void testWithStatementUsingHive() {
+        String originalSQL = "" +
+                "with t1 as (\n" +
+                "select '2020-01-01' as day\n" +
+                ")\n" +
+                "select t1.day as day from t1 limit 1";
+
+        // we should give each column a name.
+        String expectedSQL = CATS_PREFIX + originalSQL;
+
+        testHiveRewrite(originalSQL, expectedSQL, true);
     }
 
     @Test

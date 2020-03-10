@@ -20,12 +20,16 @@ import io.prestosql.plugin.hive.metastore.SemiTransactionalHiveMetastore;
 import io.prestosql.plugin.hive.metastore.Table;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.connector.ConnectorSession;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 
 import javax.inject.Inject;
 
+import java.io.IOException;
 import java.util.Optional;
 
+import static io.prestosql.plugin.hive.HiveErrorCode.HIVE_METASTORE_ERROR;
 import static io.prestosql.plugin.hive.HiveErrorCode.HIVE_PATH_ALREADY_EXISTS;
 import static io.prestosql.plugin.hive.HiveSessionProperties.isTemporaryStagingDirectoryEnabled;
 import static io.prestosql.plugin.hive.LocationHandle.WriteMode.DIRECT_TO_TARGET_EXISTING_DIRECTORY;
@@ -140,5 +144,39 @@ public class HiveLocationService
                     new Path(locationHandle.getWritePath(), partitionName),
                     locationHandle.getWriteMode());
         }
+    }
+    public void loadData(ConnectorSession session, String schemaName, String tableName, String location, String path, boolean overwrite)
+    {
+        HdfsContext context = new HdfsContext(session, schemaName, tableName);
+        Path data = new Path(path.replaceAll("'", "").replaceAll("\"", ""));
+        Path table = new Path(location);
+        FileSystem tableLocationFile = null;
+        FileSystem dataLocationFile = null;
+        try {
+            tableLocationFile = hdfsEnvironment.getFileSystem(context, table);
+            dataLocationFile = hdfsEnvironment.getFileSystem(context, data);
+            if (!tableLocationFile.exists(table)) {
+                throw new PrestoException(HIVE_METASTORE_ERROR, "Partition or table path not exist:" + table);
+            }
+            if (!dataLocationFile.exists(data)) {
+                throw new PrestoException(HIVE_METASTORE_ERROR, "data path not exist:" + data);
+            }
+            if (overwrite) {
+                dataLocationFile.delete(table, true);
+            }
+            if (!FileUtil.copy(
+                    dataLocationFile,
+                    data,
+                    tableLocationFile,
+                    table,
+                    false,
+                    overwrite,
+                    tableLocationFile.getConf())) {
+                throw new PrestoException(HIVE_METASTORE_ERROR, "Could not load data to table");
+            }
+        } catch (IOException e) {
+            throw new PrestoException(HIVE_METASTORE_ERROR, e);
+        }
+
     }
 }

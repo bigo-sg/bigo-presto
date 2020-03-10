@@ -81,7 +81,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Bigo Hive Metastore Cache
  *
- * Only refresh tableCache, partitionNamesCache and partitionFilterCache
+ * Only refresh tableCache, tableNamesCache, partitionNamesCache and partitionFilterCache
  */
 @ThreadSafe
 public class BigoCachingHiveMetastore
@@ -148,7 +148,7 @@ public class BigoCachingHiveMetastore
         databaseCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadDatabase), executor));
 
-        tableNamesCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
+        tableNamesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadAllTables), executor));
 
         tablesWithParameterCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
@@ -182,10 +182,10 @@ public class BigoCachingHiveMetastore
         partitionNamesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadPartitionNames), executor));
 
-        partitionFilterCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        partitionFilterCache = newCacheBuilder(OptionalLong.of(0L), refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadPartitionNamesByParts), executor));
 
-        partitionCache = newCacheBuilder(expiresAfterWriteMillis, OptionalLong.empty(), maximumSize)
+        partitionCache = newCacheBuilder(OptionalLong.of(0L), OptionalLong.empty(), maximumSize)
                 .build(asyncReloading(new CacheLoader<WithIdentity<HivePartitionName>, Optional<Partition>>()
                 {
                     @Override

@@ -58,6 +58,7 @@ import io.prestosql.operator.aggregation.IntervalYearToMonthSumAggregation;
 import io.prestosql.operator.aggregation.BitmapCountDistinctFunction;
 import io.prestosql.operator.aggregation.LongSumAggregation;
 import io.prestosql.operator.aggregation.MaxDataSizeForStats;
+import io.prestosql.operator.aggregation.MeanAggregations;
 import io.prestosql.operator.aggregation.MergeHyperLogLogAggregation;
 import io.prestosql.operator.aggregation.MergeQuantileDigestFunction;
 import io.prestosql.operator.aggregation.RealCorrelationAggregation;
@@ -407,6 +408,7 @@ public class FunctionRegistry
                 .aggregates(IntervalDayToSecondSumAggregation.class)
                 .aggregates(IntervalYearToMonthSumAggregation.class)
                 .aggregates(AverageAggregations.class)
+                .aggregates(MeanAggregations.class)
                 .function(REAL_AVERAGE_AGGREGATION)
                 .aggregates(IntervalDayToSecondAverageAggregation.class)
                 .aggregates(IntervalYearToMonthAverageAggregation.class)

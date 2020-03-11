@@ -38,6 +38,7 @@ import io.prestosql.operator.aggregation.BigoApproximateLongPercentileAggregatio
 import io.prestosql.operator.aggregation.BigoApproximateLongPercentileArrayAggregations;
 import io.prestosql.operator.aggregation.BigoApproximateRealPercentileAggregations;
 import io.prestosql.operator.aggregation.BigoApproximateRealPercentileArrayAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateStringPercentileAggregations;
 import io.prestosql.operator.aggregation.ApproximateSetAggregation;
 import io.prestosql.operator.aggregation.AverageAggregations;
 import io.prestosql.operator.aggregation.BitwiseAndAggregation;
@@ -430,6 +431,7 @@ public class FunctionRegistry
                 .aggregates(BigoApproximateDoublePercentileArrayAggregations.class)
                 .aggregates(BigoApproximateRealPercentileAggregations.class)
                 .aggregates(BigoApproximateRealPercentileArrayAggregations.class)
+                .aggregates(BigoApproximateStringPercentileAggregations.class)
                 .aggregate(BitmapCountDistinctFunction.class)
                 .aggregates(CountIfAggregation.class)
                 .aggregates(BooleanAndAggregation.class)

@@ -38,6 +38,7 @@ import io.prestosql.operator.aggregation.BigoApproximateLongPercentileAggregatio
 import io.prestosql.operator.aggregation.BigoApproximateLongPercentileArrayAggregations;
 import io.prestosql.operator.aggregation.BigoApproximateRealPercentileAggregations;
 import io.prestosql.operator.aggregation.BigoApproximateRealPercentileArrayAggregations;
+import io.prestosql.operator.aggregation.BigoApproximateStringPercentileAggregations;
 import io.prestosql.operator.aggregation.ApproximateSetAggregation;
 import io.prestosql.operator.aggregation.AverageAggregations;
 import io.prestosql.operator.aggregation.BitwiseAndAggregation;
@@ -62,6 +63,7 @@ import io.prestosql.operator.aggregation.IntervalYearToMonthSumAggregation;
 import io.prestosql.operator.aggregation.BitmapCountDistinctFunction;
 import io.prestosql.operator.aggregation.LongSumAggregation;
 import io.prestosql.operator.aggregation.MaxDataSizeForStats;
+import io.prestosql.operator.aggregation.MeanAggregations;
 import io.prestosql.operator.aggregation.MergeHyperLogLogAggregation;
 import io.prestosql.operator.aggregation.MergeQuantileDigestFunction;
 import io.prestosql.operator.aggregation.RealCorrelationAggregation;
@@ -429,6 +431,7 @@ public class FunctionRegistry
                 .aggregates(BigoApproximateDoublePercentileArrayAggregations.class)
                 .aggregates(BigoApproximateRealPercentileAggregations.class)
                 .aggregates(BigoApproximateRealPercentileArrayAggregations.class)
+                .aggregates(BigoApproximateStringPercentileAggregations.class)
                 .aggregate(BitmapCountDistinctFunction.class)
                 .aggregates(CountIfAggregation.class)
                 .aggregates(BooleanAndAggregation.class)
@@ -439,6 +442,7 @@ public class FunctionRegistry
                 .aggregates(IntervalDayToSecondSumAggregation.class)
                 .aggregates(IntervalYearToMonthSumAggregation.class)
                 .aggregates(AverageAggregations.class)
+                .aggregates(MeanAggregations.class)
                 .function(REAL_AVERAGE_AGGREGATION)
                 .aggregates(IntervalDayToSecondAverageAggregation.class)
                 .aggregates(IntervalYearToMonthAverageAggregation.class)

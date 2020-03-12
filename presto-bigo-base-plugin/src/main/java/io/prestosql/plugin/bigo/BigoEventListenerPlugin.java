@@ -33,6 +33,7 @@ import io.prestosql.plugin.bigo.udf.DecodeFunction;
 import io.prestosql.plugin.bigo.udf.DefaultStrToMapFunction;
 import io.prestosql.plugin.bigo.udf.EncodeFunction;
 import io.prestosql.plugin.bigo.udf.ExternalDateTimeFunctions;
+import io.prestosql.plugin.bigo.udf.ExternalMathFunctions;
 import io.prestosql.plugin.bigo.udf.HexFunction;
 import io.prestosql.plugin.bigo.udf.ImoUidSampleHashCode;
 import io.prestosql.plugin.bigo.udf.IsNullFunction;
@@ -106,6 +107,7 @@ public class BigoEventListenerPlugin
                 .add(DefaultStrToMapFunction.class)
                 .add(ExternalDateTimeFunctions.class)
                 .add(ImoUidSampleHashCode.class)
+                .add(ExternalMathFunctions.class)
                 .build();
     }
 }

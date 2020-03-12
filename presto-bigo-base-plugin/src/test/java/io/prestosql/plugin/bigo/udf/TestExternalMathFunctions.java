@@ -11,4 +11,9 @@ public class TestExternalMathFunctions extends FunctionsTestUtil
         assertFunction("conv('2e', 16, 10)", VarcharType.VARCHAR, "46");
     }
 
+    @Test
+    public void testBin() {
+        assertFunction("bin(12)", VarcharType.VARCHAR, "1100");
+    }
+
 }

@@ -42,6 +42,7 @@ public class ResourceGroupSpec
     private final int maxQueued;
     private final Optional<Integer> softConcurrencyLimit;
     private final int hardConcurrencyLimit;
+    private final int hardRunnableDriversLimit;
     private final Optional<SchedulingPolicy> schedulingPolicy;
     private final Optional<Integer> schedulingWeight;
     private final List<ResourceGroupSpec> subGroups;
@@ -56,6 +57,7 @@ public class ResourceGroupSpec
             @JsonProperty("maxQueued") int maxQueued,
             @JsonProperty("softConcurrencyLimit") Optional<Integer> softConcurrencyLimit,
             @JsonProperty("hardConcurrencyLimit") Optional<Integer> hardConcurrencyLimit,
+            @JsonProperty("hardRunnableDriversLimit") Optional<Integer> hardRunnableDriversLimit,
             @JsonProperty("maxRunning") Optional<Integer> maxRunning,
             @JsonProperty("schedulingPolicy") Optional<String> schedulingPolicy,
             @JsonProperty("schedulingWeight") Optional<Integer> schedulingWeight,
@@ -75,6 +77,10 @@ public class ResourceGroupSpec
         checkArgument(hardConcurrencyLimit.isPresent() || maxRunning.isPresent(), "Missing required property: hardConcurrencyLimit");
         this.hardConcurrencyLimit = hardConcurrencyLimit.orElseGet(maxRunning::get);
         checkArgument(this.hardConcurrencyLimit >= 0, "hardConcurrencyLimit is negative");
+
+        checkArgument(hardRunnableDriversLimit.isPresent() || maxRunning.isPresent(), "Missing required property: hardConcurrencyLimit");
+        this.hardRunnableDriversLimit = hardRunnableDriversLimit.orElse(100000);
+        checkArgument(this.hardRunnableDriversLimit >= 0, "hardRunnableDriversLimit is negative");
 
         softConcurrencyLimit.ifPresent(soft -> checkArgument(soft >= 0, "softConcurrencyLimit is negative"));
         softConcurrencyLimit.ifPresent(soft -> checkArgument(this.hardConcurrencyLimit >= soft, "hardConcurrencyLimit must be greater than or equal to softConcurrencyLimit"));
@@ -129,6 +135,11 @@ public class ResourceGroupSpec
         return hardConcurrencyLimit;
     }
 
+    public int getHardRunnableDriversLimit()
+    {
+        return hardRunnableDriversLimit;
+    }
+
     public Optional<SchedulingPolicy> getSchedulingPolicy()
     {
         return schedulingPolicy;
@@ -179,6 +190,7 @@ public class ResourceGroupSpec
                 maxQueued == that.maxQueued &&
                 softConcurrencyLimit.equals(that.softConcurrencyLimit) &&
                 hardConcurrencyLimit == that.hardConcurrencyLimit &&
+                hardRunnableDriversLimit == that.hardRunnableDriversLimit &&
                 schedulingPolicy.equals(that.schedulingPolicy) &&
                 schedulingWeight.equals(that.schedulingWeight) &&
                 subGroups.equals(that.subGroups) &&
@@ -198,6 +210,7 @@ public class ResourceGroupSpec
                 maxQueued == other.maxQueued &&
                 softConcurrencyLimit.equals(other.softConcurrencyLimit) &&
                 hardConcurrencyLimit == other.hardConcurrencyLimit &&
+                hardRunnableDriversLimit == other.hardRunnableDriversLimit &&
                 schedulingPolicy.equals(other.schedulingPolicy) &&
                 schedulingWeight.equals(other.schedulingWeight) &&
                 jmxExport.equals(other.jmxExport) &&
@@ -214,6 +227,7 @@ public class ResourceGroupSpec
                 maxQueued,
                 softConcurrencyLimit,
                 hardConcurrencyLimit,
+                hardRunnableDriversLimit,
                 schedulingPolicy,
                 schedulingWeight,
                 subGroups,
@@ -231,6 +245,7 @@ public class ResourceGroupSpec
                 .add("maxQueued", maxQueued)
                 .add("softConcurrencyLimit", softConcurrencyLimit)
                 .add("hardConcurrencyLimit", hardConcurrencyLimit)
+                .add("hardRunnableDriversLimit", hardRunnableDriversLimit)
                 .add("schedulingPolicy", schedulingPolicy)
                 .add("schedulingWeight", schedulingWeight)
                 .add("jmxExport", jmxExport)

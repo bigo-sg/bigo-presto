@@ -60,11 +60,15 @@ public interface ResourceGroup
 
     int getHardConcurrencyLimit();
 
+    int getHardRunnableDriversLimit();
+
     /**
      * Maximum number of concurrently running queries, after which
      * new queries will queue instead of starting.
      */
     void setHardConcurrencyLimit(int hardConcurrencyLimit);
+
+    void setHardRunnableDriversLimit(int hardRunnableDriversLimit);
 
     int getMaxQueuedQueries();
 

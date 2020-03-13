@@ -43,6 +43,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -93,6 +94,8 @@ public class InternalResourceGroup
     private int softConcurrencyLimit;
     @GuardedBy("root")
     private int hardConcurrencyLimit;
+    @GuardedBy("root")
+    private int hardRunnableDriversLimit = 100000;
     @GuardedBy("root")
     private int maxQueuedQueries;
     @GuardedBy("root")
@@ -162,6 +165,7 @@ public class InternalResourceGroup
                     succinctBytes(softMemoryLimitBytes),
                     softConcurrencyLimit,
                     hardConcurrencyLimit,
+                    hardRunnableDriversLimit,
                     maxQueuedQueries,
                     succinctBytes(cachedResourceUsage.getMemoryUsageBytes()),
                     succinctDuration(cachedResourceUsage.getCpuUsageMillis(), MILLISECONDS),
@@ -187,6 +191,7 @@ public class InternalResourceGroup
                     succinctBytes(softMemoryLimitBytes),
                     softConcurrencyLimit,
                     hardConcurrencyLimit,
+                    hardRunnableDriversLimit,
                     maxQueuedQueries,
                     succinctBytes(cachedResourceUsage.getMemoryUsageBytes()),
                     succinctDuration(cachedResourceUsage.getCpuUsageMillis(), MILLISECONDS),
@@ -212,6 +217,7 @@ public class InternalResourceGroup
                     succinctBytes(softMemoryLimitBytes),
                     softConcurrencyLimit,
                     hardConcurrencyLimit,
+                    hardRunnableDriversLimit,
                     maxQueuedQueries,
                     succinctBytes(cachedResourceUsage.getMemoryUsageBytes()),
                     succinctDuration(cachedResourceUsage.getCpuUsageMillis(), MILLISECONDS),
@@ -427,12 +433,35 @@ public class InternalResourceGroup
 
     @Managed
     @Override
+    public int getHardRunnableDriversLimit()
+    {
+        synchronized (root) {
+            return hardRunnableDriversLimit;
+        }
+    }
+
+    @Managed
+    @Override
     public void setHardConcurrencyLimit(int hardConcurrencyLimit)
     {
         checkArgument(hardConcurrencyLimit >= 0, "hardConcurrencyLimit is negative");
         synchronized (root) {
             boolean oldCanRun = canRunMore();
             this.hardConcurrencyLimit = hardConcurrencyLimit;
+            if (canRunMore() != oldCanRun) {
+                updateEligibility();
+            }
+        }
+    }
+
+    @Managed
+    @Override
+    public void setHardRunnableDriversLimit(int hardRunnableDriversLimit)
+    {
+        checkArgument(hardRunnableDriversLimit >= 0, "HardRunnableDriversLimit is negative");
+        synchronized (root) {
+            boolean oldCanRun = canRunMore();
+            this.hardRunnableDriversLimit = hardRunnableDriversLimit;
             if (canRunMore() != oldCanRun) {
                 updateEligibility();
             }
@@ -912,7 +941,19 @@ public class InternalResourceGroup
                 // Always allow at least one running query
                 hardConcurrencyLimit = Math.max(1, hardConcurrencyLimit);
             }
-            return runningQueries.size() + descendantRunningQueries < hardConcurrencyLimit;
+            int hardRunnableDriversLimit = this.hardRunnableDriversLimit;
+            // Always allow at least 1000 running drivers
+            hardRunnableDriversLimit = Math.max(1, hardRunnableDriversLimit);
+            final int[] runnableDrivers = {0};
+            runningQueries.keySet().stream().forEach(new Consumer<ManagedQueryExecution>() {
+                @Override
+                public void accept(ManagedQueryExecution managedQueryExecution) {
+                    runnableDrivers[0] += managedQueryExecution.getBasicQueryInfo().getQueryStats().getRunningDrivers();
+                }
+            });
+            boolean ret = runningQueries.size() + descendantRunningQueries < hardConcurrencyLimit
+                    && runnableDrivers[0] < hardRunnableDriversLimit;
+            return ret;
         }
     }
 

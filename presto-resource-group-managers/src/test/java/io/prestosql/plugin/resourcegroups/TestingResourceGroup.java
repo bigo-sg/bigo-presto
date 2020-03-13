@@ -31,6 +31,7 @@ public class TestingResourceGroup
     private long quotaGenerationRate;
     private int softConcurrencyLimit;
     private int hardConcurrencyLimit;
+    private int hardRunnableDriversLimit;
     private int maxQueued;
     private int schedulingWeight;
     private SchedulingPolicy policy;
@@ -114,9 +115,19 @@ public class TestingResourceGroup
     }
 
     @Override
+    public int getHardRunnableDriversLimit() {
+        return hardRunnableDriversLimit;
+    }
+
+    @Override
     public void setHardConcurrencyLimit(int hardConcurrencyLimit)
     {
         this.hardConcurrencyLimit = hardConcurrencyLimit;
+    }
+
+    @Override
+    public void setHardRunnableDriversLimit(int hardRunnableDriversLimit) {
+        this.hardRunnableDriversLimit = hardRunnableDriversLimit;
     }
 
     @Override

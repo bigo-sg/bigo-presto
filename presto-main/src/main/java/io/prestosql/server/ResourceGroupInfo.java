@@ -43,6 +43,7 @@ public class ResourceGroupInfo
     private final DataSize softMemoryLimit;
     private final int softConcurrencyLimit;
     private final int hardConcurrencyLimit;
+    private final int hardRunnableDriversLimit;
     private final int maxQueuedQueries;
 
     private final DataSize memoryUsage;
@@ -64,6 +65,7 @@ public class ResourceGroupInfo
             DataSize softMemoryLimit,
             int softConcurrencyLimit,
             int hardConcurrencyLimit,
+            int hardRunnableDriversLimit,
             int maxQueuedQueries,
 
             DataSize memoryUsage,
@@ -85,6 +87,7 @@ public class ResourceGroupInfo
 
         this.softConcurrencyLimit = softConcurrencyLimit;
         this.hardConcurrencyLimit = hardConcurrencyLimit;
+        this.hardRunnableDriversLimit = hardRunnableDriversLimit;
         this.maxQueuedQueries = maxQueuedQueries;
 
         this.memoryUsage = requireNonNull(memoryUsage, "memoryUsage is null");
@@ -137,6 +140,12 @@ public class ResourceGroupInfo
     public int getHardConcurrencyLimit()
     {
         return hardConcurrencyLimit;
+    }
+
+    @JsonProperty
+    public int getHardRunnableDriversLimit()
+    {
+        return hardRunnableDriversLimit;
     }
 
     @JsonProperty

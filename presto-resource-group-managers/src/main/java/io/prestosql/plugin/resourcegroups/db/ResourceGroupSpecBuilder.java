@@ -34,6 +34,7 @@ public class ResourceGroupSpecBuilder
     private final int maxQueued;
     private final Optional<Integer> softConcurrencyLimit;
     private final int hardConcurrencyLimit;
+    private final int hardRunnableDriversLimit;
     private final Optional<String> schedulingPolicy;
     private final Optional<Integer> schedulingWeight;
     private final Optional<Boolean> jmxExport;
@@ -49,6 +50,7 @@ public class ResourceGroupSpecBuilder
             int maxQueued,
             Optional<Integer> softConcurrencyLimit,
             int hardConcurrencyLimit,
+            int hardRunnableDriversLimit,
             Optional<String> schedulingPolicy,
             Optional<Integer> schedulingWeight,
             Optional<Boolean> jmxExport,
@@ -62,6 +64,7 @@ public class ResourceGroupSpecBuilder
         this.maxQueued = maxQueued;
         this.softConcurrencyLimit = requireNonNull(softConcurrencyLimit, "softConcurrencyLimit is null");
         this.hardConcurrencyLimit = hardConcurrencyLimit;
+        this.hardRunnableDriversLimit = hardRunnableDriversLimit;
         this.schedulingPolicy = requireNonNull(schedulingPolicy, "schedulingPolicy is null");
         this.schedulingWeight = schedulingWeight;
         this.jmxExport = requireNonNull(jmxExport, "jmxExport is null");
@@ -108,6 +111,7 @@ public class ResourceGroupSpecBuilder
                 maxQueued,
                 softConcurrencyLimit,
                 Optional.of(hardConcurrencyLimit),
+                Optional.of(hardRunnableDriversLimit),
                 Optional.empty(),
                 schedulingPolicy,
                 schedulingWeight,
@@ -133,6 +137,7 @@ public class ResourceGroupSpecBuilder
                 softConcurrencyLimit = Optional.empty();
             }
             int hardConcurrencyLimit = resultSet.getInt("hard_concurrency_limit");
+            int hardRunnableDriversLimit = resultSet.getInt("hard_runnable_drivers_limit");
             Optional<String> schedulingPolicy = Optional.ofNullable(resultSet.getString("scheduling_policy"));
             Optional<Integer> schedulingWeight = Optional.of(resultSet.getInt("scheduling_weight"));
             if (resultSet.wasNull()) {
@@ -155,6 +160,7 @@ public class ResourceGroupSpecBuilder
                     maxQueued,
                     softConcurrencyLimit,
                     hardConcurrencyLimit,
+                    hardRunnableDriversLimit,
                     schedulingPolicy,
                     schedulingWeight,
                     jmxExport,

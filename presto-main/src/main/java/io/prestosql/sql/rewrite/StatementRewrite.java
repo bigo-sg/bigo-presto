@@ -39,7 +39,8 @@ public final class StatementRewrite
             new DescribeOutputRewrite(),
             new ShowQueriesRewrite(),
             new ShowStatsRewrite(),
-            new ExplainRewrite());
+            new ExplainRewrite(),
+            new CubeRelatedRewrite());
 
     private StatementRewrite() {}
 

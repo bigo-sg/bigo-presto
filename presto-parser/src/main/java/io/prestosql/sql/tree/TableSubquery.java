@@ -24,7 +24,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 public class TableSubquery
         extends QueryBody
 {
-    private final Query query;
+    private Query query;
 
     public TableSubquery(Query query)
     {
@@ -45,6 +45,10 @@ public class TableSubquery
     public Query getQuery()
     {
         return query;
+    }
+
+    public void setQuery(Query query) {
+        this.query = query;
     }
 
     @Override

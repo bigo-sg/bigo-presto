@@ -26,7 +26,7 @@ public class CreateTableAsSelect
         extends Statement
 {
     private final QualifiedName name;
-    private final Query query;
+    private Query query;
     private final boolean notExists;
     private final List<Property> properties;
     private final boolean withData;
@@ -58,6 +58,10 @@ public class CreateTableAsSelect
     public QualifiedName getName()
     {
         return name;
+    }
+
+    public void setQuery(Query query) {
+        this.query = query;
     }
 
     public Query getQuery()

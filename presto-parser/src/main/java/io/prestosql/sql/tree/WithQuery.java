@@ -26,7 +26,7 @@ public class WithQuery
         extends Node
 {
     private final Identifier name;
-    private final Query query;
+    private Query query;
     private final Optional<List<Identifier>> columnNames;
 
     public WithQuery(Identifier name, Query query, Optional<List<Identifier>> columnNames)
@@ -50,6 +50,10 @@ public class WithQuery
     public Identifier getName()
     {
         return name;
+    }
+
+    public void setQuery(Query query) {
+        this.query = query;
     }
 
     public Query getQuery()

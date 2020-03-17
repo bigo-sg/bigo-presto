@@ -31,7 +31,7 @@ public class CreateView
     }
 
     private final QualifiedName name;
-    private final Query query;
+    private Query query;
     private final boolean replace;
     private final Optional<String> comment;
     private final Optional<Security> security;
@@ -59,6 +59,10 @@ public class CreateView
     public QualifiedName getName()
     {
         return name;
+    }
+
+    public void setQuery(Query query) {
+        this.query = query;
     }
 
     public Query getQuery()

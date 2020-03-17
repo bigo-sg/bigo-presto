@@ -22,7 +22,7 @@ import java.util.Optional;
 public class SubqueryExpression
         extends Expression
 {
-    private final Query query;
+    private Query query;
 
     public SubqueryExpression(Query query)
     {
@@ -37,6 +37,10 @@ public class SubqueryExpression
     private SubqueryExpression(Optional<NodeLocation> location, Query query)
     {
         super(location);
+        this.query = query;
+    }
+
+    public void setQuery(Query query) {
         this.query = query;
     }
 

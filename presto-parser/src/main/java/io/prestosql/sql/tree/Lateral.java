@@ -25,7 +25,7 @@ import static java.util.Objects.requireNonNull;
 public final class Lateral
         extends Relation
 {
-    private final Query query;
+    private Query query;
 
     public Lateral(Query query)
     {
@@ -41,6 +41,10 @@ public final class Lateral
     {
         super(location);
         this.query = requireNonNull(query, "query is null");
+    }
+
+    public void setQuery(Query query) {
+        this.query = query;
     }
 
     public Query getQuery()

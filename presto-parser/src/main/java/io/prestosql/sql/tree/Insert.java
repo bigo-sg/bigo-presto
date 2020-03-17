@@ -26,7 +26,7 @@ public final class Insert
         extends Statement
 {
     private final QualifiedName target;
-    private final Query query;
+    private Query query;
     private final Optional<List<Identifier>> columns;
     private final boolean overwrite;
 
@@ -62,6 +62,10 @@ public final class Insert
     public Optional<List<Identifier>> getColumns()
     {
         return columns;
+    }
+
+    public void setQuery(Query query) {
+        this.query = query;
     }
 
     public Query getQuery()

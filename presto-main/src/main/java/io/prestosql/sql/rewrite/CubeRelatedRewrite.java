@@ -48,7 +48,7 @@ public class CubeRelatedRewrite implements StatementRewrite.Rewrite {
     }
 
     private static class Visitor
-            extends DefaultTraversalVisitor<Node, Void> {
+            extends ReturnableTraversalVisitor {
         private final Metadata metadata;
         private final Session session;
         private final SqlParser sqlParser;

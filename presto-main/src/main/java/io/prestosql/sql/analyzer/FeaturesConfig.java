@@ -127,8 +127,8 @@ public class FeaturesConfig
     private boolean predicatePushdownUseTableProperties = true;
     private boolean ignoreDownstreamPreferences;
 
-    private Duration iterativeOptimizerTimeout = new Duration(3, MINUTES); // by default let optimizer wait a long time in case it retrieves some data from ConnectorMetadata
-    private boolean enableDynamicFiltering = true;
+    private Duration iterativeOptimizerTimeout = new Duration(15, MINUTES); // by default let optimizer wait a long time in case it retrieves some data from ConnectorMetadata
+    private boolean enableDynamicFiltering;
     private int dynamicFilteringMaxPerDriverRowCount = 100;
     private DataSize dynamicFilteringMaxPerDriverSize = DataSize.of(10, KILOBYTE);
 

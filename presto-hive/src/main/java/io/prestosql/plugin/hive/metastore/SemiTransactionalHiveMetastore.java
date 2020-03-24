@@ -2117,6 +2117,11 @@ public class SemiTransactionalHiveMetastore
         runWhenPathDoesntExist.run();
 
         try {
+            // This step is to ensure that the directory can be found correctly, in case the directory is deleted manually
+            if (!pathExists(context, hdfsEnvironment, source)) {
+                createDirectory(context, hdfsEnvironment, source);
+            }
+
             if (!hdfsEnvironment.getFileSystem(context, source).rename(source, target)) {
                 throw new PrestoException(HIVE_FILESYSTEM_ERROR, format("Failed to rename %s to %s: rename returned false", source, target));
             }

@@ -323,6 +323,7 @@ public class BigoDateTimeFunctions {
         SimpleDateFormat formatter2 = new SimpleDateFormat(dateFormat2);
 
         Calendar calendar = Calendar.getInstance();
+        calendar.setFirstDayOfWeek(Calendar.MONDAY);
         try {
             Date date = null;
             try {

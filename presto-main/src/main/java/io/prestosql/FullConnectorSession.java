@@ -133,6 +133,11 @@ public class FullConnectorSession
     }
 
     @Override
+    public String getSystemProperties(String key) {
+        return session.getSystemProperties().get(key);
+    }
+
+    @Override
     public String toString()
     {
         return toStringHelper(this)

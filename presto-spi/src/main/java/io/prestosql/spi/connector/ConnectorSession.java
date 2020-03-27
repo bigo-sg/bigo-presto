@@ -43,4 +43,8 @@ public interface ConnectorSession
     boolean isLegacyTimestamp();
 
     <T> T getProperty(String name, Class<T> type);
+
+    default String getSystemProperties(String key) {
+        throw new RuntimeException("invoke not support method");
+    }
 }

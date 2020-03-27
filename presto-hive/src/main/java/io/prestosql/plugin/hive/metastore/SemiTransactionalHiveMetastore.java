@@ -359,11 +359,25 @@ public class SemiTransactionalHiveMetastore
         checkNoPartitionAction(table.getDatabaseName(), table.getTableName());
         Action<TableAndMore> oldTableAction = tableActions.get(table.getSchemaTableName());
         HiveIdentity identity = new HiveIdentity(session);
+        String enableDownloadRewrite = session.getSystemProperties("enable_download_rewrite");
+        boolean enableDownload = false;
+        if (enableDownloadRewrite != null && enableDownloadRewrite.equals("true")) {
+            enableDownload = true;
+        }
+
         TableAndMore tableAndMore = new TableAndMore(table, identity, Optional.of(principalPrivileges), currentPath, Optional.empty(), ignoreExisting, statistics, statistics);
         if (oldTableAction == null) {
             HdfsContext hdfsContext = new HdfsContext(session, table.getDatabaseName(), table.getTableName());
-            tableActions.put(table.getSchemaTableName(), new Action<>(ActionType.ADD, tableAndMore, hdfsContext, identity));
+            Action<TableAndMore> newAction = new Action<>(ActionType.ADD, tableAndMore, hdfsContext, identity);
+            newAction.setEnableDownloadRewrite(enableDownload);
+            tableActions.put(table.getSchemaTableName(), newAction);
             return;
+        } else {
+            Table oldTable = oldTableAction.getData().getTable();
+            if (table.getDatabaseName().equals(oldTable.getDatabaseName())
+                    && table.getTableName().equals(oldTable.getTableName())) {
+                oldTableAction.setEnableDownloadRewrite(enableDownload);
+            }
         }
         switch (oldTableAction.getType()) {
             case DROP:
@@ -942,6 +956,7 @@ public class SemiTransactionalHiveMetastore
         checkHoldsLock();
 
         Committer committer = new Committer();
+        boolean onlyAddTable = false;
         try {
             for (Map.Entry<SchemaTableName, Action<TableAndMore>> entry : tableActions.entrySet()) {
                 SchemaTableName schemaTableName = entry.getKey();
@@ -954,7 +969,7 @@ public class SemiTransactionalHiveMetastore
                         committer.prepareAlterTable(action.getHdfsContext(), action.getIdentity(), action.getData());
                         break;
                     case ADD:
-                        committer.prepareAddTable(action.getHdfsContext(), action.getData());
+                        committer.prepareAddTable(action.getHdfsContext(), action.getData(), action.isEnableDownloadRewrite());
                         break;
                     case INSERT_EXISTING:
                         committer.prepareInsertExistingTable(action.getHdfsContext(), action.getData());
@@ -1140,7 +1155,7 @@ public class SemiTransactionalHiveMetastore
                     false));
         }
 
-        private void prepareAddTable(HdfsContext context, TableAndMore tableAndMore)
+        private void prepareAddTable(HdfsContext context, TableAndMore tableAndMore, boolean enableDownload)
         {
             deleteOnly = false;
 
@@ -1187,7 +1202,7 @@ public class SemiTransactionalHiveMetastore
                 }
             }
             addTableOperations.add(new CreateTableOperation(tableAndMore.getIdentity(), table, tableAndMore.getPrincipalPrivileges(), tableAndMore.isIgnoreExisting()));
-            if (!isPrestoView(table)) {
+            if (!enableDownload && !isPrestoView(table)) {
                 updateStatisticsOperations.add(new UpdateStatisticsOperation(
                         tableAndMore.getIdentity(),
                         table.getSchemaTableName(),
@@ -2013,6 +2028,15 @@ public class SemiTransactionalHiveMetastore
         private final T data;
         private final HdfsContext hdfsContext;
         private final HiveIdentity identity;
+        private boolean enableDownloadRewrite;
+
+        public void setEnableDownloadRewrite(boolean enableDownloadRewrite) {
+            this.enableDownloadRewrite = enableDownloadRewrite;
+        }
+
+        public boolean isEnableDownloadRewrite() {
+            return enableDownloadRewrite;
+        }
 
         public Action(ActionType type, T data, HdfsContext hdfsContext, HiveIdentity identity)
         {

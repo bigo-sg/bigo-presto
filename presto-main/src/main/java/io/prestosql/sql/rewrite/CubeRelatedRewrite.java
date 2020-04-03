@@ -168,7 +168,7 @@ public class CubeRelatedRewrite implements StatementRewrite.Rewrite {
                     }
                     List<Expression> expressions = groupingElement.getExpressions();
                     for (Expression expression : expressions) {
-                        if (expression instanceof IfExpression || expression instanceof SearchedCaseExpression) {
+                        if (expression instanceof IfExpression || expression instanceof SearchedCaseExpression || expression instanceof FunctionCall) {
                             // find the Expression, put it to the map
                             expressionMap.put(genRandomAlias(), expression);
                         }
@@ -179,7 +179,7 @@ public class CubeRelatedRewrite implements StatementRewrite.Rewrite {
                     for (List<Expression> list : ((GroupingSets) groupingElement).getSets()) {
                         List<Expression> newList = new ArrayList<>();
                         for (Expression expression : list) {
-                            if (expression instanceof IfExpression || expression instanceof SearchedCaseExpression) {
+                            if (expression instanceof IfExpression || expression instanceof SearchedCaseExpression || expression instanceof FunctionCall) {
                                 String alias = expressionToAliasMap.get(expression);
                                 if (null == alias) {
                                     alias = genRandomAlias();
@@ -258,7 +258,12 @@ public class CubeRelatedRewrite implements StatementRewrite.Rewrite {
                     for (String alias : expressionMap.keySet()) {
                         Expression expression = expressionMap.get(alias);
                         if (singleColumn.getExpression().equals(expression)) {
-                            SingleColumn replacement = new SingleColumn(new Identifier(alias));
+                            SingleColumn replacement = null;
+                            if (singleColumn.getAlias().isPresent()) {
+                                replacement = new SingleColumn(new Identifier(alias), Optional.of(singleColumn.getAlias().get()));
+                            } else {
+                                replacement = new SingleColumn(new Identifier(alias));
+                            }
                             selectItems.add(replacement);
                             hasReplaced = true;
                             break;

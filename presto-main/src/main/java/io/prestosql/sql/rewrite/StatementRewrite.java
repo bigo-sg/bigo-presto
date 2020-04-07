@@ -40,7 +40,8 @@ public final class StatementRewrite
             new ShowQueriesRewrite(),
             new ShowStatsRewrite(),
             new ExplainRewrite(),
-            new CubeRelatedRewrite());
+            new CubeRelatedRewrite(),
+            new PartitionTypeRewrite());
 
     private StatementRewrite() {}
 

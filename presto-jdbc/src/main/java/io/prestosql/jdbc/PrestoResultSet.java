@@ -24,6 +24,7 @@ import io.prestosql.client.QueryError;
 import io.prestosql.client.QueryStatusInfo;
 import io.prestosql.client.StatementClient;
 import io.prestosql.jdbc.ColumnInfo.Nullable;
+import org.apache.log4j.Logger;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -131,7 +132,7 @@ public class PrestoResultSet
     {
         return QueryStats.create(queryId, client.getStats());
     }
-
+    private static final Logger LOG = Logger.getLogger(PrestoResultSet.class);
     @Override
     public boolean next()
             throws SQLException
@@ -146,6 +147,8 @@ public class PrestoResultSet
             return true;
         }
         catch (RuntimeException e) {
+            e.printStackTrace();
+            LOG.error("print from presto jdbc:", e);
             if (e.getCause() instanceof SQLException) {
                 throw (SQLException) e.getCause();
             }

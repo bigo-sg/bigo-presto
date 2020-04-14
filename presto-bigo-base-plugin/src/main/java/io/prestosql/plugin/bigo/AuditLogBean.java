@@ -106,6 +106,8 @@ public class AuditLogBean
     private String outputSchema;
     private String table;
 
+    public AuditLogBean() {
+    }
 
     public AuditLogBean(QueryCompletedEvent queryCompletedEvent)
     {

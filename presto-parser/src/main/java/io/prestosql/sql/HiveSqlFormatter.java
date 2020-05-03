@@ -1520,18 +1520,19 @@ public final class HiveSqlFormatter
             return null;
         }
 
+
         @Override
         protected Void visitGrantRoles(GrantRoles node, Integer context)
         {
             builder.append("GRANT ");
             builder.append(node.getRoles().stream()
-                    .map(Identifier::toString)
-                    .collect(joining(", ")));
+                .map(Identifier::toString)
+                .collect(joining(", ")));
             builder.append(" TO ");
             builder.append(node.getGrantees().stream()
-                    .map(Formatter::formatPrincipal)
-                    .collect(joining(", ")));
-            if (node.isWithAdminOption()) {
+                .map(Formatter::formatPrincipal)
+                .collect(joining(", ")));
+            if (node.isAdminOption()) {
                 builder.append(" WITH ADMIN OPTION");
             }
             if (node.getGrantor().isPresent()) {
@@ -1544,16 +1545,16 @@ public final class HiveSqlFormatter
         protected Void visitRevokeRoles(RevokeRoles node, Integer context)
         {
             builder.append("REVOKE ");
-            if (node.isAdminOptionFor()) {
+            if (node.isAdminOption()) {
                 builder.append("ADMIN OPTION FOR ");
             }
             builder.append(node.getRoles().stream()
-                    .map(Identifier::toString)
-                    .collect(joining(", ")));
+                .map(Identifier::toString)
+                .collect(joining(", ")));
             builder.append(" FROM ");
             builder.append(node.getGrantees().stream()
-                    .map(Formatter::formatPrincipal)
-                    .collect(joining(", ")));
+                .map(Formatter::formatPrincipal)
+                .collect(joining(", ")));
             if (node.getGrantor().isPresent()) {
                 builder.append(" GRANTED BY ").append(formatGrantor(node.getGrantor().get()));
             }

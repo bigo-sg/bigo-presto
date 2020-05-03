@@ -386,6 +386,11 @@ public abstract class AstVisitor<R, C>
         return visitExpression(node, context);
     }
 
+    public R visitRLikePredicate(RLikePredicate node, C context)
+    {
+        return visitExpression(node, context);
+    }
+
     protected R visitIsNotNullPredicate(IsNotNullPredicate node, C context)
     {
         return visitExpression(node, context);

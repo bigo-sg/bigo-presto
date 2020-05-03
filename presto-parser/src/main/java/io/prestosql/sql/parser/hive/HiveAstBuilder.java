@@ -53,7 +53,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         throw new RuntimeException("please check, how should we merge them? " +
-                "most possible reason is executing a syntax that hive not support");
+            "most possible reason is executing a syntax that hive not support");
     }
 
     //////////////////
@@ -94,21 +94,21 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
         Select select = new Select(false, ImmutableList.of(new AllColumns()));
         QuerySpecification querySpecification = new QuerySpecification(
-                select,
-                Optional.of(newTable),
-                condition,
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty()
+            select,
+            Optional.of(newTable),
+            condition,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty()
         );
         Query query = new Query(
-                Optional.empty(),
-                querySpecification,
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty()
+            Optional.empty(),
+            querySpecification,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty()
         );
         return query;
     }
@@ -138,24 +138,25 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         SqlBaseParser.TablePropertyListContext tablePropertyListContext = ctx.tablePropertyList();
         if (tablePropertyListContext != null) {
             List<SqlBaseParser.TablePropertyContext> tablePropertyContexts =
-                    tablePropertyListContext.tableProperty();
+                tablePropertyListContext.tableProperty();
             for (SqlBaseParser.TablePropertyContext tablePropertyContext: tablePropertyContexts) {
                 Property property = (Property) visitTableProperty(tablePropertyContext);
                 properties.add(property);
             }
         }
         return new CreateSchema(
-                getLocation(ctx),
-                getQualifiedName(ctx.identifier().getText()),
-                ctx.EXISTS() != null,
-                properties);
+            getLocation(ctx),
+            getQualifiedName(ctx.identifier().getText()),
+            ctx.EXISTS() != null,
+            properties,
+            Optional.empty());
     }
 
     @Override public Node visitDelete(SqlBaseParser.DeleteContext ctx) {
         return new Delete(
-                getLocation(ctx),
-                new Table(getLocation(ctx), getQualifiedName(ctx.qualifiedName())),
-                visitIfPresent(ctx.booleanExpression(), Expression.class));
+            getLocation(ctx),
+            new Table(getLocation(ctx), getQualifiedName(ctx.qualifiedName())),
+            visitIfPresent(ctx.booleanExpression(), Expression.class));
     }
 
     @Override public Node visitAddTableColumns(SqlBaseParser.AddTableColumnsContext ctx) {
@@ -167,19 +168,19 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         String comment = "";
         if (colTypeContext.COMMENT() != null) {
             comment = colTypeContext.STRING().getText()
-                    .substring(1, colTypeContext.STRING().getText().length() - 1);
+                .substring(1, colTypeContext.STRING().getText().length() - 1);
         }
         DataType dataType = (DataType) visit(colTypeContext.dataType());
         ColumnDefinition columnDefinition = new ColumnDefinition(
-                new Identifier(getLocation(colTypeContext),
-                        colTypeContext.identifier().getText(), true),
-                dataType,
-                true,
-                new ArrayList<>(),
-                Optional.of(comment));
+            new Identifier(getLocation(colTypeContext),
+                colTypeContext.identifier().getText(), true),
+            dataType,
+            true,
+            new ArrayList<>(),
+            Optional.of(comment));
 
         return new AddColumn(getLocation(ctx), getQualifiedName(ctx.tableIdentifier()),
-                columnDefinition);
+            columnDefinition);
     }
 
     @Override
@@ -221,11 +222,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             }
         }
         return new LoadData(
-                Optional.of(getLocation(ctx)),
-                getQualifiedName(ctx.tableIdentifier()),
-                ctx.path.getText(),
-                ctx.OVERWRITE() != null,
-                partitions == null?ImmutableList.of():partitions
+            Optional.of(getLocation(ctx)),
+            getQualifiedName(ctx.tableIdentifier()),
+            ctx.path.getText(),
+            ctx.OVERWRITE() != null,
+            partitions == null?ImmutableList.of():partitions
         );
     }
 
@@ -249,16 +250,16 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             value = new LongLiteral(ctx.value.getText());
         }
         return new Property(getLocation(ctx),
-                new Identifier(tryUnquote(ctx.key.getText()), false), value);
+            new Identifier(tryUnquote(ctx.key.getText()), false), value);
     }
 
     @Override public Node visitDropDatabase(SqlBaseParser.DropDatabaseContext ctx)
     {
         return new DropSchema(
-                getLocation(ctx),
-                getQualifiedName(ctx.identifier().getText()),
-                ctx.EXISTS() != null,
-                false);
+            getLocation(ctx),
+            getQualifiedName(ctx.identifier().getText()),
+            ctx.EXISTS() != null,
+            false);
     }
     @Override public Node visitSetDatabaseProperties(SqlBaseParser.SetDatabasePropertiesContext ctx)
     {
@@ -326,15 +327,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     private String getSpecialChar(String input) {
         ImmutableMap map = ImmutableMap.builder()
-                .put('b', "\b")
-                .put('f', "\f")
-                .put('n', "\n")
-                .put('r', "\r")
-                .put('t', "\t")
-                .put('\\', "\\")
-                .put('\'', "\'")
-                .put('\"', "\"")
-                .build();
+            .put('b', "\b")
+            .put('f', "\f")
+            .put('n', "\n")
+            .put('r', "\r")
+            .put('t', "\t")
+            .put('\\', "\\")
+            .put('\'', "\'")
+            .put('\"', "\"")
+            .build();
         if (input == null || input.length() != 2 || input.charAt(0) != '\\') {
             return input;
         }
@@ -349,15 +350,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return "ORC";
         }
         ImmutableMap map = ImmutableMap.builder()
-                .put("TEXTFILE", "TEXTFILE")
-                .put("SEQUENCEFILE", "SEQUENCEFILE")
-                .put("ORC", "ORC")
-                .put("ORCFILE", "ORC")
-                .put("PARQUET", "PARQUET")
-                .put("AVRO", "AVRO")
-                .put("RCFILE", "RCBINARY")
-                .put("JSONFILE", "JSON")
-                .build();
+            .put("TEXTFILE", "TEXTFILE")
+            .put("SEQUENCEFILE", "SEQUENCEFILE")
+            .put("ORC", "ORC")
+            .put("ORCFILE", "ORC")
+            .put("PARQUET", "PARQUET")
+            .put("AVRO", "AVRO")
+            .put("RCFILE", "RCBINARY")
+            .put("JSONFILE", "JSON")
+            .build();
         if (map.containsKey(sqlFormat)) {
             return (String) map.get(sqlFormat.toUpperCase());
         }
@@ -378,14 +379,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         // get partition columns
         if (ctx.partitionColumns != null) {
             List<SqlBaseParser.ColTypeContext> colTypeListContexts =
-                    ctx.partitionColumns.colType();
+                ctx.partitionColumns.colType();
             List<Expression> partitionedCol = new ArrayList<>();
             for (SqlBaseParser.ColTypeContext colTypeContext: colTypeListContexts) {
                 partitionedCol.add(new StringLiteral(tryUnquote(colTypeContext.identifier().getText())));
             }
             Property partitionedBy =
-                    new Property(new Identifier("partitioned_by", false),
-                            new ArrayConstructor(partitionedCol));
+                new Property(new Identifier("partitioned_by", false),
+                    new ArrayConstructor(partitionedCol));
             properties.add(partitionedBy);
         }
 
@@ -396,43 +397,43 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             if (rowFormatContext instanceof SqlBaseParser.RowFormatSerdeContext) {
                 String format = ((SqlBaseParser.RowFormatSerdeContext) rowFormatContext).name.getText();
                 if (format.contains("org.apache.hive.hcatalog.data.JsonSerDe")
-                        || format.contains("org.openx.data.jsonserde.JsonSerDe")) {
+                    || format.contains("org.openx.data.jsonserde.JsonSerDe")) {
                     Property property = new Property(new Identifier("format", false),
-                            new StringLiteral("JSON"));
+                        new StringLiteral("JSON"));
                     properties.add(property);
                     formatGet = true;
                 } else if (format.contains("ParquetHiveSerDe")) {
                     Property property = new Property(new Identifier("format", false),
-                            new StringLiteral("PARQUET"));
+                        new StringLiteral("PARQUET"));
                     properties.add(property);
                     formatGet = true;
                 } else if (format.contains("org.apache.hadoop.hive.serde2.avro.AvroSerDe")) {
                     Property property = new Property(new Identifier("format", false),
-                            new StringLiteral("AVRO"));
+                        new StringLiteral("AVRO"));
                     properties.add(property);
                     formatGet = true;
                 } else {
                     Property property = new Property(new Identifier("format", false),
-                            new StringLiteral("ORC"));
+                        new StringLiteral("ORC"));
                     properties.add(property);
                     formatGet = true;
                 }
             } else if (rowFormatContext instanceof SqlBaseParser.RowFormatDelimitedContext) {
                 SqlBaseParser.RowFormatDelimitedContext rowFormatDelimitedContext =
-                        ((SqlBaseParser.RowFormatDelimitedContext) rowFormatContext);
+                    ((SqlBaseParser.RowFormatDelimitedContext) rowFormatContext);
                 if (rowFormatDelimitedContext.DELIMITED() != null) {
                     Property formatProperty = new Property(new Identifier("format", false),
-                            new StringLiteral("TEXTFILE"));
+                        new StringLiteral("TEXTFILE"));
                     properties.add(formatProperty);
                     formatGet = true;
                     if (rowFormatDelimitedContext.FIELDS() != null) {
                         Property property = new Property(new Identifier("textfile_field_separator", false),
-                                new StringLiteral(getSpecialChar(unquote(rowFormatDelimitedContext.fieldsTerminatedBy.getText()))));
+                            new StringLiteral(getSpecialChar(unquote(rowFormatDelimitedContext.fieldsTerminatedBy.getText()))));
                         properties.add(property);
                     }
                     if (rowFormatDelimitedContext.ESCAPED() != null) {
                         Property property = new Property(new Identifier("textfile_field_separator_escape", false),
-                                new StringLiteral(getSpecialChar(unquote(rowFormatDelimitedContext.escapedBy.getText()))));
+                            new StringLiteral(getSpecialChar(unquote(rowFormatDelimitedContext.escapedBy.getText()))));
                         properties.add(property);
                     }
                 }
@@ -451,12 +452,12 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 SqlBaseParser.GenericFileFormatContext genericFileFormatContext = (SqlBaseParser.GenericFileFormatContext)createFileFormatContext.fileFormat();
                 String hiveFormat = getFileFormat(genericFileFormatContext.identifier().getText().toUpperCase());
                 Property property = new Property(new Identifier("format", false),
-                        new StringLiteral(hiveFormat));
+                    new StringLiteral(hiveFormat));
                 properties.add(property);
                 formatGet = true;
             } else {
                 throw parseError("create table format " + format + " not supported!",
-                        createFileFormatContext);
+                    createFileFormatContext);
             }
         }
 
@@ -467,13 +468,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             }
             String loc = tryUnquote(ctx.locationSpec(0).STRING().getText());
             Property location = new Property(new Identifier("external_location", true),
-                    new StringLiteral(getLocation(ctx.locationSpec(0)), loc));
+                new StringLiteral(getLocation(ctx.locationSpec(0)), loc));
             properties.add(location);
         } else {
             if (ctx.locationSpec() != null && ctx.locationSpec().size() > 0) {
                 String loc = tryUnquote(ctx.locationSpec(0).STRING().getText());
                 Property location = new Property(new Identifier("external_location", true),
-                        new StringLiteral(getLocation(ctx.locationSpec(0)), loc));
+                    new StringLiteral(getLocation(ctx.locationSpec(0)), loc));
                 properties.add(location);
             }
         }
@@ -493,12 +494,12 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     }
                     DataType dataType = (DataType) visit(colTypeContext.dataType());
                     TableElement tableElement = new ColumnDefinition(
-                            new Identifier(getLocation(colTypeContext),
-                                    tryUnquote(colTypeContext.identifier().getText()), true),
-                            dataType,
-                            true,
-                            new ArrayList<>(),
-                            colComment);
+                        new Identifier(getLocation(colTypeContext),
+                            tryUnquote(colTypeContext.identifier().getText()), true),
+                        dataType,
+                        true,
+                        new ArrayList<>(),
+                        colComment);
                     elements.add(tableElement);
                 }
             }
@@ -510,38 +511,38 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 throw parseError("'create table t as query' lack word of 'as' before 'query'", ctx.query());
             }
             SqlBaseParser.SingleInsertQueryContext singleInsertQueryContext =
-                    (SqlBaseParser.SingleInsertQueryContext)ctx.query().queryNoWith();
+                (SqlBaseParser.SingleInsertQueryContext)ctx.query().queryNoWith();
             Object queryObject = visit(singleInsertQueryContext.queryTerm());
             QueryBody term = null;
             if (queryObject instanceof QueryBody) {
                 term = (QueryBody) visit(singleInsertQueryContext.queryTerm());
             } else if (queryObject instanceof Query) {
                 term = new TableSubquery(
-                        getLocation(ctx.query()),
-                        (Query) queryObject
+                    getLocation(ctx.query()),
+                    (Query) queryObject
                 );
             }
 
             Query query = (Query)withQueryOrganization(term, singleInsertQueryContext.queryOrganization());
             QualifiedName target = getQualifiedName(ctx.createTableHeader().tableIdentifier());
             return new CreateTableAsSelect(
-                    target,
-                    query,
-                    ctx.createTableHeader().EXISTS() != null,
-                    properties,
-                    true,
-                    Optional.empty(),
-                    comment);
+                target,
+                query,
+                ctx.createTableHeader().EXISTS() != null,
+                properties,
+                true,
+                Optional.empty(),
+                comment);
         }
 
         // only create table
         return new CreateTable(
-                getLocation(ctx),
-                getQualifiedName(ctx.createTableHeader().tableIdentifier()),
-                elements,
-                ctx.createTableHeader().EXISTS() != null,
-                properties,
-                comment);
+            getLocation(ctx),
+            getQualifiedName(ctx.createTableHeader().tableIdentifier()),
+            elements,
+            ctx.createTableHeader().EXISTS() != null,
+            properties,
+            comment);
     }
 
     @Override
@@ -552,10 +553,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitCreateTableLike(SqlBaseParser.CreateTableLikeContext ctx) {
         return new CreateTableLike(
-                Optional.of(getLocation(ctx)),
-                getQualifiedName(ctx.target),
-                getQualifiedName(ctx.source),
-                ctx.EXISTS() != null && ctx.NOT() != null);
+            Optional.of(getLocation(ctx)),
+            getQualifiedName(ctx.target),
+            getQualifiedName(ctx.source),
+            ctx.EXISTS() != null && ctx.NOT() != null);
     }
 
     @Override
@@ -572,9 +573,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         for (SqlBaseParser.NamedQueryContext namedQueryContext: namedQueryContexts) {
 
             WithQuery withQuery = new WithQuery(
-                    new Identifier(getLocation(namedQueryContext), namedQueryContext.name.getText(), false),
-                    (Query) visitQuery(namedQueryContext.query()),
-                    Optional.empty()
+                new Identifier(getLocation(namedQueryContext), namedQueryContext.name.getText(), false),
+                (Query) visitQuery(namedQueryContext.query()),
+                Optional.empty()
             );
             queries.add(withQuery);
         }
@@ -588,10 +589,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitExplain(SqlBaseParser.ExplainContext ctx) {
         return new Explain(getLocation(ctx),
-                false,
-                false,
-                (Statement) visit(ctx.statement()),
-                new ArrayList<>()
+            false,
+            false,
+            (Statement) visit(ctx.statement()),
+            new ArrayList<>()
         );
     }
 
@@ -606,38 +607,38 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         expressionRoot = getPartitionExpression(partitionSpecContexts.get(0));
         for (int i = 1; i < partitionSpecContexts.size(); ++i) {
             expressionRoot = new LogicalBinaryExpression(LogicalBinaryExpression.Operator.OR,
-                    expressionRoot,
-                    getPartitionExpression(partitionSpecContexts.get(i)));
+                expressionRoot,
+                getPartitionExpression(partitionSpecContexts.get(i)));
 
         }
 
         return new Delete(
-                getLocation(ctx),
-                new Table(getLocation(ctx), getQualifiedName(ctx.tableIdentifier())),
-                Optional.of(expressionRoot));
+            getLocation(ctx),
+            new Table(getLocation(ctx), getQualifiedName(ctx.tableIdentifier())),
+            Optional.of(expressionRoot));
     }
 
     private Expression getPartitionExpression(SqlBaseParser.PartitionSpecContext partitionSpecContext) {
         Expression expression = null;
         if (partitionSpecContext != null) {
             List<SqlBaseParser.PartitionValContext> partitionValContexts =
-                    partitionSpecContext.partitionVal();
+                partitionSpecContext.partitionVal();
             SqlBaseParser.PartitionValContext partitionValContext = partitionValContexts.get(0);
             expression = new ComparisonExpression(getLocation(partitionValContexts.get(0)),
-                    ComparisonExpression.Operator.EQUAL,
-                    new Identifier(partitionValContext.identifier().getText()),
-                    new StringLiteral(getLocation(partitionValContext),
-                            unquote(partitionValContext.constant().getText())));
+                ComparisonExpression.Operator.EQUAL,
+                new Identifier(partitionValContext.identifier().getText()),
+                new StringLiteral(getLocation(partitionValContext),
+                    unquote(partitionValContext.constant().getText())));
             if (partitionValContexts.size() > 1) {
                 for (int i = 1; i < partitionValContexts.size(); ++i) {
                     partitionValContext = partitionValContexts.get(i);
                     expression = new LogicalBinaryExpression(LogicalBinaryExpression.Operator.AND,
-                            expression,
-                            new ComparisonExpression(getLocation(partitionValContext),
-                                    ComparisonExpression.Operator.EQUAL,
-                                    new Identifier(partitionValContext.identifier().getText()),
-                                    new StringLiteral(getLocation(partitionValContext),
-                                            unquote(partitionValContext.constant().getText()))));
+                        expression,
+                        new ComparisonExpression(getLocation(partitionValContext),
+                            ComparisonExpression.Operator.EQUAL,
+                            new Identifier(partitionValContext.identifier().getText()),
+                            new StringLiteral(getLocation(partitionValContext),
+                                unquote(partitionValContext.constant().getText()))));
                 }
             }
         }
@@ -649,25 +650,38 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         QualifiedName qualifiedName;
         if (ctx.tableIdentifier().db != null) {
             qualifiedName = QualifiedName.of(ctx.tableIdentifier().db.getText(),
-                    ctx.tableIdentifier().table.getText());
+                ctx.tableIdentifier().table.getText());
         } else {
             qualifiedName = QualifiedName.of(ctx.tableIdentifier().table.getText());
         }
         if (ctx.VIEW() != null) {
             return new DropView(
-                    getLocation(ctx),
-                    qualifiedName,
-                    ctx.EXISTS() != null
+                getLocation(ctx),
+                qualifiedName,
+                ctx.EXISTS() != null
             );
         } else if (ctx.TABLE() != null) {
             return new DropTable(
-                    getLocation(ctx),
-                    qualifiedName,
-                    ctx.EXISTS() != null
+                getLocation(ctx),
+                qualifiedName,
+                ctx.EXISTS() != null
             );
         } else {
             throw parseError("not a proper drop command", ctx);
         }
+    }
+
+    @Override public Node visitCreateView(SqlBaseParser.CreateViewContext ctx) {
+        if (ctx.AS() == null) {
+            throw parseError("need AS before query when creating view", ctx.query());
+        }
+        QualifiedName name = getQualifiedName(ctx.tableIdentifier());
+        Query query = (Query) visit(ctx.query());
+        return new CreateView(name,
+            query,
+            ctx.REPLACE() != null,
+            Optional.empty(),
+            Optional.empty());
     }
 
     @Override
@@ -692,8 +706,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override public Node visitShowDatabases(SqlBaseParser.ShowDatabasesContext ctx)
     {
         return new ShowSchemas(
-                getLocation(ctx), Optional.empty(), getTextIfPresent(ctx.pattern)
-                .map(HiveAstBuilder::unquote), Optional.empty());
+            getLocation(ctx), Optional.empty(), getTextIfPresent(ctx.pattern)
+            .map(HiveAstBuilder::unquote), Optional.empty());
     }
     @Override public Node visitShowTables(SqlBaseParser.ShowTablesContext ctx)
     {
@@ -704,8 +718,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             database = Optional.empty();
         }
         return new ShowTables(
-                getLocation(ctx), database,getTextIfPresent(ctx.pattern)
-                .map(HiveAstBuilder::unquote), Optional.empty());
+            getLocation(ctx), database,getTextIfPresent(ctx.pattern)
+            .map(HiveAstBuilder::unquote), Optional.empty());
     }
 
     @Override
@@ -769,8 +783,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             Select select = new Select(false, ImmutableList.of(singleColumn));
             Relation relation = (Relation) visit(ctx.right);
             QuerySpecification querySpecification = new QuerySpecification(select, Optional.of(relation),
-                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                    Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty());
             Query query = new Query(Optional.empty(), querySpecification, Optional.empty(), Optional.empty(), Optional.empty());
             SubqueryExpression subqueryExpression = new SubqueryExpression(query);
             InPredicate inPredicate = new InPredicate(expression, subqueryExpression);
@@ -789,7 +803,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
         else {
             if(ctx.joinCriteria() == null) {
-                throw parseError("Missing join criteria", ctx);
+                return new Join(getLocation(ctx), Join.Type.CROSS, left, right, Optional.empty());
             }
 
             if (ctx.joinCriteria().ON() != null) {
@@ -832,7 +846,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override
     public Node visitValueExpressionDefault(SqlBaseParser.ValueExpressionDefaultContext ctx) {
-         return super.visitValueExpressionDefault(ctx);
+        return super.visitValueExpressionDefault(ctx);
     }
 
     @Override
@@ -890,14 +904,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return relations.get(0);
         } else {
             Join result = new Join(getLocation(ctx), Join.Type.IMPLICIT,
-                    relations.get(0),
-                    relations.get(1),
-                    Optional.empty());
+                relations.get(0),
+                relations.get(1),
+                Optional.empty());
             for (int i = 2; i < relations.size(); ++i) {
                 result = new Join(getLocation(ctx), Join.Type.IMPLICIT,
-                        result,
-                        relations.get(i),
-                        Optional.empty());
+                    result,
+                    relations.get(i),
+                    Optional.empty());
             }
             return result;
         }
@@ -976,29 +990,29 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             QuerySpecification querySpecification = (QuerySpecification) term;
 
             return new Query(
+                getLocation(ctx),
+                Optional.empty(),
+                new QuerySpecification(
                     getLocation(ctx),
-                    Optional.empty(),
-                    new QuerySpecification(
-                            getLocation(ctx),
-                            querySpecification.getSelect(),
-                            querySpecification.getFrom(),
-                            querySpecification.getWhere(),
-                            querySpecification.getGroupBy(),
-                            querySpecification.getHaving(),
-                            orderBy,
-                            Optional.empty(),
-                            limit),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty());
-        } else {
-            return new Query(
-                    getLocation(ctx),
-                    Optional.empty(),
-                    term,
+                    querySpecification.getSelect(),
+                    querySpecification.getFrom(),
+                    querySpecification.getWhere(),
+                    querySpecification.getGroupBy(),
+                    querySpecification.getHaving(),
                     orderBy,
                     Optional.empty(),
-                    limit);
+                    limit),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty());
+        } else {
+            return new Query(
+                getLocation(ctx),
+                Optional.empty(),
+                term,
+                orderBy,
+                Optional.empty(),
+                limit);
         }
     }
 
@@ -1007,11 +1021,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             String exp = tryUnquote(ctx.constant().getText());
             String constant = ctx.identifier().getText().replace("\"\"", "");
             return new SingleColumn(getLocation(ctx),
-                    new StringLiteral(exp),
-                    Optional.of(new Identifier(constant, true)));
+                new StringLiteral(exp),
+                Optional.of(new Identifier(constant, true)));
         } else {
             return new SingleColumn(getLocation(ctx),
-                    new Identifier(ctx.identifier().getText().replace("\"\"", ""), true), Optional.empty());
+                new Identifier(ctx.identifier().getText().replace("\"\"", ""), true), Optional.empty());
         }
     }
 
@@ -1039,11 +1053,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         SqlBaseParser.PartitionSpecContext partitionSpecContext = null;
         if (ctx.insertInto() instanceof SqlBaseParser.InsertIntoTableContext) {
             SqlBaseParser.InsertIntoTableContext insertIntoTableContext =
-                    (SqlBaseParser.InsertIntoTableContext) ctx.insertInto();
+                (SqlBaseParser.InsertIntoTableContext) ctx.insertInto();
             partitionSpecContext = insertIntoTableContext.partitionSpec();
         } else if (ctx.insertInto() instanceof SqlBaseParser.InsertOverwriteTableContext) {
             SqlBaseParser.InsertOverwriteTableContext insertOverwriteTableContext =
-                    (SqlBaseParser.InsertOverwriteTableContext) ctx.insertInto();
+                (SqlBaseParser.InsertOverwriteTableContext) ctx.insertInto();
             partitionSpecContext = insertOverwriteTableContext.partitionSpec();
         }
 
@@ -1163,13 +1177,13 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
             if (starExpression.getIdentifiers().size() == 2) {
                 DereferenceExpression dereferenceExpression =
-                        new DereferenceExpression(starExpression.getIdentifiers().get(0),
-                                starExpression.getIdentifiers().get(1));
+                    new DereferenceExpression(starExpression.getIdentifiers().get(0),
+                        starExpression.getIdentifiers().get(1));
                 return new AllColumns(nodeLocation,
-                        Optional.of(dereferenceExpression), ImmutableList.of());
+                    Optional.of(dereferenceExpression), ImmutableList.of());
             } else if (starExpression.getIdentifiers().size() == 1) {
                 return new AllColumns(nodeLocation,
-                        Optional.of(starExpression.getIdentifiers().get(0)), ImmutableList.of());
+                    Optional.of(starExpression.getIdentifiers().get(0)), ImmutableList.of());
             } else {
                 return new AllColumns(nodeLocation, Optional.empty(), ImmutableList.of());
             }
@@ -1183,15 +1197,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         Use use;
         if (ctx.catalog != null) {
             use = new Use(
-                    getLocation(ctx),
-                    Optional.of(new Identifier(getLocation(ctx), ctx.catalog.getText(), false)),
-                    new Identifier(getLocation(ctx), ctx.db.getText(), false));
+                getLocation(ctx),
+                Optional.of(new Identifier(getLocation(ctx), ctx.catalog.getText(), false)),
+                new Identifier(getLocation(ctx), ctx.db.getText(), false));
             visit(ctx.catalog);
         } else {
             use = new Use(
-                    getLocation(ctx),
-                    Optional.ofNullable(null),
-                    new Identifier(getLocation(ctx), ctx.db.getText(), false));
+                getLocation(ctx),
+                Optional.ofNullable(null),
+                new Identifier(getLocation(ctx), ctx.db.getText(), false));
         }
         visit(ctx.db);
         return use;
@@ -1206,26 +1220,26 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             condition = Optional.of(expression);
         }
         return new Delete(
-                getLocation(ctx),
-                new Table(getLocation(ctx), getQualifiedName(ctx.tableIdentifier())),
-                condition);
+            getLocation(ctx),
+            new Table(getLocation(ctx), getQualifiedName(ctx.tableIdentifier())),
+            condition);
     }
 
     @Override
     public Node visitSetSession(SqlBaseParser.SetSessionContext ctx) {
         SqlBaseParser.ExpressionContext expression = ctx.expression();
         SetSession setSession = new SetSession(getLocation(ctx),
-                getQualifiedName(ctx.qualifiedName()), (Expression) visit(expression));
+            getQualifiedName(ctx.qualifiedName()), (Expression) visit(expression));
         return setSession;
     }
 
     @Override
     public Node visitLogicalBinary(SqlBaseParser.LogicalBinaryContext ctx) {
         return new LogicalBinaryExpression(
-                getLocation(ctx.operator),
-                getLogicalBinaryOperator(ctx.operator),
-                (Expression) visit(ctx.left),
-                (Expression) visit(ctx.right));
+            getLocation(ctx.operator),
+            getLogicalBinaryOperator(ctx.operator),
+            (Expression) visit(ctx.left),
+            (Expression) visit(ctx.right));
     }
 
     @Override
@@ -1265,22 +1279,22 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             throw parseError("not support sample function type", ctx);
         }
         SampledRelation sampledRelation = new SampledRelation(getLocation(ctx),
-                relation,
-                type,
-                new LongLiteral(ctx.percentage.getText()));
+            relation,
+            type,
+            new LongLiteral(ctx.percentage.getText()));
         return sampledRelation;
     }
 
     @Override public Node visitShowFunctions(SqlBaseParser.ShowFunctionsContext ctx) {
-        return new ShowFunctions();
+        return new ShowFunctions(Optional.empty(), Optional.empty());
     }
 
     @Override public Node visitShowCreateTable(SqlBaseParser.ShowCreateTableContext ctx)
     {
         return new ShowCreate(
-                getLocation(ctx),
-                ctx.TABLE() != null?ShowCreate.Type.TABLE: ShowCreate.Type.VIEW,
-                getQualifiedName(ctx.tableIdentifier())
+            getLocation(ctx),
+            ctx.TABLE() != null?ShowCreate.Type.TABLE: ShowCreate.Type.VIEW,
+            getQualifiedName(ctx.tableIdentifier())
         );
     }
 
@@ -1289,10 +1303,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         if (ctx.tableIdentifier().db != null) {
             if (!parsingOptions.useCaching()) {
                 return new ShowColumnsSkipCache(QualifiedName.of(ctx.tableIdentifier().db.getText(),
-                        ctx.tableIdentifier().table.getText()));
+                    ctx.tableIdentifier().table.getText()));
             }
             return new ShowColumns(QualifiedName.of(ctx.tableIdentifier().db.getText(),
-                    ctx.tableIdentifier().table.getText()));
+                ctx.tableIdentifier().table.getText()));
         } else {
             if (!parsingOptions.useCaching()) {
                 return new ShowColumnsSkipCache(QualifiedName.of(ctx.tableIdentifier().table.getText()));
@@ -1305,10 +1319,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         if (ctx.tableIdentifier().db != null) {
             if (!parsingOptions.useCaching()) {
                 return new ShowColumnsSkipCache(QualifiedName.of(ctx.tableIdentifier().db.getText(),
-                        ctx.tableIdentifier().table.getText()));
+                    ctx.tableIdentifier().table.getText()));
             }
             return new ShowColumns(QualifiedName.of(ctx.tableIdentifier().db.getText(),
-                    ctx.tableIdentifier().table.getText()));
+                ctx.tableIdentifier().table.getText()));
         } else {
             if (!parsingOptions.useCaching()) {
                 return new ShowColumnsSkipCache(QualifiedName.of(ctx.tableIdentifier().table.getText()));
@@ -1357,11 +1371,11 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             if (node instanceof Query) {
                 Query query = (Query) node;
                 return new Query(
-                        Optional.of((With) visitCtes(ctx.ctes())),
-                        query.getQueryBody(),
-                        query.getOrderBy(),
-                        query.getOffset(),
-                        query.getLimit()
+                    Optional.of((With) visitCtes(ctx.ctes())),
+                    query.getQueryBody(),
+                    query.getOrderBy(),
+                    query.getOffset(),
+                    query.getLimit()
                 );
             } else if (node instanceof Insert) {
                 Insert insert = (Insert) node;
@@ -1381,7 +1395,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         if (ctx.kind.getType()  == SqlBaseParser.SELECT) {
             SqlBaseParser.NamedExpressionSeqContext namedExpressionSeqContext = ctx.namedExpressionSeq();
             List<SqlBaseParser.NamedExpressionContext> namedExpressionContexts =
-                    namedExpressionSeqContext.namedExpression();
+                namedExpressionSeqContext.namedExpression();
 
             List<SelectItem> selectItems = new ArrayList<>();
             for (SqlBaseParser.NamedExpressionContext namedExpressionContext: namedExpressionContexts) {
@@ -1404,22 +1418,22 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                         where = Optional.of(leftSemiJoin.getInPredicate());
                     } else {
                         where = Optional.of(
-                                new LogicalBinaryExpression(LogicalBinaryExpression.Operator.AND,
-                                        leftSemiJoin.getInPredicate(),
-                                        where.get()));
+                            new LogicalBinaryExpression(LogicalBinaryExpression.Operator.AND,
+                                leftSemiJoin.getInPredicate(),
+                                where.get()));
                     }
                 }
             }
             return new QuerySpecification(
-                    nodeLocation,
-                    select,
-                    from,
-                    where,
-                    visitIfPresent(ctx.aggregation(), GroupBy.class),
-                    visitIfPresent(ctx.having, Expression.class),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty());
+                nodeLocation,
+                select,
+                from,
+                where,
+                visitIfPresent(ctx.aggregation(), GroupBy.class),
+                visitIfPresent(ctx.having, Expression.class),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty());
         } else {
             throw parseError("Don't support kind: " + ctx.kind.getText(), ctx);
         }
@@ -1453,10 +1467,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitComparison(SqlBaseParser.ComparisonContext ctx) {
         return new ComparisonExpression(
-                getLocation(ctx.comparisonOperator()),
-                getComparisonOperator(((TerminalNode) ctx.comparisonOperator().getChild(0)).getSymbol()),
-                (Expression) visit(ctx.left),
-                (Expression) visit(ctx.right));
+            getLocation(ctx.comparisonOperator()),
+            getComparisonOperator(((TerminalNode) ctx.comparisonOperator().getChild(0)).getSymbol()),
+            (Expression) visit(ctx.left),
+            (Expression) visit(ctx.right));
     }
 
     private Node withPredicate(Expression expression, SqlBaseParser.PredicateContext ctx) {
@@ -1471,10 +1485,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 return new ExistsPredicate(getLocation(ctx), new SubqueryExpression(getLocation(ctx), (Query) visit(ctx.query())));
             case SqlBaseParser.BETWEEN:
                 Expression betweenPredicate = new BetweenPredicate(
-                        getLocation(ctx),
-                        expression,
-                        (Expression) visit(ctx.lower),
-                        (Expression) visit(ctx.upper));
+                    getLocation(ctx),
+                    expression,
+                    (Expression) visit(ctx.lower),
+                    (Expression) visit(ctx.upper));
 
                 if (ctx.NOT() != null) {
                     return new NotExpression(getLocation(ctx), betweenPredicate);
@@ -1485,9 +1499,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 if (ctx.query() != null) {
                     // In subquery
                     Expression inPredicate = new InPredicate(
-                            getLocation(ctx),
-                            expression,
-                            new SubqueryExpression(getLocation(ctx), (Query) visit(ctx.query())));
+                        getLocation(ctx),
+                        expression,
+                        new SubqueryExpression(getLocation(ctx), (Query) visit(ctx.query())));
 
                     if (ctx.NOT() != null) {
                         return new NotExpression(getLocation(ctx), inPredicate);
@@ -1498,9 +1512,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     // In value list
                     InListExpression inListExpression = new InListExpression(getLocation(ctx), visit(ctx.expression(), Expression.class));
                     Expression inPredicate = new InPredicate(
-                            getLocation(ctx),
-                            expression,
-                            inListExpression);
+                        getLocation(ctx),
+                        expression,
+                        inListExpression);
 
                     if (ctx.NOT() != null) {
                         return new NotExpression(getLocation(ctx), inPredicate);
@@ -1510,10 +1524,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 }
             case SqlBaseParser.LIKE:
                 Expression likePredicate = new LikePredicate(
-                        getLocation(ctx),
-                        expression,
-                        (Expression) visit(ctx.pattern),
-                        Optional.empty());
+                    getLocation(ctx),
+                    expression,
+                    (Expression) visit(ctx.pattern),
+                    Optional.empty());
 
                 if (ctx.NOT() != null) {
                     return new NotExpression(getLocation(ctx), likePredicate);
@@ -1522,10 +1536,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 }
             case SqlBaseParser.DISTINCT:
                 Expression comparisonExpression = new ComparisonExpression(
-                        getLocation(ctx),
-                        ComparisonExpression.Operator.IS_DISTINCT_FROM,
-                        expression,
-                        (Expression) visit(ctx.right));
+                    getLocation(ctx),
+                    ComparisonExpression.Operator.IS_DISTINCT_FROM,
+                    expression,
+                    (Expression) visit(ctx.right));
 
                 if (ctx.NOT() != null) {
                     return new NotExpression(getLocation(ctx), comparisonExpression);
@@ -1538,10 +1552,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                     pattern = new StringLiteral(decreaseSlash(((StringLiteral)pattern).getValue()));
                 }
                 Expression rLikePredicate = new RLikePredicate(
-                        getLocation(ctx),
-                        expression,
-                        pattern,
-                        Optional.empty());
+                    getLocation(ctx),
+                    expression,
+                    pattern,
+                    Optional.empty());
 
                 if (ctx.NOT() != null) {
                     return new NotExpression(getLocation(ctx), rLikePredicate);
@@ -1573,17 +1587,17 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             expressions.add((Expression) visit(ctx.left));
             expressions.add((Expression) visit(ctx.right));
             return new FunctionCall(
-                    getLocation(ctx),
-                    QualifiedName.of("concat"),
-                    expressions
+                getLocation(ctx),
+                QualifiedName.of("concat"),
+                expressions
             );
         }
 
         return new ArithmeticBinaryExpression(
-                getLocation(ctx.operator),
-                getArithmeticBinaryOperator(ctx.operator),
-                (Expression) visit(ctx.left),
-                (Expression) visit(ctx.right));
+            getLocation(ctx.operator),
+            getArithmeticBinaryOperator(ctx.operator),
+            (Expression) visit(ctx.left),
+            (Expression) visit(ctx.right));
     }
 
     @Override
@@ -1672,10 +1686,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             }
 
             return new IfExpression(
-                    getLocation(ctx),
-                    (Expression) visit(ctx.expression(0)),
-                    (Expression) visit(ctx.expression(1)),
-                    elseExpression);
+                getLocation(ctx),
+                (Expression) visit(ctx.expression(0)),
+                (Expression) visit(ctx.expression(1)),
+                elseExpression);
         }
 
         if (name.toString().equalsIgnoreCase("nullif")) {
@@ -1684,9 +1698,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             check(!distinct, "DISTINCT not valid for 'nullif' function", ctx);
 
             return new NullIfExpression(
-                    getLocation(ctx),
-                    (Expression) visit(ctx.expression(0)),
-                    (Expression) visit(ctx.expression(1)));
+                getLocation(ctx),
+                (Expression) visit(ctx.expression(0)),
+                (Expression) visit(ctx.expression(1)));
         }
 
         if (name.toString().equalsIgnoreCase("coalesce")) {
@@ -1702,7 +1716,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         expressions.stream().forEach(expression -> {
             if (expression instanceof StringLiteral) {
                 expressionsBuileder.add(new StringLiteral(
-                        decreaseSlash(((StringLiteral)expression).getValue())
+                    decreaseSlash(((StringLiteral)expression).getValue())
                 ));
             } else {
                 expressionsBuileder.add(expression);
@@ -1710,14 +1724,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         });
         if (expressions.size() == 1 && expressions.get(0) instanceof StarExpression) {
             return new FunctionCall(
-                    Optional.of(getLocation(ctx)),
-                    name,
-                    window,
-                    Optional.empty(),//filter,
-                    Optional.empty(),//orderBy,
-                    distinct,
-                    Optional.empty(),
-                    new ArrayList<>()
+                Optional.of(getLocation(ctx)),
+                name,
+                window,
+                Optional.empty(),//filter,
+                Optional.empty(),//orderBy,
+                distinct,
+                Optional.empty(),
+                new ArrayList<>()
             );
         }
 
@@ -1727,17 +1741,6 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             }
             Row row = new Row(getLocation(ctx), expressions);
             return new FunctionCall(
-                    Optional.of(getLocation(ctx)),
-                    name,
-                    window,
-                    Optional.empty(),//filter,
-                    Optional.empty(),//orderBy,
-                    distinct,
-                    Optional.empty(),
-                    Arrays.asList(row)
-            );
-        }
-        return new FunctionCall(
                 Optional.of(getLocation(ctx)),
                 name,
                 window,
@@ -1745,7 +1748,18 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 Optional.empty(),//orderBy,
                 distinct,
                 Optional.empty(),
-                expressionsBuileder.build()
+                Arrays.asList(row)
+            );
+        }
+        return new FunctionCall(
+            Optional.of(getLocation(ctx)),
+            name,
+            window,
+            Optional.empty(),//filter,
+            Optional.empty(),//orderBy,
+            distinct,
+            Optional.empty(),
+            expressionsBuileder.build()
         );
     }
 
@@ -1772,10 +1786,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         }
 
         return new Window(
-                getLocation(ctx),
-                visit(ctx.partition, Expression.class),
-                orderBy,
-                visitIfPresent(ctx.windowFrame(), WindowFrame.class));
+            getLocation(ctx),
+            visit(ctx.partition, Expression.class),
+            orderBy,
+            visitIfPresent(ctx.windowFrame(), WindowFrame.class));
     }
 
     private static WindowFrame.Type getFrameType(ParserRuleContext ctx, Token type)
@@ -1819,10 +1833,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitWindowFrame(SqlBaseParser.WindowFrameContext ctx) {
         return new WindowFrame(
-                getLocation(ctx),
-                getFrameType(ctx, ctx.frameType),
-                (FrameBound) visit(ctx.start),
-                visitIfPresent(ctx.end, FrameBound.class));
+            getLocation(ctx),
+            getFrameType(ctx, ctx.frameType),
+            (FrameBound) visit(ctx.start),
+            visitIfPresent(ctx.end, FrameBound.class));
     }
 
     @Override
@@ -1864,10 +1878,10 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitSimpleCase(SqlBaseParser.SimpleCaseContext ctx) {
         return new SimpleCaseExpression(
-                getLocation(ctx),
-                (Expression) visit(ctx.value),
-                visit(ctx.whenClause(), WhenClause.class),
-                visitIfPresent(ctx.elseExpression, Expression.class));
+            getLocation(ctx),
+            (Expression) visit(ctx.value),
+            visit(ctx.whenClause(), WhenClause.class),
+            visitIfPresent(ctx.elseExpression, Expression.class));
     }
 
     @Override public Node visitComplexDataType(SqlBaseParser.ComplexDataTypeContext ctx) {
@@ -1878,12 +1892,12 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         DataType dataType = null;
         if (ctx.ARRAY() != null) {
             dataType = new GenericDataType(getLocation(ctx),
-                    new Identifier(getLocation(ctx), ctx.ARRAY().getText(), true),
-                    typeParameters);
+                new Identifier(getLocation(ctx), ctx.ARRAY().getText(), true),
+                typeParameters);
         } else if (ctx.MAP() != null) {
             dataType = new GenericDataType(getLocation(ctx),
-                    new Identifier(getLocation(ctx), ctx.MAP().getText(), true),
-                    typeParameters);
+                new Identifier(getLocation(ctx), ctx.MAP().getText(), true),
+                typeParameters);
         } else if (ctx.STRUCT() != null) {
             List<RowDataType.Field> fields = visit(ctx.complexColTypeList().complexColType(), RowDataType.Field.class);
             dataType = new RowDataType(getLocation(ctx), fields);
@@ -1895,15 +1909,15 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
     @Override public Node visitPrimitiveDataType(SqlBaseParser.PrimitiveDataTypeContext ctx) {
         GenericDataType genericDataType = new GenericDataType(getLocation(ctx),
-                new Identifier(getLocation(ctx), ctx.identifier().getText(), true),
-                ImmutableList.of());
+            new Identifier(getLocation(ctx), ctx.identifier().getText(), true),
+            ImmutableList.of());
         return genericDataType;
     }
 
     @Override public Node visitComplexColType(SqlBaseParser.ComplexColTypeContext ctx) {
         RowDataType.Field field = new RowDataType.Field(getLocation(ctx),
-                Optional.of(new Identifier(getLocation(ctx.identifier()), ctx.identifier().getText(), true)),
-                (DataType)visit(ctx.dataType()));
+            Optional.of(new Identifier(getLocation(ctx.identifier()), ctx.identifier().getText(), true)),
+            (DataType)visit(ctx.dataType()));
         return field;
     }
 
@@ -1915,17 +1929,17 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitSearchedCase(SqlBaseParser.SearchedCaseContext ctx) {
         return new SearchedCaseExpression(
-                getLocation(ctx),
-                visit(ctx.whenClause(), WhenClause.class),
-                visitIfPresent(ctx.elseExpression, Expression.class));
+            getLocation(ctx),
+            visit(ctx.whenClause(), WhenClause.class),
+            visitIfPresent(ctx.elseExpression, Expression.class));
     }
 
     @Override
     public Node visitDereference(SqlBaseParser.DereferenceContext ctx) {
         return new DereferenceExpression(
-                getLocation(ctx),
-                (Expression) visit(ctx.base),
-                (Identifier) visit(ctx.fieldName));
+            getLocation(ctx),
+            (Expression) visit(ctx.base),
+            (Identifier) visit(ctx.fieldName));
     }
 
     @Override
@@ -1941,7 +1955,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitSubscript(SqlBaseParser.SubscriptContext ctx) {
         return new SubscriptExpression(getLocation(ctx),
-                (Expression) visit(ctx.value), (Expression) visit(ctx.index));
+            (Expression) visit(ctx.value), (Expression) visit(ctx.index));
     }
 
     @Override
@@ -1952,14 +1966,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     @Override
     public Node visitSortItem(SqlBaseParser.SortItemContext ctx) {
         return new SortItem(
-                getLocation(ctx),
-                (Expression) visit(ctx.expression()),
-                Optional.ofNullable(ctx.ordering)
-                        .map(HiveAstBuilder::getOrderingType)
-                        .orElse(SortItem.Ordering.ASCENDING),
-                Optional.ofNullable(ctx.nullOrder)
-                        .map(HiveAstBuilder::getNullOrderingType)
-                        .orElse(SortItem.NullOrdering.UNDEFINED));
+            getLocation(ctx),
+            (Expression) visit(ctx.expression()),
+            Optional.ofNullable(ctx.ordering)
+                .map(HiveAstBuilder::getOrderingType)
+                .orElse(SortItem.Ordering.ASCENDING),
+            Optional.ofNullable(ctx.nullOrder)
+                .map(HiveAstBuilder::getNullOrderingType)
+                .orElse(SortItem.NullOrdering.UNDEFINED));
     }
 
     @Override
@@ -1968,8 +1982,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         Object o = visit(ctx.STRING());
         if (o == null) {
             throw parseError("cannot recognize input near " +
-                    ctx.start.getText() + " or " + ctx.stop.getText() +
-                    "most reason may be missing column before like/rlike/between or missing =/!=/>/</>=/<=/<> between column and condition expression", ctx);
+                ctx.start.getText() + " or " + ctx.stop.getText() +
+                "most reason may be missing column before like/rlike/between or missing =/!=/>/</>=/<=/<> between column and condition expression", ctx);
         }
         String value = ((StringLiteral) o).getValue();
 
@@ -2077,8 +2091,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
                     Node node = visit(complexColTypeContext.identifier());
                     builder.append(tryUnquote(node.toString()))
-                            .append(" ")
-                            .append(getType(complexColTypeContext.dataType()));
+                        .append(" ")
+                        .append(getType(complexColTypeContext.dataType()));
                 }
                 builder.append(")");
                 return "ROW" + builder.toString();
@@ -2165,8 +2179,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
 
             for (String id: tmp) {
                 Identifier identifier =
-                        new Identifier(getLocation(identifierContext),
-                                id, true);
+                    new Identifier(getLocation(identifierContext),
+                        id, true);
                 identifiers.add(identifier);
             }
         }
@@ -2178,8 +2192,8 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
         List<Identifier> identifiers = new ArrayList<>();
         for (SqlBaseParser.IdentifierContext identifierContext: context.identifier()) {
             Identifier identifier =
-                    new Identifier(getLocation(identifierContext),
-                            identifierContext.getText(), true);
+                new Identifier(getLocation(identifierContext),
+                    identifierContext.getText(), true);
             identifiers.add(identifier);
             visit(identifierContext);
         }
@@ -2189,9 +2203,9 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     private <T> List<T> visit(List<? extends ParserRuleContext> contexts, Class<T> clazz)
     {
         return contexts.stream()
-                .map(this::visit)
-                .map(clazz::cast)
-                .collect(toList());
+            .map(this::visit)
+            .map(clazz::cast)
+            .collect(toList());
     }
 
     public Node visitUnquotedIdentifier(io.prestosql.sql.parser.SqlBaseParser.UnquotedIdentifierContext context)
@@ -2202,14 +2216,14 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     private <T> Optional<T> visitIfPresent(ParserRuleContext context, Class<T> clazz)
     {
         return Optional.ofNullable(context)
-                .map(this::visit)
-                .map(clazz::cast);
+            .map(this::visit)
+            .map(clazz::cast);
     }
 
     private static Optional<String> getTextIfPresent(Token token)
     {
         return Optional.ofNullable(token)
-                .map(Token::getText);
+            .map(Token::getText);
     }
 
     public static NodeLocation getLocation(ParserRuleContext parserRuleContext)
@@ -2243,7 +2257,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return null;
         }
         String[] tmp = qualifiedName.replace("`", "").
-                replace("\"", "").split("\\.");
+            replace("\"", "").split("\\.");
         if (tmp.length == 0) {
             return null;
         }
@@ -2257,7 +2271,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
     public static String unquote(String value)
     {
         return value.substring(1, value.length() - 1)
-                .replace("''", "'");
+            .replace("''", "'");
     }
 
     /**
@@ -2276,7 +2290,7 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
             return null;
         }
         return value.replace("\'", "").
-                replace("\"", "").
-                replace("`", "");
+            replace("\"", "").
+            replace("`", "");
     }
 }

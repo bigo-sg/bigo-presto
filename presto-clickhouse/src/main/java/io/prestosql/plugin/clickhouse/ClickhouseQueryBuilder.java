@@ -322,7 +322,7 @@ public class ClickhouseQueryBuilder
         return quote(columnName) + " " + operator + " ?";
     }
 
-    private String quote(String name)
+    protected String quote(String name)
     {
         name = name.replace(quote, quote + quote);
         return quote + name + quote;

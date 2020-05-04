@@ -54,6 +54,7 @@ final class TestingResourceGroups
                 10,
                 Optional.empty(),
                 Optional.of(10),
+                Optional.of(10),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),

@@ -37,27 +37,7 @@ import java.util.regex.Pattern;
 
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static io.prestosql.spi.StandardErrorCode.CONFIGURATION_INVALID;
-import static io.prestosql.spi.security.AccessDeniedException.denyAddColumn;
-import static io.prestosql.spi.security.AccessDeniedException.denyCatalogAccess;
-import static io.prestosql.spi.security.AccessDeniedException.denyCommentTable;
-import static io.prestosql.spi.security.AccessDeniedException.denyCreateSchema;
-import static io.prestosql.spi.security.AccessDeniedException.denyCreateTable;
-import static io.prestosql.spi.security.AccessDeniedException.denyCreateView;
-import static io.prestosql.spi.security.AccessDeniedException.denyCreateViewWithSelect;
-import static io.prestosql.spi.security.AccessDeniedException.denyDeleteTable;
-import static io.prestosql.spi.security.AccessDeniedException.denyDropColumn;
-import static io.prestosql.spi.security.AccessDeniedException.denyDropSchema;
-import static io.prestosql.spi.security.AccessDeniedException.denyDropTable;
-import static io.prestosql.spi.security.AccessDeniedException.denyDropView;
-import static io.prestosql.spi.security.AccessDeniedException.denyInsertTable;
-import static io.prestosql.spi.security.AccessDeniedException.denyRenameColumn;
-import static io.prestosql.spi.security.AccessDeniedException.denyRenameSchema;
-import static io.prestosql.spi.security.AccessDeniedException.denyRenameTable;
-import static io.prestosql.spi.security.AccessDeniedException.denySelectColumns;
-import static io.prestosql.spi.security.AccessDeniedException.denySetUser;
-import static io.prestosql.spi.security.AccessDeniedException.denyShowColumnsMetadata;
-import static io.prestosql.spi.security.AccessDeniedException.denyShowSchemas;
-import static io.prestosql.spi.security.AccessDeniedException.denyShowTablesMetadata;
+import static io.prestosql.spi.security.AccessDeniedException.*;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -316,15 +296,6 @@ public class RangerSystemAccessControl
             denyCommentTable(table.toString());
         }
     }
-
-    @Override
-    public void checkCanShowTablesMetadata(SystemSecurityContext context, CatalogSchemaName schema)
-    {
-        if (!canAccessCatalog(context, schema.getCatalogName())) {
-            denyShowTablesMetadata(schema.toString());
-        }
-    }
-
     @Override
     public Set<SchemaTableName> filterTables(SystemSecurityContext context, String catalogName, Set<SchemaTableName> tableNames)
     {
@@ -333,14 +304,6 @@ public class RangerSystemAccessControl
         }
 
         return tableNames;
-    }
-
-    @Override
-    public void checkCanShowColumnsMetadata(SystemSecurityContext context, CatalogSchemaTableName table)
-    {
-        if (!canAccessCatalog(context, table.getCatalogName())) {
-            denyShowColumnsMetadata(table.toString());
-        }
     }
 
     @Override

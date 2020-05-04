@@ -20,7 +20,6 @@ import io.prestosql.plugin.jdbc.ConnectionFactory;
 import io.prestosql.plugin.jdbc.JdbcColumnHandle;
 import io.prestosql.plugin.jdbc.JdbcSplit;
 import io.prestosql.plugin.jdbc.JdbcTableHandle;
-import io.prestosql.plugin.jdbc.StatsCollecting;
 import io.prestosql.spi.connector.ConnectorSession;
 
 import javax.inject.Inject;
@@ -39,7 +38,7 @@ public class ClickhouseClient
     private static final Logger log = Logger.get(ClickhouseClient.class);
 
     @Inject
-    public ClickhouseClient(BaseJdbcConfig config, @StatsCollecting ConnectionFactory connectionFactory)
+    public ClickhouseClient(BaseJdbcConfig config, ConnectionFactory connectionFactory)
     {
         super(config, "\"", connectionFactory);
     }

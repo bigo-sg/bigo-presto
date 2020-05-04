@@ -80,7 +80,6 @@ public abstract class FunctionsTestUtil
         functionAssertions = new FunctionAssertions(session, config);
         // load all functions which are in bigo plugin
         BigoEventListenerPlugin bigoEventListenerPlugin = new BigoEventListenerPlugin();
-        bigoEventListenerPlugin.getFunctions().stream().forEach(functionClass -> functionAssertions.addFunctions(extractFunctions(functionClass)));
     }
 
     @AfterClass(alwaysRun = true)
@@ -184,13 +183,6 @@ public abstract class FunctionsTestUtil
     protected void registerFunctions(Plugin plugin)
     {
         functionAssertions.getMetadata().addFunctions(extractFunctions(plugin.getFunctions()));
-    }
-
-    protected void registerTypes(Plugin plugin)
-    {
-        for (Type type : plugin.getTypes()) {
-            functionAssertions.addType(type);
-        }
     }
 
     protected static SqlDecimal decimal(String decimalString)

@@ -1,12 +1,10 @@
 package sg.bigo.ranger;
 
-import com.google.common.collect.ImmutableList;
 import io.prestosql.spi.connector.CatalogSchemaName;
 import io.prestosql.spi.connector.CatalogSchemaTableName;
 import io.prestosql.spi.connector.ColumnMetadata;
 import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.spi.security.AccessDeniedException;
-import io.prestosql.spi.security.Identity;
 import io.prestosql.spi.security.SystemAccessControl;
 import io.prestosql.spi.security.SystemSecurityContext;
 
@@ -15,8 +13,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
-import static io.prestosql.spi.security.AccessDeniedException.denyShowColumnsMetadata;
 
 /**
  * @author tangyun@bigo.sg
@@ -78,14 +74,6 @@ public class RangerSystemAccessControl
   }
 
   @Override
-  public void checkCanShowColumnsMetadata(SystemSecurityContext context, CatalogSchemaTableName table)
-  {
-    if (!RangerUtils.checkPermission(context.getIdentity(), table, PrestoAccessType.SELECT)) {
-      denyShowColumnsMetadata(table.toString());
-    }
-  }
-
-  @Override
   public void checkCanCreateTable(SystemSecurityContext context, CatalogSchemaTableName table) {
     if (!RangerUtils.checkPermission(context.getIdentity(), table, PrestoAccessType.CREATE)) {
       AccessDeniedException.denyCreateTable(table.getSchemaTableName().getTableName());
@@ -105,13 +93,6 @@ public class RangerSystemAccessControl
       AccessDeniedException.denyRenameTable(table.getSchemaTableName().getTableName(),
               newTable.getSchemaTableName().getTableName());
     }
-  }
-
-  @Override
-  public void checkCanShowTablesMetadata(SystemSecurityContext context, CatalogSchemaName schema) {
-      if (!RangerUtils.checkPermission(context.getIdentity(), schema, PrestoAccessType.SELECT)) {
-          AccessDeniedException.denyShowTablesMetadata(schema.toString());
-      }
   }
 
   @Override

@@ -33,19 +33,6 @@ public class ParseErrorMessages extends SQLTester {
     }
 
     @Test
-    public void testShowPartitions()
-    {
-        String sql = "Show Partitions mytable";
-
-        try {
-            runHiveSQL(sql);
-            Assert.fail("sql: " + sql + " should throw exception");
-        }catch (ParsingException e) {
-            Assert.assertTrue(e.getMessage().contains("Don't support"));
-        }
-    }
-
-    @Test
     public void testUsingUDTFFuncCall()
     {
         String sql = "" +

@@ -295,8 +295,14 @@ valueExpression
     : primaryExpression                                                                 #valueExpressionDefault
     | valueExpression AT timeZoneSpecifier                                              #atTimeZone
     | operator=(MINUS | PLUS) valueExpression                                           #arithmeticUnary
-    | left=valueExpression operator=(ASTERISK | SLASH | PERCENT) right=valueExpression  #arithmeticBinary
+    | left=valueExpression operator=(ASTERISK | SLASH | PERCENT | DIV) right=valueExpression  #arithmeticBinary
     | left=valueExpression operator=(PLUS | MINUS) right=valueExpression                #arithmeticBinary
+    // added
+    | left=valueExpression operator=AMPERSAND right=valueExpression                     #arithmeticBinary
+    // added
+    | left=valueExpression operator=HAT right=valueExpression                           #arithmeticBinary
+    // added
+    | left=valueExpression operator=PIPE right=valueExpression                          #arithmeticBinary
     | left=valueExpression CONCAT right=valueExpression                                 #concatenation
     ;
 
@@ -747,6 +753,15 @@ ASTERISK: '*';
 SLASH: '/';
 PERCENT: '%';
 CONCAT: '||';
+
+// added
+DIV: 'DIV';
+// added
+AMPERSAND: '&';
+// added
+PIPE: '|';
+// added
+HAT: '^';
 
 STRING
     : '\'' ( ~'\'' | '\'\'' )* '\''

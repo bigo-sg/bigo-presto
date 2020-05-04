@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.prestosql</groupId>
         <artifactId>presto-root</artifactId>
-        <version>324</version>
+        <version>332</version>
     </parent>
 
     <artifactId>presto-ranger-systemaccesscontrol</artifactId>

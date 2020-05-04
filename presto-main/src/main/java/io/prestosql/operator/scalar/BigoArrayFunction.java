@@ -59,16 +59,18 @@ public final class BigoArrayFunction
 
     public BigoArrayFunction() {
         super(new FunctionMetadata(
-                new Signature("array",
-                FunctionKind.SCALAR,
+            new Signature("array",
                 ImmutableList.of(typeVariable("E")),
                 ImmutableList.of(),
                 TypeSignature.arrayType(new TypeSignature("E")),
                 ImmutableList.of(new TypeSignature("E"), new TypeSignature("E")),
                 true),
                 true,
+                ImmutableList.of(),
                 true,
-                "generate an array."));
+                true,
+                "generate an array.",
+            FunctionKind.SCALAR));
     }
 
     @Override

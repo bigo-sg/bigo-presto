@@ -59,15 +59,19 @@ public class BigoCollectSetFunction
         super(new FunctionMetadata(
                 new Signature(
                         NAME,
-                        AGGREGATE,
                         ImmutableList.of(typeVariable("T")),
                         ImmutableList.of(),
                         TypeSignature.arrayType(new TypeSignature("T")),
                         ImmutableList.of(new TypeSignature("T")),
                         false),
+                true,
+                ImmutableList.of(),
                 false,
                 true,
-                "return an array of values"));
+                "return an array of values",
+                AGGREGATE),
+            true,
+            false);
         this.groupMode = requireNonNull(groupMode, "groupMode is null");
     }
 

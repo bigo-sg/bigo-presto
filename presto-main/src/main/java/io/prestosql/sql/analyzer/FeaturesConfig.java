@@ -1028,6 +1028,7 @@ public class FeaturesConfig
     @Config("optimizer.ignore-downstream-preferences")
     public FeaturesConfig setIgnoreDownstreamPreferences(boolean ignoreDownstreamPreferences) {
         this.ignoreDownstreamPreferences = ignoreDownstreamPreferences;
+        return this;
     }
     public String getDownloadWriteDBName()
     {

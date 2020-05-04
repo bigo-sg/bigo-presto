@@ -12,6 +12,8 @@ import io.prestosql.sql.tree.Statement;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Optional;
 
 public class DownloadRewriteTest {
@@ -51,7 +53,7 @@ public class DownloadRewriteTest {
         Session.SessionBuilder sessionBuilder = Session.builder(sessionPropertyManager);
 
         sessionBuilder.setQueryId(new QueryId("query_123"));
-        sessionBuilder.setIdentity(new Identity("identity", Optional.empty()));
+        sessionBuilder.setIdentity(Identity.ofUser("identity"));
 
         sessionBuilder.setSystemProperty(SystemSessionProperties.ENABLE_DOWNLOAD_REWRITE, String.valueOf(enableDownloadRewrite));
         sessionBuilder.setSystemProperty(SystemSessionProperties.DOWNLOAD_REWRITE_DB_NAME, "download_db");

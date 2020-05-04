@@ -64,7 +64,7 @@ public final class RLikeFunctions
     @ScalarFunction(value = "rlike", hidden = true)
     @LiteralParameters("x")
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean likeVarchar(@SqlType("varchar(x)") Slice value, @SqlType(RLikePatternType.NAME) Regex pattern)
+    public static boolean likeVarchar(@SqlType("varchar(x)") Slice value, @SqlType(RLikePatternType.NAME) JoniRegexp pattern)
     {
         return JoniRegexpFunctions.regexpLike(value, pattern);
     }
@@ -72,7 +72,7 @@ public final class RLikeFunctions
     @ScalarFunction(value = "rlike", hidden = true)
     @LiteralParameters("x")
     @SqlType(StandardTypes.BOOLEAN)
-    public static boolean rLikeChar(@LiteralParameter("x") Long x, @SqlType("char(x)") Slice value, @SqlType(LikePatternType.NAME) Regex pattern)
+    public static boolean rLikeChar(@LiteralParameter("x") Long x, @SqlType("char(x)") Slice value, @SqlType(LikePatternType.NAME) JoniRegexp pattern)
     {
         return likeVarchar(padSpaces(value, x.intValue()), pattern);
     }

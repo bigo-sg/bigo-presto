@@ -26,52 +26,11 @@ import io.prestosql.spi.type.RowType;
 import io.prestosql.spi.type.RowType.Field;
 import io.prestosql.spi.type.TimeZoneKey;
 import io.prestosql.spi.type.Type;
+import io.prestosql.sql.parser.hive.RLikePredicate;
 import io.prestosql.sql.planner.Symbol;
 import io.prestosql.sql.relational.SpecialForm.Form;
 import io.prestosql.sql.relational.optimizer.ExpressionOptimizer;
-import io.prestosql.sql.tree.ArithmeticBinaryExpression;
-import io.prestosql.sql.tree.ArithmeticUnaryExpression;
-import io.prestosql.sql.tree.AstVisitor;
-import io.prestosql.sql.tree.BetweenPredicate;
-import io.prestosql.sql.tree.BinaryLiteral;
-import io.prestosql.sql.tree.BindExpression;
-import io.prestosql.sql.tree.BooleanLiteral;
-import io.prestosql.sql.tree.Cast;
-import io.prestosql.sql.tree.CharLiteral;
-import io.prestosql.sql.tree.CoalesceExpression;
-import io.prestosql.sql.tree.ComparisonExpression;
-import io.prestosql.sql.tree.DecimalLiteral;
-import io.prestosql.sql.tree.DereferenceExpression;
-import io.prestosql.sql.tree.DoubleLiteral;
-import io.prestosql.sql.tree.Expression;
-import io.prestosql.sql.tree.FieldReference;
-import io.prestosql.sql.tree.FunctionCall;
-import io.prestosql.sql.tree.GenericLiteral;
-import io.prestosql.sql.tree.Identifier;
-import io.prestosql.sql.tree.IfExpression;
-import io.prestosql.sql.tree.InListExpression;
-import io.prestosql.sql.tree.InPredicate;
-import io.prestosql.sql.tree.IntervalLiteral;
-import io.prestosql.sql.tree.IsNotNullPredicate;
-import io.prestosql.sql.tree.IsNullPredicate;
-import io.prestosql.sql.tree.LambdaArgumentDeclaration;
-import io.prestosql.sql.tree.LambdaExpression;
-import io.prestosql.sql.tree.LogicalBinaryExpression;
-import io.prestosql.sql.tree.LongLiteral;
-import io.prestosql.sql.tree.NodeRef;
-import io.prestosql.sql.tree.NotExpression;
-import io.prestosql.sql.tree.NullIfExpression;
-import io.prestosql.sql.tree.NullLiteral;
-import io.prestosql.sql.tree.QualifiedName;
-import io.prestosql.sql.tree.Row;
-import io.prestosql.sql.tree.SearchedCaseExpression;
-import io.prestosql.sql.tree.SimpleCaseExpression;
-import io.prestosql.sql.tree.StringLiteral;
-import io.prestosql.sql.tree.SubscriptExpression;
-import io.prestosql.sql.tree.SymbolReference;
-import io.prestosql.sql.tree.TimeLiteral;
-import io.prestosql.sql.tree.TimestampLiteral;
-import io.prestosql.sql.tree.WhenClause;
+import io.prestosql.sql.tree.*;
 import io.prestosql.type.UnknownType;
 
 import java.util.List;
@@ -684,58 +643,6 @@ public final class SqlToRowExpressionTranslator
                     value,
                     min,
                     max);
-        }
-
-        @Override
-        protected RowExpression visitLikePredicate(LikePredicate node, Void context)
-        {
-            RowExpression value = process(node.getValue(), context);
-            RowExpression pattern = process(node.getPattern(), context);
-
-            if (node.getEscape().isPresent()) {
-                RowExpression escape = process(node.getEscape().get(), context);
-                return likeFunctionCall(value, new CallExpression(standardFunctionResolution.likePatternFunction(), LIKE_PATTERN, ImmutableList.of(pattern, escape)));
-            }
-
-            CallExpression patternCall = call(
-                    metadata.getCoercion(VARCHAR, LIKE_PATTERN),
-                    LIKE_PATTERN,
-                    pattern);
-            return likeFunctionCall(value, patternCall);
-        }
-
-        private RowExpression likeFunctionCall(RowExpression value, RowExpression pattern)
-        {
-            if (value.getType() instanceof VarcharType) {
-                return call(standardFunctionResolution.likeVarcharSignature(), BOOLEAN, value, pattern);
-            }
-
-            checkState(value.getType() instanceof CharType, "LIKE value type is neither VARCHAR or CHAR");
-            return call(standardFunctionResolution.likeCharFunction(value.getType()), BOOLEAN, value, pattern);
-        }
-
-        @Override
-        public RowExpression visitRLikePredicate(RLikePredicate node, Void context)
-        {
-            RowExpression value = process(node.getValue(), context);
-            RowExpression pattern = process(node.getPattern(), context);
-
-            if (node.getEscape().isPresent()) {
-                RowExpression escape = process(node.getEscape().get(), context);
-                return rLikeFunctionCall(value, call(metadata.getCoercion(VARCHAR, RLIKE_PATTERN), RLIKE_PATTERN, pattern));
-            }
-
-            return rLikeFunctionCall(value, call(metadata.getCoercion(VARCHAR, RLIKE_PATTERN), RLIKE_PATTERN, pattern));
-        }
-
-        private RowExpression rLikeFunctionCall(RowExpression value, RowExpression pattern)
-        {
-            if (value.getType() instanceof VarcharType) {
-                return call(standardFunctionResolution.rLikeVarcharSignature(), BOOLEAN, value, pattern);
-            }
-
-            checkState(value.getType() instanceof CharType, "RLIKE value type is neither VARCHAR or CHAR");
-            return call(standardFunctionResolution.rLikeCharFunction(value.getType()), BOOLEAN, value, pattern);
         }
 
         @Override

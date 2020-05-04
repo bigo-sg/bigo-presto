@@ -36,15 +36,7 @@ import io.prestosql.spi.ErrorCodeSupplier;
 import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.PrestoWarning;
 import io.prestosql.spi.function.OperatorType;
-import io.prestosql.spi.type.CharType;
-import io.prestosql.spi.type.DecimalParseResult;
-import io.prestosql.spi.type.Decimals;
-import io.prestosql.spi.type.RowType;
-import io.prestosql.spi.type.Type;
-import io.prestosql.spi.type.StandardTypes;
-import io.prestosql.spi.type.TypeNotFoundException;
-import io.prestosql.spi.type.TypeSignatureParameter;
-import io.prestosql.spi.type.VarcharType;
+import io.prestosql.spi.type.*;
 import io.prestosql.sql.parser.SqlParser;
 import io.prestosql.sql.parser.hive.RLikePredicate;
 import io.prestosql.sql.planner.Symbol;
@@ -558,19 +550,18 @@ public class ExpressionAnalyzer
 
                 if (tc.compare2TypesOrder(leftType, rightType) == rightType) {
                     if (tc.canConvertType(leftType, rightType)) {
-                        Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
-                        node.setLeft(cast);
-                    } else if (tc.canConvertType(rightType, leftType)) {
-                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
-                        node.setRight(cast);
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(rightType)));
                     }
-                } else if (tc.compare2TypesOrder(leftType, rightType) == leftType) {
+                    else if (tc.canConvertType(rightType, leftType)) {
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(leftType)));
+                    }
+                }
+                else if (tc.compare2TypesOrder(leftType, rightType) == leftType) {
                     if (tc.canConvertType(rightType, leftType)) {
-                        Cast cast = new Cast(node.getRight(), leftType.getDisplayName());
-                        node.setRight(cast);
-                    } else if (tc.canConvertType(leftType, rightType)) {
-                        Cast cast = new Cast(node.getLeft(), rightType.getDisplayName());
-                        node.setLeft(cast);
+                        node.setRight(new Cast(node.getRight(), TypeSignatureTranslator.toSqlType(leftType)));
+                    }
+                    else if (tc.canConvertType(leftType, rightType)) {
+                        node.setLeft(new Cast(node.getLeft(), TypeSignatureTranslator.toSqlType(rightType)));
                     }
                 }
             }
@@ -1354,21 +1345,42 @@ public class ExpressionAnalyzer
                     return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
                 }
 
-                if(tc.compare3TypesOrder(minType, valueType, maxType) == minType){
-                    Cast cast1 = new Cast(valueExpression, minType.getDisplayName());
-                    Cast cast2 = new Cast(maxExpression, minType.getDisplayName());
-                    node.setValue(cast1);
-                    node.setMax(cast2);
-                }else if(tc.compare3TypesOrder(minType, valueType, maxType) == valueType){
-                    Cast cast1 = new Cast(minExpression, valueType.getDisplayName());
-                    Cast cast2 = new Cast(maxExpression, valueType.getDisplayName());
-                    node.setMin(cast1);
-                    node.setMax(cast2);
-                }else if(tc.compare3TypesOrder(minType, valueType, maxType) == maxType){
-                    Cast cast1 = new Cast(minExpression, maxType.getDisplayName());
-                    Cast cast2 = new Cast(valueExpression, maxType.getDisplayName());
-                    node.setMin(cast1);
-                    node.setValue(cast2);
+                if (minType == null || valueType == null || maxType == null) {
+                    return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
+                }
+                if (tc.compare3TypesOrder(minType, valueType, maxType) == null) {
+                    return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
+                }
+
+                if (tc.compare3TypesOrder(minType, valueType, maxType) == minType) {
+                    if (valueType != minType) {
+                        Cast cast = new Cast(valueExpression, TypeSignatureTranslator.toSqlType(minType));
+                        node.setValue(cast);
+                    }
+                    if (maxType != minType) {
+                        Cast cast = new Cast(maxExpression, TypeSignatureTranslator.toSqlType(minType));
+                        node.setMax(cast);
+                    }
+                }
+                else if (tc.compare3TypesOrder(minType, valueType, maxType) == valueType) {
+                    if (minType != valueType) {
+                        Cast cast = new Cast(minExpression, TypeSignatureTranslator.toSqlType(valueType));
+                        node.setMin(cast);
+                    }
+                    if (maxType != valueType) {
+                        Cast cast = new Cast(maxExpression, TypeSignatureTranslator.toSqlType(valueType));
+                        node.setMax(cast);
+                    }
+                }
+                else if (tc.compare3TypesOrder(minType, valueType, maxType) == maxType) {
+                    if (minType != maxType) {
+                        Cast cast = new Cast(minExpression, TypeSignatureTranslator.toSqlType(maxType));
+                        node.setMin(cast);
+                    }
+                    if (valueType != maxType) {
+                        Cast cast = new Cast(valueExpression, TypeSignatureTranslator.toSqlType(maxType));
+                        node.setValue(cast);
+                    }
                 }
             }
 

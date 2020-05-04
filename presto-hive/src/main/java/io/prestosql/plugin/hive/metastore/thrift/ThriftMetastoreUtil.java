@@ -814,7 +814,7 @@ public final class ThriftMetastoreUtil
                     throw new PrestoException(HIVE_METASTORE_ERROR, "The metadata obtained from Hive Metastore is expired.");
                 }
                 long transient_lastDdlTime = Long.valueOf(parameters.get(TRANSIENT_LAST_DDL_TIME));
-                long lastUpdateThreshold = new java.util.Date().getTime() - TIME_INTERVAL_THRESOLD;
+                long lastUpdateThreshold = (new java.util.Date().getTime() - TIME_INTERVAL_THRESOLD) / 1000;
                 if (transient_lastDdlTime < lastUpdateThreshold) {
                     throw new PrestoException(HIVE_METASTORE_ERROR, "The metadata obtained from Hive Metastore is expired.");
                 }
@@ -837,7 +837,7 @@ public final class ThriftMetastoreUtil
                 }
             }
         } catch (Exception e) {
-            log.error("Encountered error when correcting partition parameters. ", e);
+            log.error("Encountered error when correcting partition parameters. " + e.getMessage(), e);
         }
     }
 

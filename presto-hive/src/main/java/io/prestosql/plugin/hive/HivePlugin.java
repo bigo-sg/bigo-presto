@@ -11,10 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.prestosql.plugin.jdbc;
+package io.prestosql.plugin.hive;
 
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Module;
 import com.google.common.collect.ImmutableSet;
 import io.prestosql.spi.Plugin;
 import io.prestosql.spi.connector.ConnectorFactory;
@@ -23,25 +22,30 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static java.util.Objects.requireNonNull;
 
-public class JdbcPlugin
+public class HivePlugin
         implements Plugin
 {
     private final String name;
-    private final Module module;
 
-    public JdbcPlugin(String name, Module module)
+    public HivePlugin(String name)
     {
         checkArgument(!isNullOrEmpty(name), "name is null or empty");
         this.name = name;
-        this.module = requireNonNull(module, "module is null");
     }
 
     @Override
     public Iterable<ConnectorFactory> getConnectorFactories()
     {
-        return ImmutableList.of(new JdbcConnectorFactory(name, module));
+        return ImmutableList.of(new HiveConnectorFactory(name));
+    }
+
+    @Override
+    public Set<Class<?>> getFunctions()
+    {
+        return ImmutableSet.<Class<?>>builder()
+                .add(MaxMindFunction.class)
+                .build();
     }
 
 }

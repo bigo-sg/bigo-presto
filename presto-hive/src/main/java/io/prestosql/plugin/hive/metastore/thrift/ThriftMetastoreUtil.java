@@ -96,6 +96,7 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.prestosql.plugin.hive.HiveErrorCode.HIVE_INVALID_METADATA;
+import static io.prestosql.plugin.hive.HiveErrorCode.HIVE_METASTORE_ERROR;
 import static io.prestosql.plugin.hive.HiveMetadata.AVRO_SCHEMA_URL_KEY;
 import static io.prestosql.plugin.hive.HiveStorageFormat.AVRO;
 import static io.prestosql.plugin.hive.HiveStorageFormat.CSV;
@@ -154,8 +155,12 @@ public final class ThriftMetastoreUtil
     private static final String NUM_FILES = "numFiles";
     private static final String NUM_ROWS = "numRows";
     private static final String RAW_DATA_SIZE = "rawDataSize";
+    private static final String TRANSIENT_LAST_DDL_TIME = "transient_lastDdlTime";
     private static final String TOTAL_SIZE = "totalSize";
     private static final Set<String> STATS_PROPERTIES = ImmutableSet.of(NUM_FILES, NUM_ROWS, RAW_DATA_SIZE, TOTAL_SIZE);
+
+    private static final long TIME_INTERVAL_THRESOLD = 432000000L; // 5 days
+    private static final double EXPERIENCED_RATIO_OF_TOTAL_SIZE_TO_NUM_ROWS = 30.0;
 
     private ThriftMetastoreUtil() {}
 
@@ -787,11 +792,53 @@ public final class ThriftMetastoreUtil
 
     public static HiveBasicStatistics getHiveBasicStatistics(Map<String, String> parameters)
     {
+        // estimate numRows again here since the information from Hive Metastore maybe not correct
+        correctPartitionParameters(parameters);
         OptionalLong numFiles = parse(parameters.get(NUM_FILES));
         OptionalLong numRows = parse(parameters.get(NUM_ROWS));
         OptionalLong inMemoryDataSizeInBytes = parse(parameters.get(RAW_DATA_SIZE));
         OptionalLong onDiskDataSizeInBytes = parse(parameters.get(TOTAL_SIZE));
         return new HiveBasicStatistics(numFiles, numRows, inMemoryDataSizeInBytes, onDiskDataSizeInBytes);
+    }
+
+    /**
+     * This method is used for correcting the parameters information
+     * since it is obtained from Hive Metastore and it maybe not correct
+     * @param parameters the parameters information obtained from Hive Metastore
+     */
+    public static void correctPartitionParameters(Map<String, String> parameters){
+        try {
+            if (null != parameters && !parameters.isEmpty()) {
+                // judge whether the metadata is expired or not
+                if (!parameters.containsKey(TRANSIENT_LAST_DDL_TIME)) {
+                    throw new PrestoException(HIVE_METASTORE_ERROR, "The metadata obtained from Hive Metastore is expired.");
+                }
+                long transient_lastDdlTime = Long.valueOf(parameters.get(TRANSIENT_LAST_DDL_TIME));
+                long lastUpdateThreshold = new java.util.Date().getTime() - TIME_INTERVAL_THRESOLD;
+                if (transient_lastDdlTime < lastUpdateThreshold) {
+                    throw new PrestoException(HIVE_METASTORE_ERROR, "The metadata obtained from Hive Metastore is expired.");
+                }
+                // judge whether the parameter numRows is zero or not
+                if (!parameters.containsKey(NUM_ROWS)) {
+                    throw new PrestoException(HIVE_METASTORE_ERROR, "This is an external table. We cannot estimate its size.");
+                }
+                long numRows = Long.valueOf(parameters.get(NUM_ROWS));
+                if (numRows > 0) {
+                    return;
+                }
+                // estimate numRows with totalSize
+                if (!parameters.containsKey(TOTAL_SIZE)) {
+                    throw new PrestoException(HIVE_METASTORE_ERROR, "There must be something wrong as there is no totalSize parameter unexpectedly.");
+                }
+                long totalSize = Long.valueOf(parameters.get(TOTAL_SIZE));
+                if (totalSize > 0) {
+                    numRows = Math.round(totalSize / EXPERIENCED_RATIO_OF_TOTAL_SIZE_TO_NUM_ROWS);
+                    parameters.put(NUM_ROWS, numRows + "");
+                }
+            }
+        } catch (Exception e) {
+            log.error("Encountered error when correcting partition parameters. ", e);
+        }
     }
 
     private static OptionalLong parse(@Nullable String parameterValue)

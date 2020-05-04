@@ -69,14 +69,7 @@ import javax.inject.Inject;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalLong;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -132,6 +125,9 @@ public class ThriftHiveMetastore
 
     private static final Pattern TABLE_PARAMETER_SAFE_KEY_PATTERN = Pattern.compile("^[a-zA-Z_]+$");
     private static final Pattern TABLE_PARAMETER_SAFE_VALUE_PATTERN = Pattern.compile("^[a-zA-Z0-9]*$");
+
+    private final long TIME_INTERVAL_THRESOLD = 432000000L; // 5 days
+    private final double EXPERIENCED_RATIO_OF_TOTAL_SIZE_TO_NUM_ROWS = 30.0;
 
     @Inject
     public ThriftHiveMetastore(MetastoreLocator metastoreLocator, ThriftMetastoreConfig thriftConfig, HiveAuthenticationConfig authenticationConfig)
@@ -334,6 +330,10 @@ public class ThriftHiveMetastore
     public Map<String, PartitionStatistics> getPartitionStatistics(HiveIdentity identity, String databaseName, String tableName, Set<String> partitionNames)
     {
         List<Partition> partitions = getPartitionsByNames(identity, databaseName, tableName, ImmutableList.copyOf(partitionNames));
+        // estimate numRows again here since the information from Hive Metastore maybe not correct
+        for (Partition partition : partitions) {
+            ThriftMetastoreUtil.correctPartitionParameters(partition.getParameters());
+        }
         return getPartitionStatistics(identity, databaseName, tableName, partitions);
     }
 

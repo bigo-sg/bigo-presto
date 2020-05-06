@@ -275,10 +275,15 @@ public final class VarcharOperators
         @LiteralParameters({"x", "y"})
         @SqlType(StandardTypes.BOOLEAN)
         public static boolean isDistinctFrom(
-                @SqlType("varchar(x)") Slice left,
-                @IsNull boolean leftNull,
-                @SqlType("varchar(y)") Slice right,
-                @IsNull boolean rightNull)
+            @SqlType(StandardTypes.VARCHAR) Slice left,
+            @IsNull boolean leftNull,
+            @SqlType(StandardTypes.VARCHAR) Slice right,
+            @IsNull boolean rightNull)
+//        public static boolean isDistinctFrom(
+//                @SqlType("varchar(x)") Slice left,
+//                @IsNull boolean leftNull,
+//                @SqlType("varchar(y)") Slice right,
+//                @IsNull boolean rightNull)
         {
             if (leftNull != rightNull) {
                 return true;
@@ -292,10 +297,15 @@ public final class VarcharOperators
         @LiteralParameters({"x", "y"})
         @SqlType(StandardTypes.BOOLEAN)
         public static boolean isDistinctFrom(
-                @BlockPosition @SqlType(value = "varchar(x)", nativeContainerType = Slice.class) Block left,
-                @BlockIndex int leftPosition,
-                @BlockPosition @SqlType(value = "varchar(y)", nativeContainerType = Slice.class) Block right,
-                @BlockIndex int rightPosition)
+            @BlockPosition @SqlType(value = StandardTypes.VARCHAR, nativeContainerType = Slice.class) Block left,
+            @BlockIndex int leftPosition,
+            @BlockPosition @SqlType(value = StandardTypes.VARCHAR, nativeContainerType = Slice.class) Block right,
+            @BlockIndex int rightPosition)
+//        public static boolean isDistinctFrom(
+//                @BlockPosition @SqlType(value = "varchar(x)", nativeContainerType = Slice.class) Block left,
+//                @BlockIndex int leftPosition,
+//                @BlockPosition @SqlType(value = "varchar(y)", nativeContainerType = Slice.class) Block right,
+//                @BlockIndex int rightPosition)
         {
             if (left.isNull(leftPosition) != right.isNull(rightPosition)) {
                 return true;

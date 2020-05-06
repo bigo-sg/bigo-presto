@@ -21,11 +21,10 @@ import io.prestosql.plugin.hive.metastore.HiveMetastore;
 import io.prestosql.plugin.hive.metastore.HiveMetastoreDecorator;
 
 import javax.inject.Singleton;
-
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
-import com.google.inject.Scopes;
+import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.prestosql.plugin.hive.metastore.cache.CachingHiveMetastore.cachingHiveMetastore;
@@ -39,9 +38,9 @@ public class CachingHiveMetastoreModule
     public void configure(Binder binder)
     {
         configBinder(binder).bindConfig(CachingHiveMetastoreConfig.class);
-        binder.bind(HiveMetastore.class).to(BigoCachingHiveMetastore.class).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, HiveMetastoreDecorator.class);
         newExporter(binder).export(HiveMetastore.class)
-                .as(generator -> generator.generatedNameOf(BigoCachingHiveMetastore.class));
+            .as(generator -> generator.generatedNameOf(CachingHiveMetastore.class));
     }
 
     @Provides

@@ -37,6 +37,7 @@ import io.prestosql.spi.type.Type;
 import org.weakref.jmx.Managed;
 
 import javax.annotation.concurrent.ThreadSafe;
+import javax.inject.Inject;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
@@ -87,7 +88,8 @@ public class BigoCachingHiveMetastore
     private final LoadingCache<HivePrincipal, Set<RoleGrant>> roleGrantsCache;
     private final LoadingCache<String, Optional<String>> configValuesCache;
 
-    public static HiveMetastore cachingHiveMetastore(HiveMetastore delegate, Executor executor, CachingHiveMetastoreConfig config)
+    @Inject
+    public static HiveMetastore cachingHiveMetastore(@ForCachingHiveMetastore HiveMetastore delegate, @ForCachingHiveMetastore Executor executor, CachingHiveMetastoreConfig config)
     {
         return cachingHiveMetastore(
                 delegate,

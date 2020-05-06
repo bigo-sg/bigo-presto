@@ -69,6 +69,7 @@ public class PluginManager
             .add("com.fasterxml.jackson.annotation.")
             .add("io.airlift.slice.")
             .add("org.openjdk.jol.")
+            .add("org.apache.kafka.")
             .build();
 
     private static final Logger log = Logger.get(PluginManager.class);

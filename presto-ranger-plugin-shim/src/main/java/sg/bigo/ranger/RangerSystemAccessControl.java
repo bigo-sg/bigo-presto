@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static io.prestosql.spi.security.AccessDeniedException.*;
+
 /**
  * @author tangyun@bigo.sg
  * @date 9/25/19 5:55 PM
@@ -31,6 +33,16 @@ public class RangerSystemAccessControl
 
   @Override
   public void checkCanSetSystemSessionProperty(SystemSecurityContext context, String propertyName) {
+  }
+
+  @Override
+  public void checkCanExecuteQuery(SystemSecurityContext context)
+  {
+  }
+
+  @Override
+  public void checkCanKillQueryOwnedBy(SystemSecurityContext context, String queryOwner)
+  {
   }
 
   @Override
@@ -66,13 +78,19 @@ public class RangerSystemAccessControl
     return schemaNames;
   }
 
-
+  public void checkCanShowColumns(SystemSecurityContext context, CatalogSchemaTableName table)
+  {
+  }
   @Override
   public List<ColumnMetadata> filterColumns(SystemSecurityContext context, CatalogSchemaTableName tableName, List<ColumnMetadata> columns)
   {
     return columns;
   }
 
+  @Override
+  public void checkCanShowCreateTable(SystemSecurityContext context, CatalogSchemaTableName table)
+  {
+  }
   @Override
   public void checkCanCreateTable(SystemSecurityContext context, CatalogSchemaTableName table) {
     if (!RangerUtils.checkPermission(context.getIdentity(), table, PrestoAccessType.CREATE)) {
@@ -94,7 +112,10 @@ public class RangerSystemAccessControl
               newTable.getSchemaTableName().getTableName());
     }
   }
-
+  @Override
+  public void checkCanShowTables(SystemSecurityContext context, CatalogSchemaName schema)
+  {
+  }
   @Override
   public Set<SchemaTableName> filterTables(SystemSecurityContext context, String catalogName, Set<SchemaTableName> tableNames) {
     return tableNames;
@@ -158,6 +179,11 @@ public class RangerSystemAccessControl
   @Override
   public void checkCanCreateViewWithSelectFromColumns(SystemSecurityContext context, CatalogSchemaTableName table, Set<String> columns) {
     AccessDeniedException.denyCreateViewWithSelect(table.getSchemaTableName().getTableName(), context.getIdentity());
+  }
+
+  @Override
+  public void checkCanExecuteFunction(SystemSecurityContext systemSecurityContext, String functionName)
+  {
   }
 
   @Override

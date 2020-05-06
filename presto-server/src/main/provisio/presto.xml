@@ -38,11 +38,11 @@
         </artifact>
     </artifactSet>
 
-    <artifactSet to="plugin/ranger-systemaccesscontrol">
-        <artifact id="${project.groupId}:presto-ranger-systemaccesscontrol:zip:${project.version}">
-            <unpack />
-        </artifact>
-    </artifactSet>
+    <!--<artifactSet to="plugin/ranger-systemaccesscontrol">-->
+        <!--<artifact id="${project.groupId}:presto-ranger-systemaccesscontrol:zip:${project.version}">-->
+            <!--<unpack />-->
+        <!--</artifact>-->
+    <!--</artifactSet>-->
 
     <artifactSet to="plugin/presto-ranger-plugin-shim">
         <artifact id="${project.groupId}:presto-ranger-plugin-shim:zip:${project.version}">

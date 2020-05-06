@@ -53,8 +53,7 @@ import static io.prestosql.cost.CostCalculatorWithEstimatedExchanges.calculateRe
 import static io.prestosql.cost.CostCalculatorWithEstimatedExchanges.calculateRemoteRepartitionCost;
 import static io.prestosql.cost.CostCalculatorWithEstimatedExchanges.calculateRemoteReplicateCost;
 import static io.prestosql.cost.LocalCostEstimate.addPartialComponents;
-import static io.prestosql.sql.planner.plan.AggregationNode.Step.FINAL;
-import static io.prestosql.sql.planner.plan.AggregationNode.Step.SINGLE;
+import static io.prestosql.sql.planner.plan.AggregationNode.Step.*;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
@@ -166,7 +165,7 @@ public class CostCalculatorUsingExchanges
         @Override
         public PlanCostEstimate visitAggregation(AggregationNode node, Void context)
         {
-            if (node.getStep() != FINAL && node.getStep() != SINGLE) {
+            if (node.getStep() != FINAL && node.getStep() != SINGLE && node.getStep() != PARTIAL) {
                 return PlanCostEstimate.unknown();
             }
             PlanNodeStatsEstimate aggregationStats = getStats(node);

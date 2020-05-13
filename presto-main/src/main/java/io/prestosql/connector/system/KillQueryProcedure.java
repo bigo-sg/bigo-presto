@@ -31,6 +31,7 @@ import java.util.Optional;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.prestosql.spi.StandardErrorCode.ADMINISTRATIVELY_KILLED;
+import static io.prestosql.spi.StandardErrorCode.ROBOT_KILLED;
 import static io.prestosql.spi.StandardErrorCode.ADMINISTRATIVELY_PREEMPTED;
 import static io.prestosql.spi.StandardErrorCode.INVALID_PROCEDURE_ARGUMENT;
 import static io.prestosql.spi.StandardErrorCode.NOT_FOUND;
@@ -93,6 +94,12 @@ public class KillQueryProcedure
     public static PrestoException createKillQueryException(String message)
     {
         return new PrestoException(ADMINISTRATIVELY_KILLED, "Query killed. " +
+                (isNullOrEmpty(message) ? "No message provided." : "Message: " + message));
+    }
+
+    public static PrestoException createRobotKillQueryException(String message)
+    {
+        return new PrestoException(ROBOT_KILLED, "Query killed. " +
                 (isNullOrEmpty(message) ? "No message provided." : "Message: " + message));
     }
 

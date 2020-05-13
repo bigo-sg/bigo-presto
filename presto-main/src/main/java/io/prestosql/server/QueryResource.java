@@ -37,6 +37,7 @@ import java.util.Optional;
 
 import static io.prestosql.connector.system.KillQueryProcedure.createKillQueryException;
 import static io.prestosql.connector.system.KillQueryProcedure.createPreemptQueryException;
+import static io.prestosql.connector.system.KillQueryProcedure.createRobotKillQueryException;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -111,6 +112,13 @@ public class QueryResource
     public Response killQuery(@PathParam("queryId") QueryId queryId, String message)
     {
         return failQuery(queryId, createKillQueryException(message));
+    }
+
+    @PUT
+    @Path("{queryId}/robot-killed")
+    public Response robotKillQuery(@PathParam("queryId") QueryId queryId, String message)
+    {
+        return failQuery(queryId, createRobotKillQueryException("Query killed by robot, plz rerun your query some minutes later!"));
     }
 
     @PUT

@@ -43,6 +43,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static io.prestosql.connector.system.KillQueryProcedure.createKillQueryException;
+import static io.prestosql.connector.system.KillQueryProcedure.createRobotKillQueryException;
 import static io.prestosql.connector.system.KillQueryProcedure.createPreemptQueryException;
 import static io.prestosql.security.AccessControlUtil.checkCanKillQueryOwnedBy;
 import static io.prestosql.security.AccessControlUtil.checkCanViewQueryOwnedBy;
@@ -74,7 +75,7 @@ public class QueryResource
         QueryState expectedState = stateFilter == null ? null : QueryState.valueOf(stateFilter.toUpperCase(Locale.ENGLISH));
 
         List<BasicQueryInfo> queries = dispatchManager.getQueries();
-        queries = filterQueries(extractAuthorizedIdentity(servletRequest, httpHeaders, accessControl, groupProvider), queries, accessControl);
+//        queries = filterQueries(extractAuthorizedIdentity(servletRequest, httpHeaders, accessControl, groupProvider), queries, accessControl);
 
         ImmutableList.Builder<BasicQueryInfo> builder = new ImmutableList.Builder<>();
         for (BasicQueryInfo queryInfo : queries) {
@@ -115,7 +116,7 @@ public class QueryResource
             return Response.status(Status.GONE).build();
         }
         try {
-            checkCanViewQueryOwnedBy(extractAuthorizedIdentity(servletRequest, httpHeaders, accessControl, groupProvider), queryInfo.get().getSession().getUser(), accessControl);
+//            checkCanViewQueryOwnedBy(extractAuthorizedIdentity(servletRequest, httpHeaders, accessControl, groupProvider), queryInfo.get().getSession().getUser(), accessControl);
             return Response.ok(queryInfo.get()).build();
         }
         catch (AccessDeniedException e) {
@@ -131,7 +132,7 @@ public class QueryResource
 
         try {
             BasicQueryInfo queryInfo = dispatchManager.getQueryInfo(queryId);
-            checkCanKillQueryOwnedBy(extractAuthorizedIdentity(servletRequest, httpHeaders, accessControl, groupProvider), queryInfo.getSession().getUser(), accessControl);
+//            checkCanKillQueryOwnedBy(extractAuthorizedIdentity(servletRequest, httpHeaders, accessControl, groupProvider), queryInfo.getSession().getUser(), accessControl);
             dispatchManager.cancelQuery(queryId);
         }
         catch (AccessDeniedException e) {
@@ -146,6 +147,13 @@ public class QueryResource
     public Response killQuery(@PathParam("queryId") QueryId queryId, String message, @Context HttpServletRequest servletRequest, @Context HttpHeaders httpHeaders)
     {
         return failQuery(queryId, createKillQueryException(message), servletRequest, httpHeaders);
+    }
+
+    @PUT
+    @Path("{queryId}/robot-killed")
+    public Response robotKillQuery(@PathParam("queryId") QueryId queryId, String message, @Context HttpServletRequest servletRequest, @Context HttpHeaders httpHeaders)
+    {
+        return failQuery(queryId, createRobotKillQueryException("Query killed by robot, plz rerun your query some minutes later!"), servletRequest, httpHeaders);
     }
 
     @PUT

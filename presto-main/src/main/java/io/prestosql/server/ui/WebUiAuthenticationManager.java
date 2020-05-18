@@ -24,8 +24,9 @@ public interface WebUiAuthenticationManager
 {
     static boolean isUiRequest(HttpServletRequest request)
     {
-        String pathInfo = request.getPathInfo();
-        return pathInfo == null || pathInfo.equals("/") || pathInfo.startsWith("/ui");
+//        String pathInfo = request.getPathInfo();
+//        return pathInfo == null || pathInfo.equals("/") || pathInfo.startsWith("/ui");
+        return false;
     }
 
     void handleUiRequest(HttpServletRequest request, HttpServletResponse response, FilterChain nextFilter)

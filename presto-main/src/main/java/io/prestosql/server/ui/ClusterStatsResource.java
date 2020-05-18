@@ -32,7 +32,7 @@ import javax.ws.rs.core.MediaType;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-@Path("/ui/api/stats")
+@Path("/")
 public class ClusterStatsResource
 {
     private final InternalNodeManager nodeManager;
@@ -50,6 +50,14 @@ public class ClusterStatsResource
     }
 
     @GET
+    @Path("/v1/cluster")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ClusterStats getClusterStatsV1() {
+        return getClusterStats();
+    }
+
+    @GET
+    @Path("/ui/api/stats")
     @Produces(MediaType.APPLICATION_JSON)
     public ClusterStats getClusterStats()
     {

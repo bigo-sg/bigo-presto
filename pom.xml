@@ -55,7 +55,7 @@
         <dep.gcs.version>2.0.0</dep.gcs.version>
         <dep.errorprone.version>2.3.3</dep.errorprone.version>
         <rubix.version>0.3.6</rubix.version>
-
+        <json-serde.version>1.3.7.3</json-serde.version>
         <!--
           America/Bahia_Banderas has:
            - offset change since 1970 (offset Jan 1970: -08:00, offset Jan 2018: -06:00)
@@ -148,6 +148,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- https://mvnrepository.com/artifact/org.keedio.openx.data/json-serde -->
+            <dependency>
+                <groupId>org.keedio.openx.data</groupId>
+                <artifactId>json-serde</artifactId>
+                <version>${json-serde.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.prestosql</groupId>
                 <artifactId>presto-spi</artifactId>

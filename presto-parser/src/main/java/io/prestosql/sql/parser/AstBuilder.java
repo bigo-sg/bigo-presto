@@ -1274,12 +1274,14 @@ class AstBuilder
     public Node visitLike(SqlBaseParser.LikeContext context)
     {
         if (context.RLIKE() != null) {
-            Expression result = new RLikePredicate(
-                    getLocation(context),
+            Expression result = new FunctionCall(
+                getLocation(context),
+                QualifiedName.of("regexp_like"),
+                ImmutableList.of(
                     (Expression) visit(context.value),
-                    (Expression) visit(context.pattern),
-                    visitIfPresent(context.escape, Expression.class));
-
+                    (Expression) visit(context.pattern)
+                )
+            );
             if (context.NOT() != null) {
                 result = new NotExpression(getLocation(context), result);
             }

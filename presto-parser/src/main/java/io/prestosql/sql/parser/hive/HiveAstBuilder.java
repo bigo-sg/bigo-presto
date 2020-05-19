@@ -1551,11 +1551,25 @@ public class HiveAstBuilder extends io.hivesql.sql.parser.SqlBaseBaseVisitor<Nod
                 if (pattern instanceof StringLiteral) {
                     pattern = new StringLiteral(decreaseSlash(((StringLiteral)pattern).getValue()));
                 }
-                Expression rLikePredicate = new RLikePredicate(
+                Expression rLikePredicate = new FunctionCall(
                     getLocation(ctx),
-                    expression,
-                    pattern,
-                    Optional.empty());
+                    QualifiedName.of("regexp_like"),
+                    ImmutableList.of(
+                        new Cast(
+                            getLocation(ctx), expression,
+                            new GenericDataType(Optional.empty(), new Identifier("string"), ImmutableList.of())
+                        ),
+                        new Cast(
+                            getLocation(ctx), pattern,
+                            new GenericDataType(Optional.empty(), new Identifier("string"), ImmutableList.of())
+                        )
+                    )
+                );
+//                Expression rLikePredicate = new RLikePredicate(
+//                    getLocation(ctx),
+//                    expression,
+//                    pattern,
+//                    Optional.empty());
 
                 if (ctx.NOT() != null) {
                     return new NotExpression(getLocation(ctx), rLikePredicate);

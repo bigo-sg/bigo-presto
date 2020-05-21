@@ -24,6 +24,7 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,6 +46,8 @@ public class PrestoDriver
 
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .addInterceptor(userAgent(DRIVER_NAME + "/" + DRIVER_VERSION))
+            .connectTimeout(120, TimeUnit.MINUTES)
+            .readTimeout(120, TimeUnit.MINUTES)
             .socketFactory(new SocketChannelSocketFactory())
             .build();
 

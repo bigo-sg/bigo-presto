@@ -2,11 +2,7 @@ package io.prestosql.operator.aggregation.arrayagg;
 
 import com.google.common.collect.ImmutableList;
 import io.airlift.bytecode.DynamicClassLoader;
-import io.prestosql.metadata.BoundVariables;
-import io.prestosql.metadata.FunctionMetadata;
-import io.prestosql.metadata.Metadata;
-import io.prestosql.metadata.Signature;
-import io.prestosql.metadata.SqlAggregationFunction;
+import io.prestosql.metadata.*;
 import io.prestosql.operator.aggregation.AccumulatorCompiler;
 import io.prestosql.operator.aggregation.AggregationMetadata;
 import io.prestosql.operator.aggregation.AggregationMetadata.AccumulatorStateDescriptor;
@@ -56,7 +52,7 @@ public class BigoCollectListFunction
                     ImmutableList.of(new TypeSignature("T")),
                     false),
                 true,
-                ImmutableList.of(),
+                ImmutableList.of(new FunctionArgumentDefinition(true)),
                 false,
                 true,
                 "return an array of values",
@@ -127,5 +123,10 @@ public class BigoCollectListFunction
             state.forEach((block, position) -> elementType.appendTo(block, position, entryBuilder));
             out.closeEntry();
         }
+    }
+
+    @Override
+    public boolean isOrderSensitive() {
+        return true;
     }
 }

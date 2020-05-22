@@ -14,8 +14,11 @@
 package io.prestosql.plugin.hive;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.prestosql.spi.Plugin;
 import io.prestosql.spi.connector.ConnectorFactory;
+
+import java.util.Set;
 
 public class HiveHadoop2Plugin
         implements Plugin
@@ -24,5 +27,13 @@ public class HiveHadoop2Plugin
     public Iterable<ConnectorFactory> getConnectorFactories()
     {
         return ImmutableList.of(new HiveConnectorFactory("hive-hadoop2"));
+    }
+
+    @Override
+    public Set<Class<?>> getFunctions()
+    {
+        return ImmutableSet.<Class<?>>builder()
+                .add(MaxMindFunction.class)
+                .build();
     }
 }

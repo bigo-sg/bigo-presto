@@ -191,4 +191,9 @@ public class BigoCollectSetFunction
         }
         return value;
     }
+
+    @Override
+    public boolean isOrderSensitive() {
+        return true;
+    }
 }

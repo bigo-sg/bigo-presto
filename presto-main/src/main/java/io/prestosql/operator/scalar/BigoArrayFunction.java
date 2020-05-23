@@ -12,12 +12,7 @@ import io.airlift.bytecode.Scope;
 import io.airlift.bytecode.Variable;
 import io.airlift.bytecode.control.IfStatement;
 import io.airlift.bytecode.expression.BytecodeExpression;
-import io.prestosql.metadata.BoundVariables;
-import io.prestosql.metadata.FunctionKind;
-import io.prestosql.metadata.FunctionMetadata;
-import io.prestosql.metadata.Metadata;
-import io.prestosql.metadata.Signature;
-import io.prestosql.metadata.SqlScalarFunction;
+import io.prestosql.metadata.*;
 import io.prestosql.spi.block.Block;
 import io.prestosql.spi.block.BlockBuilder;
 import io.prestosql.spi.block.BlockBuilderStatus;
@@ -66,7 +61,9 @@ public final class BigoArrayFunction
                 ImmutableList.of(new TypeSignature("E"), new TypeSignature("E")),
                 true),
                 true,
-                ImmutableList.of(),
+                ImmutableList.of(
+                        new FunctionArgumentDefinition(true),
+                        new FunctionArgumentDefinition(true)),
                 true,
                 true,
                 "generate an array.",

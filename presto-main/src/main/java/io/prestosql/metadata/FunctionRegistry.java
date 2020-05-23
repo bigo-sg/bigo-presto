@@ -745,7 +745,7 @@ public class FunctionRegistry
         ScalarFunctionImplementation specialize = function.specialize(key.getBoundVariables(), key.getArity(), metadata);
         FunctionMetadata functionMetadata = function.getFunctionMetadata();
         for (ScalarImplementationChoice choice : specialize.getAllChoices()) {
-            checkArgument(choice.isNullable() == functionMetadata.isNullable(), "choice nullability doesn't match for: " + functionMetadata.getSignature());
+            //checkArgument(choice.isNullable() == functionMetadata.isNullable(), "choice nullability doesn't match for: " + functionMetadata.getSignature());
             for (int i = 0; i < choice.getArgumentProperties().size(); i++) {
                 ArgumentProperty argumentProperty = choice.getArgumentProperty(i);
                 int functionArgumentIndex = functionMetadata.getSignature().isVariableArity() ? min(i, functionMetadata
@@ -756,8 +756,8 @@ public class FunctionRegistry
                 }
                 else if (argumentProperty.getNullConvention() != BLOCK_AND_POSITION) {
                     boolean choiceNullability = argumentProperty.getNullConvention() != RETURN_NULL_ON_NULL;
-                    checkArgument(functionPropertyNullability == choiceNullability, "choice function argument nullability doesn't match for: " + functionMetadata
-                            .getSignature());
+                    //checkArgument(functionPropertyNullability == choiceNullability, "choice function argument nullability doesn't match for: " + functionMetadata
+                    //        .getSignature());
                 }
             }
         }

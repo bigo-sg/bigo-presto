@@ -170,7 +170,7 @@ public class QueryResource
         try {
             BasicQueryInfo queryInfo = dispatchManager.getQueryInfo(queryId);
 
-            checkCanKillQueryOwnedBy(extractAuthorizedIdentity(servletRequest, httpHeaders, accessControl, groupProvider), queryInfo.getSession().getUser(), accessControl);
+//            checkCanKillQueryOwnedBy(extractAuthorizedIdentity(servletRequest, httpHeaders, accessControl, groupProvider), queryInfo.getSession().getUser(), accessControl);
 
             // check before killing to provide the proper error code (this is racy)
             if (queryInfo.getState().isDone()) {

@@ -1445,16 +1445,14 @@ public final class MetadataManager
         FunctionMetadata functionMetadata = functions.get(resolvedFunction.getFunctionId());
 
         // specialize function metadata to resolvedFunction
-        List<FunctionArgumentDefinition> argumentDefinitions = ImmutableList.of();
+        List<FunctionArgumentDefinition> argumentDefinitions;
         if (functionMetadata.getSignature().isVariableArity()) {
-            if (functionMetadata.getArgumentDefinitions().size() != 0) {
-                List<FunctionArgumentDefinition> fixedArguments = functionMetadata.getArgumentDefinitions().subList(0, functionMetadata.getArgumentDefinitions().size() - 1);
-                int variableArgumentCount = resolvedFunction.getSignature().getArgumentTypes().size() - fixedArguments.size();
-                argumentDefinitions = ImmutableList.<FunctionArgumentDefinition>builder()
+            List<FunctionArgumentDefinition> fixedArguments = functionMetadata.getArgumentDefinitions().subList(0, functionMetadata.getArgumentDefinitions().size() - 1);
+            int variableArgumentCount = resolvedFunction.getSignature().getArgumentTypes().size() - fixedArguments.size();
+            argumentDefinitions = ImmutableList.<FunctionArgumentDefinition>builder()
                     .addAll(fixedArguments)
                     .addAll(nCopies(variableArgumentCount, functionMetadata.getArgumentDefinitions().get(functionMetadata.getArgumentDefinitions().size() - 1)))
                     .build();
-            }
         }
         else {
             argumentDefinitions = functionMetadata.getArgumentDefinitions();

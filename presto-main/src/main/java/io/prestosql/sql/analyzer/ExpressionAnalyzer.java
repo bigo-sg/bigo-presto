@@ -1341,13 +1341,10 @@ public class ExpressionAnalyzer
                 Type valueType = process(valueExpression, context);
                 Type maxType = process(maxExpression, context);
 
-                if(minType == null || valueType == null || maxType == null) {
-                    return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
-                }
-
                 if (minType == null || valueType == null || maxType == null) {
                     return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
                 }
+
                 if (tc.compare3TypesOrder(minType, valueType, maxType) == null) {
                     return getOperator(context, node, OperatorType.BETWEEN, valueExpression, minExpression, maxExpression);
                 }

@@ -107,7 +107,8 @@ public class AuthenticationFilter
 
         // skip authentication if non-secure or not configured
         if (!doesRequestSupportAuthentication(request)) {
-            handleInsecureRequest(nextFilter, request, response);
+            nextFilter.doFilter(request, response);
+//            handleInsecureRequest(nextFilter, request, response);
             return;
         }
 

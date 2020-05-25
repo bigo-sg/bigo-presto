@@ -44,6 +44,7 @@ import java.util.Optional;
 
 import static io.prestosql.connector.system.KillQueryProcedure.createKillQueryException;
 import static io.prestosql.connector.system.KillQueryProcedure.createPreemptQueryException;
+import static io.prestosql.connector.system.KillQueryProcedure.createRobotKillQueryException;
 import static io.prestosql.security.AccessControlUtil.checkCanKillQueryOwnedBy;
 import static io.prestosql.security.AccessControlUtil.checkCanViewQueryOwnedBy;
 import static io.prestosql.security.AccessControlUtil.filterQueries;
@@ -83,6 +84,25 @@ public class UiQueryResource
     }
 
     @GET
+    @Path("states")
+    public List<BasicQueryInfo> getAllQueryInfos(@QueryParam("states") String statesFilter)
+    {
+        String[] states = statesFilter == null? null:statesFilter.toUpperCase().split(",");
+        ImmutableList.Builder<BasicQueryInfo> builder = new ImmutableList.Builder<>();
+        for (BasicQueryInfo queryInfo : dispatchManager.getQueries()) {
+            if (statesFilter != null) {
+                for (String state: states) {
+                    if (state.equals(queryInfo.getState().toString())) {
+                        builder.add(queryInfo);
+                        break;
+                    }
+                }
+            }
+        }
+        return builder.build();
+    }
+
+    @GET
     @Path("{queryId}")
     public Response getQueryInfo(@PathParam("queryId") QueryId queryId, @Context HttpServletRequest servletRequest, @Context HttpHeaders httpHeaders)
     {
@@ -109,6 +129,13 @@ public class UiQueryResource
     }
 
     @PUT
+    @Path("{queryId}/robot-killed")
+    public Response robotKillQuery(@PathParam("queryId") QueryId queryId, String message, @Context HttpServletRequest servletRequest, @Context HttpHeaders httpHeaders)
+    {
+        return failQuery(queryId, createRobotKillQueryException("Query killed by robot, plz rerun your query some minutes later!"), servletRequest, httpHeaders);
+    }
+
+    @PUT
     @Path("{queryId}/preempted")
     public Response preemptQuery(@PathParam("queryId") QueryId queryId, String message, @Context HttpServletRequest servletRequest, @Context HttpHeaders httpHeaders)
     {
@@ -122,7 +149,7 @@ public class UiQueryResource
         try {
             BasicQueryInfo queryInfo = dispatchManager.getQueryInfo(queryId);
 
-            checkCanKillQueryOwnedBy(extractAuthorizedIdentity(servletRequest, httpHeaders, accessControl, groupProvider), queryInfo.getSession().getUser(), accessControl);
+//            checkCanKillQueryOwnedBy(extractAuthorizedIdentity(servletRequest, httpHeaders, accessControl, groupProvider), queryInfo.getSession().getUser(), accessControl);
 
             // check before killing to provide the proper error code (this is racy)
             if (queryInfo.getState().isDone()) {

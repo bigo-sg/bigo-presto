@@ -38,7 +38,7 @@ final public class DownloadRewrite
         if (node.getLocation().isPresent()) {
             return node.getLocation().get();
         } else {
-            return new NodeLocation(0, 0);
+            return new NodeLocation(1, 0);
         }
     }
 

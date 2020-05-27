@@ -97,6 +97,10 @@ public class HivePageSourceProvider
         HiveSplit hiveSplit = (HiveSplit) split;
         Path path = new Path(hiveSplit.getPath());
 
+        if (path.getName().endsWith(".tmp")) {
+            return new EmptyPageSource();
+        }
+
         Configuration configuration = hdfsEnvironment.getConfiguration(new HdfsContext(session, hiveSplit.getDatabase(), hiveSplit.getTable()), path);
 
         Optional<ConnectorPageSource> pageSource = createHivePageSource(

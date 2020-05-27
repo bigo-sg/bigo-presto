@@ -261,19 +261,13 @@ public final class HiveUtil
                 throw new PrestoException(HIVE_BAD_DATA, "Line too long in text file: " + path, e);
             }
 
-            PrestoException prestoException = new PrestoException(HIVE_CANNOT_OPEN_SPLIT, format("Error opening Hive split %s (offset=%s, length=%s) using %s: %s",
+            throw new PrestoException(HIVE_CANNOT_OPEN_SPLIT, format("Error opening Hive split %s (offset=%s, length=%s) using %s: %s",
                     path,
                     start,
                     length,
                     getInputFormatName(schema),
                     firstNonNull(e.getMessage(), e.getClass().getName())),
                     e);
-            if (path.getName().endsWith(".tmp")) {
-                prestoException.printStackTrace();
-                return null;
-            } else {
-                throw prestoException;
-            }
         }
     }
 

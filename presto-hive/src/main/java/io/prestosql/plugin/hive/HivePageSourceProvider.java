@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableSet;
 import io.prestosql.plugin.hive.HdfsEnvironment.HdfsContext;
 import io.prestosql.plugin.hive.HiveSplit.BucketConversion;
 import io.prestosql.plugin.hive.util.HiveBucketing.BucketingVersion;
+import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.connector.ColumnHandle;
 import io.prestosql.spi.connector.ConnectorPageSource;
 import io.prestosql.spi.connector.ConnectorPageSourceProvider;
@@ -52,6 +53,7 @@ import static com.google.common.collect.Maps.uniqueIndex;
 import static io.prestosql.plugin.hive.HiveColumnHandle.ColumnType.PARTITION_KEY;
 import static io.prestosql.plugin.hive.HiveColumnHandle.ColumnType.REGULAR;
 import static io.prestosql.plugin.hive.HiveColumnHandle.ColumnType.SYNTHESIZED;
+import static io.prestosql.plugin.hive.HiveErrorCode.HIVE_CANNOT_OPEN_SPLIT;
 import static io.prestosql.plugin.hive.HivePageSourceProvider.ColumnMapping.toColumnHandles;
 import static io.prestosql.plugin.hive.util.HiveUtil.getPrefilledColumnValue;
 import static java.util.Objects.requireNonNull;
@@ -97,37 +99,43 @@ public class HivePageSourceProvider
         HiveSplit hiveSplit = (HiveSplit) split;
         Path path = new Path(hiveSplit.getPath());
 
-        if (path.getName().endsWith(".tmp")) {
-            return new EmptyPageSource();
-        }
+        try {
+            Configuration configuration = hdfsEnvironment.getConfiguration(new HdfsContext(session, hiveSplit.getDatabase(), hiveSplit.getTable()), path);
 
-        Configuration configuration = hdfsEnvironment.getConfiguration(new HdfsContext(session, hiveSplit.getDatabase(), hiveSplit.getTable()), path);
-
-        Optional<ConnectorPageSource> pageSource = createHivePageSource(
-                pageSourceFactories,
-                cursorProviders,
-                configuration,
-                session,
-                path,
-                hiveSplit.getBucketNumber(),
-                hiveSplit.getStart(),
-                hiveSplit.getLength(),
-                hiveSplit.getFileSize(),
-                hiveSplit.getFileModifiedTime(),
-                hiveSplit.getSchema(),
-                hiveTable.getCompactEffectivePredicate().intersect(dynamicFilter.transform(HiveColumnHandle.class::cast).simplify()),
-                hiveColumns,
-                hiveSplit.getPartitionKeys(),
-                hiveStorageTimeZone,
-                typeManager,
-                hiveSplit.getTableToPartitionMapping(),
-                hiveSplit.getBucketConversion(),
-                hiveSplit.isS3SelectPushdownEnabled(),
-                hiveSplit.getDeleteDeltaLocations());
-        if (pageSource.isPresent()) {
-            return pageSource.get();
+            Optional<ConnectorPageSource> pageSource = createHivePageSource(
+                    pageSourceFactories,
+                    cursorProviders,
+                    configuration,
+                    session,
+                    path,
+                    hiveSplit.getBucketNumber(),
+                    hiveSplit.getStart(),
+                    hiveSplit.getLength(),
+                    hiveSplit.getFileSize(),
+                    hiveSplit.getFileModifiedTime(),
+                    hiveSplit.getSchema(),
+                    hiveTable.getCompactEffectivePredicate().intersect(dynamicFilter.transform(HiveColumnHandle.class::cast).simplify()),
+                    hiveColumns,
+                    hiveSplit.getPartitionKeys(),
+                    hiveStorageTimeZone,
+                    typeManager,
+                    hiveSplit.getTableToPartitionMapping(),
+                    hiveSplit.getBucketConversion(),
+                    hiveSplit.isS3SelectPushdownEnabled(),
+                    hiveSplit.getDeleteDeltaLocations());
+            if (pageSource.isPresent()) {
+                return pageSource.get();
+            }
+            throw new RuntimeException("Could not find a file reader for split " + hiveSplit);
+        } catch (PrestoException e) {
+            if (e.getErrorCode().equals(HIVE_CANNOT_OPEN_SPLIT.toErrorCode())) {
+                // ignore files whose names end with .tmp
+                if (path.getName().endsWith(".tmp")) {
+                    return new EmptyPageSource();
+                }
+            }
+            throw e;
         }
-        throw new RuntimeException("Could not find a file reader for split " + hiveSplit);
     }
 
     public static Optional<ConnectorPageSource> createHivePageSource(

@@ -99,9 +99,8 @@ public class HivePageSourceProvider
         HiveSplit hiveSplit = (HiveSplit) split;
         Path path = new Path(hiveSplit.getPath());
         // ignore files whose names end with .tmp
-        if (path.getName().endsWith(".tmp")) {
-            System.out.println("jiaming debug: " + path);
-            //return new EmptyPageSource();
+        if (path.getName().endsWith(".tmp") && path.getName().contains("flume")) {
+            return new EmptyPageSource();
         }
 
         try {

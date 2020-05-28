@@ -98,6 +98,11 @@ public class HivePageSourceProvider
 
         HiveSplit hiveSplit = (HiveSplit) split;
         Path path = new Path(hiveSplit.getPath());
+        // ignore files whose names end with .tmp
+        if (path.getName().endsWith(".tmp")) {
+            System.out.println("jiaming debug: " + path);
+            //return new EmptyPageSource();
+        }
 
         try {
             Configuration configuration = hdfsEnvironment.getConfiguration(new HdfsContext(session, hiveSplit.getDatabase(), hiveSplit.getTable()), path);

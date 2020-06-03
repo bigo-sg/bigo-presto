@@ -837,7 +837,8 @@ public final class ThriftMetastoreUtil
                 }
             }
         } catch (Exception e) {
-            log.error("Encountered error when correcting partition parameters. " + e.getMessage(), e);
+            // ignroe
+            // log.error("Encountered error when correcting partition parameters. " + e.getMessage(), e);
         }
     }
 

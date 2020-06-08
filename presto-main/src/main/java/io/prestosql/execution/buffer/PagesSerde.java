@@ -15,6 +15,8 @@ package io.prestosql.execution.buffer;
 
 import io.airlift.compress.Compressor;
 import io.airlift.compress.Decompressor;
+import io.airlift.compress.snappy.SnappyCompressor;
+import io.airlift.log.Logger;
 import io.airlift.slice.DynamicSliceOutput;
 import io.airlift.slice.Slice;
 import io.airlift.slice.SliceOutput;
@@ -40,6 +42,8 @@ import static java.util.Objects.requireNonNull;
 @NotThreadSafe
 public class PagesSerde
 {
+    private static final Logger log = Logger.get(PagesSerde.class);
+
     private static final double MINIMUM_COMPRESSION_RATIO = 0.8;
 
     private final BlockEncodingSerde blockEncodingSerde;
@@ -65,6 +69,10 @@ public class PagesSerde
         MarkerSet markers = MarkerSet.empty();
 
         if (compressor.isPresent()) {
+            if (compressor.get() instanceof SnappyCompressor) {
+                log.info("[jiaming_debug] pagesSerde.serialize(Page page) compressor is SnappyCompressor.");
+            }
+
             byte[] compressed = new byte[compressor.get().maxCompressedLength(uncompressedSize)];
             int compressedSize = compressor.get().compress(
                     slice.byteArray(),

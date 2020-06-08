@@ -18,6 +18,7 @@ import io.airlift.compress.Compressor;
 import io.airlift.compress.lz4.Lz4Compressor;
 import io.airlift.compress.snappy.SnappyCompressor;
 import io.airlift.compress.zstd.ZstdCompressor;
+import io.airlift.log.Logger;
 import io.airlift.slice.SizeOf;
 import io.airlift.slice.Slice;
 import io.airlift.slice.SliceOutput;
@@ -47,6 +48,8 @@ import static java.util.Objects.requireNonNull;
 public class OrcOutputBuffer
         extends SliceOutput
 {
+    private static final Logger log = Logger.get(OrcOutputBuffer.class);
+
     private static final int INSTANCE_SIZE = ClassLayout.parseClass(OrcOutputBuffer.class).instanceSize();
     private static final int INITIAL_BUFFER_SIZE = 256;
     private static final int DIRECT_FLUSH_SIZE = 32 * 1024;
@@ -439,6 +442,10 @@ public class OrcOutputBuffer
         int minCompressionBufferSize = compressor.maxCompressedLength(length);
         if (compressionBuffer.length < minCompressionBufferSize) {
             compressionBuffer = new byte[minCompressionBufferSize];
+        }
+
+        if (compressor instanceof SnappyCompressor) {
+            log.info("[jiaming_debug] pagesSerde.serialize(Page page) compressor is SnappyCompressor.");
         }
 
         int compressedSize = compressor.compress(chunk, offset, length, compressionBuffer, 0, compressionBuffer.length);

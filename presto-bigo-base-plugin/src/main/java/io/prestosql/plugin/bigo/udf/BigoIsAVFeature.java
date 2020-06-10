@@ -29,6 +29,6 @@ public class BigoIsAVFeature {
         if (k > 64) {
             return false;
         }
-        return (featureMask & (1 << k)) != 0;
+        return (featureMask & (1L << k)) != 0;
     }
 }

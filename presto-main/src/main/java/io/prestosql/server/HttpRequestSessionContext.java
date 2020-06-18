@@ -37,15 +37,8 @@ import javax.ws.rs.core.Response.Status;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -372,7 +365,12 @@ public final class HttpRequestSessionContext
     private Set<String> parseClientTags(HttpServletRequest servletRequest)
     {
         Splitter splitter = Splitter.on(',').trimResults().omitEmptyStrings();
-        return ImmutableSet.copyOf(splitter.split(nullToEmpty(servletRequest.getHeader(PRESTO_CLIENT_TAGS))));
+        Set<String> set = new HashSet<>();
+        for (String val : splitter.split(nullToEmpty(servletRequest.getHeader(PRESTO_CLIENT_TAGS)))) {
+            set.add(val);
+        }
+        set.add("hello");
+        return ImmutableSet.copyOf(set);
     }
 
     private Set<String> parseClientCapabilities(HttpServletRequest servletRequest)

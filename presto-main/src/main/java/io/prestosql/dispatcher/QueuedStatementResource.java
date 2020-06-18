@@ -31,11 +31,13 @@ import io.prestosql.server.SessionContext;
 import io.prestosql.server.protocol.Slug;
 import io.prestosql.spi.ErrorCode;
 import io.prestosql.spi.QueryId;
+import org.eclipse.jetty.http.HttpField;
 
 import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.GuardedBy;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -52,7 +54,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import java.lang.reflect.Field;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -156,12 +160,38 @@ public class QueuedStatementResource
         if (isNullOrEmpty(statement)) {
             throw badRequest(BAD_REQUEST, "SQL statement is empty");
         }
-
+        // set client tag for tasks from hello cluster
+        //reflectSetparam(servletRequest, "X-Presto-Client-Tags", "Hello");
         SessionContext sessionContext = new HttpRequestSessionContext(forwardedHeaderSupport, servletRequest);
         Query query = new Query(statement, sessionContext, dispatchManager);
         queries.put(query.getQueryId(), query);
 
         return Response.ok(query.getQueryResults(query.getLastToken(), uriInfo, xForwardedProto)).build();
+    }
+
+    private void reflectSetparam(HttpServletRequest request,String key,String value){
+        Class<? extends HttpServletRequest> requestClass = request.getClass();
+        System.out.println("request实现类="+requestClass.getName());
+        try {
+            Field request1 = requestClass.getDeclaredField("_metaData");
+            request1.setAccessible(true);
+            Object o = request1.get(request);
+            Field fields = o.getClass().getSuperclass().getDeclaredField("_fields");
+            fields.setAccessible(true);
+            Object o1 = fields.get(o);
+            Field headers = o1.getClass().getDeclaredField("_fields");
+            headers.setAccessible(true);
+            Object o2 = headers.get(o1);
+            HttpField[] httpFields = ((HttpField[]) o2);
+            HttpField[] newHttpFields = new HttpField[httpFields.length + 1];
+            for (int i = 0; i < httpFields.length; i++) {
+                newHttpFields[i] = httpFields[i];
+            }
+            newHttpFields[newHttpFields.length - 1] = new HttpField(key, value);
+            headers.set(o1, newHttpFields);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @GET

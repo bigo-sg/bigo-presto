@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class CachingHiveMetastoreConfig
 {
     private Duration metastoreCacheTtl = new Duration(0, TimeUnit.SECONDS);
+    private Duration metastorePartitionCacheTtl = new Duration(0, TimeUnit.SECONDS);
     private Optional<Duration> metastoreRefreshInterval = Optional.empty();
     private long metastoreCacheMaximumSize = 10000;
     private int maxMetastoreRefreshThreads = 100;
@@ -40,6 +41,19 @@ public class CachingHiveMetastoreConfig
     public CachingHiveMetastoreConfig setMetastoreCacheTtl(Duration metastoreCacheTtl)
     {
         this.metastoreCacheTtl = metastoreCacheTtl;
+        return this;
+    }
+
+    @NotNull
+    public Duration getMetastorePartitionCacheTtl()
+    {
+        return metastorePartitionCacheTtl;
+    }
+
+    @Config("hive.metastore-partition-cache-ttl")
+    public CachingHiveMetastoreConfig setMetastorePartitionCacheTtl(Duration metastorePartitionCacheTtl)
+    {
+        this.metastorePartitionCacheTtl = metastorePartitionCacheTtl;
         return this;
     }
 

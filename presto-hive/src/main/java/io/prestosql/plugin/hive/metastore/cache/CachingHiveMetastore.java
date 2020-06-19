@@ -112,11 +112,12 @@ public class CachingHiveMetastore
                 delegate,
                 executor,
                 config.getMetastoreCacheTtl(),
+                config.getMetastorePartitionCacheTtl(),
                 config.getMetastoreRefreshInterval(),
                 config.getMetastoreCacheMaximumSize());
     }
 
-    public static HiveMetastore cachingHiveMetastore(HiveMetastore delegate, Executor executor, Duration cacheTtl, Optional<Duration> refreshInterval, long maximumSize)
+    public static HiveMetastore cachingHiveMetastore(HiveMetastore delegate, Executor executor, Duration cacheTtl, Duration cachePartitionTtl, Optional<Duration> refreshInterval, long maximumSize)
     {
         if (cacheTtl.toMillis() == 0 || maximumSize == 0) {
             // caching is disabled
@@ -127,6 +128,7 @@ public class CachingHiveMetastore
                 delegate,
                 executor,
                 OptionalLong.of(cacheTtl.toMillis()),
+                OptionalLong.of(cachePartitionTtl.toMillis()),
                 refreshInterval
                         .map(Duration::toMillis)
                         .map(OptionalLong::of)
@@ -141,10 +143,12 @@ public class CachingHiveMetastore
                 newDirectExecutorService(),
                 OptionalLong.empty(),
                 OptionalLong.empty(),
+                OptionalLong.empty(),
                 maximumSize);
     }
 
-    protected CachingHiveMetastore(HiveMetastore delegate, Executor executor, OptionalLong expiresAfterWriteMillis, OptionalLong refreshMills, long maximumSize)
+    protected CachingHiveMetastore(HiveMetastore delegate, Executor executor, OptionalLong expiresAfterWriteMillis,
+                                   OptionalLong partitionExpiresAfterWriteMillis, OptionalLong refreshMills, long maximumSize)
     {
         this.delegate = requireNonNull(delegate, "delegate is null");
         requireNonNull(executor, "executor is null");
@@ -164,7 +168,7 @@ public class CachingHiveMetastore
         tableStatisticsCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadTableColumnStatistics), executor));
 
-        partitionStatisticsCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        partitionStatisticsCache = newCacheBuilder(partitionExpiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(new CacheLoader<WithIdentity<HivePartitionName>, PartitionStatistics>()
                 {
                     @Override
@@ -186,13 +190,13 @@ public class CachingHiveMetastore
         viewNamesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadAllViews), executor));
 
-        partitionNamesCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        partitionNamesCache = newCacheBuilder(partitionExpiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadPartitionNames), executor));
 
-        partitionFilterCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        partitionFilterCache = newCacheBuilder(partitionExpiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(CacheLoader.from(this::loadPartitionNamesByParts), executor));
 
-        partitionCache = newCacheBuilder(expiresAfterWriteMillis, refreshMills, maximumSize)
+        partitionCache = newCacheBuilder(partitionExpiresAfterWriteMillis, refreshMills, maximumSize)
                 .build(asyncReloading(new CacheLoader<WithIdentity<HivePartitionName>, Optional<Partition>>()
                 {
                     @Override

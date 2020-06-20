@@ -520,7 +520,7 @@ public abstract class AbstractTestHiveFileSystem
 
         public TestingHiveMetastore(HiveMetastore delegate, Executor executor, Path basePath, HdfsEnvironment hdfsEnvironment)
         {
-            super(delegate, executor, OptionalLong.empty(), OptionalLong.empty(), 0);
+            super(delegate, executor, OptionalLong.empty(), OptionalLong.empty(), OptionalLong.empty(), 0);
             this.basePath = basePath;
             this.hdfsEnvironment = hdfsEnvironment;
         }

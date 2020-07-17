@@ -15,6 +15,7 @@ package io.prestosql.plugin.hive;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import io.prestosql.orc.OrcCorruptionException;
 import io.prestosql.plugin.hive.HdfsEnvironment.HdfsContext;
 import io.prestosql.plugin.hive.HiveSplit.BucketConversion;
 import io.prestosql.plugin.hive.util.HiveBucketing.BucketingVersion;
@@ -197,6 +198,7 @@ public class HivePageSourceProvider
         });
 
         for (HivePageSourceFactory pageSourceFactory : pageSourceFactories) {
+            try {
             Optional<? extends ConnectorPageSource> pageSource = pageSourceFactory.createPageSource(
                     configuration,
                     session,
@@ -209,15 +211,21 @@ public class HivePageSourceProvider
                     effectivePredicate,
                     hiveStorageTimeZone,
                     deleteDeltaLocations);
-            if (pageSource.isPresent()) {
-                return Optional.of(
-                        new HivePageSource(
-                                columnMappings,
-                                bucketAdaptation,
-                                hiveStorageTimeZone,
-                                typeManager,
-                                pageSource.get()));
+                if (pageSource.isPresent()) {
+                    return Optional.of(
+                            new HivePageSource(
+                                    columnMappings,
+                                    bucketAdaptation,
+                                    hiveStorageTimeZone,
+                                    typeManager,
+                                    pageSource.get()));
+                }
+            } catch (Exception e) {
+                if (e.getMessage().contains("Not an ORC file")) {
+                    continue;
+                }
             }
+
         }
 
         for (HiveRecordCursorProvider provider : cursorProviders) {

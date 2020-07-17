@@ -132,7 +132,8 @@ public class OrcReader
             // check if this is an ORC file and not an RCFile or something else
             if (!isValidHeaderMagic(orcDataSource)) {
                 throw new OrcCorruptionException(orcDataSource.getId(), "Not an ORC file");
-            }
+
+                            }
             throw e;
         }
 

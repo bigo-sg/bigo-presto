@@ -19,6 +19,7 @@ import io.prestosql.metadata.Metadata;
 import io.prestosql.metadata.QualifiedObjectName;
 import io.prestosql.metadata.TableHandle;
 import io.prestosql.security.AccessControl;
+import io.prestosql.spi.PrestoException;
 import io.prestosql.sql.tree.DropTable;
 import io.prestosql.sql.tree.Expression;
 import io.prestosql.transaction.TransactionManager;
@@ -56,7 +57,11 @@ public class DropTableTask
 
         accessControl.checkCanDropTable(session.toSecurityContext(), tableName);
 
-        metadata.dropTable(session, tableHandle.get());
+        try {
+            metadata.dropTable(session, tableHandle.get());
+        } catch (PrestoException e) {
+            // ignore table not found exception
+        }
 
         return immediateFuture(null);
     }

@@ -133,6 +133,11 @@ public class HivePageSourceProvider
             }
             throw new RuntimeException("Could not find a file reader for split " + hiveSplit);
         } catch (PrestoException e) {
+            // ignore files whose format is not ORC
+            if (e.getMessage().contains("Invalid postscript") || e.getMessage().contains("Not an ORC file")) {
+                return new EmptyPageSource();
+            }
+
             if (e.getErrorCode().equals(HIVE_CANNOT_OPEN_SPLIT.toErrorCode())) {
                 // ignore files whose names end with .tmp
                 if (path.getName().endsWith(".tmp")) {
@@ -198,7 +203,6 @@ public class HivePageSourceProvider
         });
 
         for (HivePageSourceFactory pageSourceFactory : pageSourceFactories) {
-            try {
             Optional<? extends ConnectorPageSource> pageSource = pageSourceFactory.createPageSource(
                     configuration,
                     session,
@@ -220,12 +224,6 @@ public class HivePageSourceProvider
                                     typeManager,
                                     pageSource.get()));
                 }
-            } catch (Exception e) {
-                if (e.getMessage().contains("Not an ORC file")) {
-                    continue;
-                }
-            }
-
         }
 
         for (HiveRecordCursorProvider provider : cursorProviders) {
